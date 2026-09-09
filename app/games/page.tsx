@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     'Browse verified keyless Roblox games with live player counts, instant loaders, and individual features.',
 };
 
-export default async function ScriptsPage() {
+export default async function GamesPage() {
   const scripts = await getScripts();
 
   // Calculate script counts per game slug
@@ -29,4 +29,3 @@ export default async function ScriptsPage() {
     </main>
   );
 }
-

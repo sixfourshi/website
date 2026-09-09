@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Search, Sparkles, RefreshCw } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { RobloxGame } from '@/lib/games';
 import { GameCard } from './GameCard';
 import { Reveal } from './Reveal';
@@ -75,15 +75,11 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
       <Reveal>
         <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-azure-500/30 bg-azure-500/10 px-3 py-1 text-xs font-medium text-azure-300">
-              <Sparkles size={12} className="text-azure-400" />
-              Supported Games &amp; Hubs
-            </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-white sm:text-4xl">
-              Roblox Scripts
+              Supported Games
             </h1>
             <p className="mt-1.5 max-w-lg text-sm text-slate-300">
-              Select a game below to browse verified, keyless scripts with direct loaders.
+              Click a game to expand its features and tabs.
             </p>
           </div>
 
@@ -95,7 +91,7 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
             />
             <input
               type="text"
-              placeholder="Search games or hubs..."
+              placeholder="Search game..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full rounded-xl border border-line/80 bg-[#0a122e]/80 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-400 outline-none transition-all focus:border-azure-500 focus:bg-[#0c163a] focus:ring-1 focus:ring-azure-500"

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Zap } from 'lucide-react';
 
 const NAV = [
-  { href: '/scripts', label: 'Scripts' },
+  { href: '/scripts', label: 'Games' },
   { href: '/executors', label: 'Executors' },
   { href: '/changelog', label: 'Changelog' },
   { href: '/#demo', label: 'Demo' },
