@@ -3,7 +3,7 @@ import { Navbar } from '@/components/Navbar';
 import { GamesList } from '@/components/GamesList';
 import { Footer } from '@/components/Footer';
 import { getScripts } from '@/lib/scripts';
-import { ROBLOX_GAMES } from '@/lib/games';
+import { getGames } from '@/lib/games-server';
 
 export const metadata: Metadata = {
   title: 'Supported Games — Sour Hub',
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ScriptsPage() {
-  const scripts = await getScripts();
+  const [scripts, games] = await Promise.all([getScripts(), getGames()]);
 
   // Calculate script counts per game slug
   const scriptCounts: Record<string, number> = {};
@@ -24,7 +24,7 @@ export default async function ScriptsPage() {
   return (
     <main className="min-h-screen">
       <Navbar />
-      <GamesList games={ROBLOX_GAMES} scriptCounts={scriptCounts} />
+      <GamesList games={games} scriptCounts={scriptCounts} />
       <Footer />
     </main>
   );

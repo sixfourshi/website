@@ -15,6 +15,7 @@ import {
 import { Script } from '@/lib/scripts';
 import { Icon } from './Icon';
 import { CodeViewer } from './CodeViewer';
+import { copyToClipboard } from './Toast';
 
 interface CompactScriptCardProps {
   script: Script;
@@ -30,18 +31,8 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
   };
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(getLoadstring());
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Fallback if clipboard API is restricted
-      const textarea = document.createElement('textarea');
-      textarea.value = getLoadstring();
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
+    const success = await copyToClipboard(getLoadstring(), 'Script copied to clipboard!');
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
+import { copyToClipboard } from './Toast';
 
 export function LoaderActions({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
@@ -9,9 +10,11 @@ export function LoaderActions({ slug }: { slug: string }) {
   const onCopy = async () => {
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const snippet = `loadstring(game:HttpGet("${origin}/raw/${slug}"))()`;
-    await navigator.clipboard.writeText(snippet);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    const success = await copyToClipboard(snippet, 'Script copied to clipboard!');
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
   };
 
   return (

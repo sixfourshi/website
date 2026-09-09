@@ -9,11 +9,11 @@ import { CodeViewer } from '@/components/CodeViewer';
 import { LoaderActions } from '@/components/LoaderActions';
 import { GameDetailView } from '@/components/GameDetailView';
 import { getScript, getScripts, getScriptsByGame } from '@/lib/scripts';
-import { ROBLOX_GAMES, getGameBySlug } from '@/lib/games';
+import { getGames, getGameBySlug } from '@/lib/games-server';
 
 export async function generateStaticParams() {
-  const scripts = await getScripts();
-  const gameParams = ROBLOX_GAMES.map((g) => ({ slug: g.slug }));
+  const [scripts, games] = await Promise.all([getScripts(), getGames()]);
+  const gameParams = games.map((g) => ({ slug: g.slug }));
   const scriptParams = scripts.map((s) => ({ slug: s.slug }));
   return [...gameParams, ...scriptParams];
 }
@@ -23,7 +23,7 @@ export async function generateMetadata({
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const game = getGameBySlug(params.slug);
+  const game = await getGameBySlug(params.slug);
   if (game) {
     return {
       title: `${game.name} Scripts — Sour Hub`,
@@ -50,7 +50,7 @@ export default async function ScriptOrGamePage({
   params: { slug: string };
 }) {
   // Check if requested slug is a game (e.g. volleyball-legends, rivals, etc.)
-  const game = getGameBySlug(params.slug);
+  const game = await getGameBySlug(params.slug);
   if (game) {
     const scripts = await getScriptsByGame(game.slug);
     return (

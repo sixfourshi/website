@@ -75,7 +75,7 @@ export const ROBLOX_GAMES: RobloxGame[] = [
 ];
 
 export function getGameBySlug(slug: string): RobloxGame | undefined {
-  return ROBLOX_GAMES.find((g) => g.slug === slug);
+  return ROBLOX_GAMES.find((g) => g.slug.toLowerCase() === slug.toLowerCase());
 }
 
 export function formatPlayerCount(count: number | null | undefined): string {

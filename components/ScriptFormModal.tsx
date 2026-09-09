@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import type { Script } from '@/lib/scripts';
+import type { RobloxGame } from '@/lib/games';
 
 const ICON_OPTIONS = [
   'FileCode', 'Orbit', 'Waypoints', 'Eye', 'Hammer', 'Workflow',
@@ -11,10 +12,12 @@ const ICON_OPTIONS = [
 
 export function ScriptFormModal({
   script,
+  games = [],
   onClose,
   onSaved,
 }: {
   script: Script | null;
+  games?: RobloxGame[];
   onClose: () => void;
   onSaved: (script: Script) => void;
 }) {
@@ -23,7 +26,7 @@ export function ScriptFormModal({
     name: script?.name ?? '',
     description: script?.description ?? '',
     category: script?.category ?? 'Utility',
-    game: script?.game ?? 'Universal',
+    game: script?.game ?? 'universal',
     version: script?.version ?? '1.0.0',
     icon: script?.icon ?? 'FileCode',
     code: script?.code ?? '',
@@ -61,15 +64,15 @@ export function ScriptFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-      <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-base p-6 shadow-glow">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold text-ink">
-            {isEdit ? 'Edit script' : 'Add script'}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4 py-6">
+      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-[#09122f] p-6 shadow-glow">
+        <div className="mb-5 flex items-center justify-between border-b border-line/60 pb-3">
+          <h2 className="font-display text-lg font-semibold text-white">
+            {isEdit ? 'Edit Script' : 'Add Script'}
           </h2>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-ink-muted hover:text-ink"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:text-white"
           >
             <X size={15} />
           </button>
@@ -77,56 +80,80 @@ export function ScriptFormModal({
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-xs text-ink-muted">Name</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">Name</label>
             <input
               required
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
-              className="w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-ink focus:border-azure-600 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
             />
           </div>
 
+          {/* Assigned Game Selector */}
           <div>
-            <label className="mb-1.5 block text-xs text-ink-muted">
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">
+              Assigned Game
+            </label>
+            <select
+              value={form.game.toLowerCase()}
+              onChange={(e) => update('game', e.target.value)}
+              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+            >
+              <option value="universal">Universal (All Games)</option>
+              {games
+                .filter((g) => g.slug.toLowerCase() !== 'universal')
+                .map((g) => (
+                  <option key={g.slug} value={g.slug.toLowerCase()}>
+                    {g.name} ({g.slug})
+                  </option>
+                ))}
+            </select>
+            <p className="mt-1 text-[11px] text-slate-400">
+              This script will appear under this game&apos;s tab and in its loader routing.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">
               Description
             </label>
             <textarea
               value={form.description}
               onChange={(e) => update('description', e.target.value)}
               rows={2}
-              className="w-full resize-none rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-ink focus:border-azure-600 focus:outline-none"
+              className="w-full resize-none rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="mb-1.5 block text-xs text-ink-muted">
+              <label className="mb-1.5 block text-xs font-medium text-slate-300">
                 Category
               </label>
               <input
                 value={form.category}
                 onChange={(e) => update('category', e.target.value)}
-                className="w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-ink focus:border-azure-600 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs text-ink-muted">
+              <label className="mb-1.5 block text-xs font-medium text-slate-300">
                 Version
               </label>
               <input
                 value={form.version}
                 onChange={(e) => update('version', e.target.value)}
-                className="w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-ink focus:border-azure-600 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs text-ink-muted">Icon</label>
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">Icon</label>
             <select
               value={form.icon}
               onChange={(e) => update('icon', e.target.value)}
-              className="w-full rounded-xl border border-line bg-surface/60 px-4 py-2.5 text-sm text-ink focus:border-azure-600 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
             >
               {ICON_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -137,24 +164,24 @@ export function ScriptFormModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs text-ink-muted">
+            <label className="mb-1.5 block text-xs font-medium text-slate-300">
               Luau source
             </label>
             <textarea
               value={form.code}
               onChange={(e) => update('code', e.target.value)}
               rows={8}
-              className="w-full resize-y rounded-xl border border-line bg-surface/60 px-4 py-2.5 font-mono text-xs text-ink focus:border-azure-600 focus:outline-none"
+              className="w-full resize-y rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 font-mono text-xs text-white focus:border-azure-500 focus:outline-none"
             />
           </div>
 
           {error && <p className="text-sm text-red-400">{error}</p>}
 
-          <div className="flex justify-end gap-3 pt-1">
+          <div className="flex justify-end gap-3 pt-2 border-t border-line/60">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-line px-4 py-2.5 text-sm text-ink-muted hover:text-ink"
+              className="rounded-xl border border-line px-4 py-2.5 text-sm text-slate-300 hover:text-white"
             >
               Cancel
             </button>

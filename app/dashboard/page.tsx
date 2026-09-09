@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
 import { isAuthenticated } from '@/lib/auth';
 import { getScripts } from '@/lib/scripts';
+import { getGames } from '@/lib/games-server';
 import { DashboardClient } from '@/components/DashboardClient';
 
 export default async function DashboardPage() {
   const authed = await isAuthenticated();
   if (!authed) redirect('/login');
 
-  const scripts = await getScripts();
+  const [scripts, games] = await Promise.all([getScripts(), getGames()]);
 
-  return <DashboardClient initialScripts={scripts} />;
+  return <DashboardClient initialScripts={scripts} initialGames={games} />;
 }

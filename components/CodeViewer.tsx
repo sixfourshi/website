@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { copyToClipboard } from './Toast';
 
 const KEYWORDS = new Set([
   'local', 'function', 'end', 'if', 'then', 'else', 'elseif', 'return',
@@ -49,9 +50,11 @@ export function CodeViewer({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
-    await navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1800);
+    const success = await copyToClipboard(code, 'Script copied to clipboard!');
+    if (success) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1800);
+    }
   };
 
   const lines = code.replace(/\n$/, '').split('\n');

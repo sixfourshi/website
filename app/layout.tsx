@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppBackground } from '@/components/AppBackground';
+import { ToastContainer } from '@/components/Toast';
 
 export const metadata: Metadata = {
   title: 'Sour Hub — Roblox Script Hub',
@@ -82,6 +83,7 @@ export default function RootLayout({
       <body className="font-body bg-base text-ink antialiased relative min-h-screen" suppressHydrationWarning>
         <AppBackground />
         <div className="relative z-10">{children}</div>
+        <ToastContainer />
       </body>
     </html>
   );

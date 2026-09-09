@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Check, Copy, Sparkles, Zap } from 'lucide-react';
 import { Reveal } from './Reveal';
+import { copyToClipboard } from './Toast';
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
@@ -15,17 +16,8 @@ export function Hero() {
         : 'https://sourhub.vercel.app';
     const loaderSnippet = `loadstring(game:HttpGet("${origin}/raw/loader"))()`;
 
-    try {
-      await navigator.clipboard.writeText(loaderSnippet);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      const textarea = document.createElement('textarea');
-      textarea.value = loaderSnippet;
-      document.body.appendChild(textarea);
-      textarea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textarea);
+    const success = await copyToClipboard(loaderSnippet, 'Universal loader copied to clipboard!');
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
