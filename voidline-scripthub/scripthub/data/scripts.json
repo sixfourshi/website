@@ -1,0 +1,68 @@
+[
+  {
+    "slug": "orbit-farm",
+    "name": "Orbit Farm",
+    "description": "Automated farming loop with configurable targets, safe-teleport pathing, and an auto-sell cycle.",
+    "category": "Farming",
+    "game": "Universal",
+    "version": "2.4.0",
+    "updatedAt": "2026-08-14",
+    "icon": "Orbit",
+    "code": "-- Orbit Farm\n-- version 2.4.0\nlocal Config = {\n  AutoFarm = true,\n  AutoSell = true,\n  Radius = 120,\n}\n\nprint('Orbit Farm loaded — config ready:', Config)\n-- Replace this stub with your actual module logic.\n"
+  },
+  {
+    "slug": "driftpath",
+    "name": "Driftpath",
+    "description": "Smooth camera and movement helper with adjustable speed curves and waypoint recording.",
+    "category": "Movement",
+    "game": "Universal",
+    "version": "1.9.2",
+    "updatedAt": "2026-08-02",
+    "icon": "Waypoints",
+    "code": "-- Driftpath\n-- version 1.9.2\nlocal Waypoints = {}\n\nlocal function record(position)\n  table.insert(Waypoints, position)\nend\n\nprint('Driftpath ready. Waypoints table initialized.')\n"
+  },
+  {
+    "slug": "lumen-esp",
+    "name": "Lumen ESP",
+    "description": "Lightweight visual overlay with team-color awareness and adjustable render distance.",
+    "category": "Visuals",
+    "game": "Universal",
+    "version": "3.1.1",
+    "updatedAt": "2026-07-20",
+    "icon": "Eye",
+    "code": "-- Lumen ESP\n-- version 3.1.1\nlocal Settings = {\n  MaxDistance = 800,\n  TeamColors = true,\n}\n\nprint('Lumen ESP initialized with settings:', Settings)\n"
+  },
+  {
+    "slug": "pulsecraft",
+    "name": "Pulsecraft",
+    "description": "Building and placement assistant with grid snapping and undo history.",
+    "category": "Utility",
+    "game": "Universal",
+    "version": "1.2.0",
+    "updatedAt": "2026-06-30",
+    "icon": "Hammer",
+    "code": "-- Pulsecraft\n-- version 1.2.0\nlocal History = {}\n\nlocal function snapshot(state)\n  table.insert(History, state)\nend\n\nprint('Pulsecraft ready. History buffer created.')\n"
+  },
+  {
+    "slug": "nightfall-macro",
+    "name": "Nightfall Macro",
+    "description": "Sequenced action macros with a simple step editor and pause/resume controls.",
+    "category": "Automation",
+    "game": "Universal",
+    "version": "4.0.3",
+    "updatedAt": "2026-08-28",
+    "icon": "Workflow",
+    "code": "-- Nightfall Macro\n-- version 4.0.3\nlocal Steps = {}\n\nlocal function addStep(fn)\n  table.insert(Steps, fn)\nend\n\nprint('Nightfall Macro loaded with', #Steps, 'steps.')\n"
+  },
+  {
+    "slug": "haloui",
+    "name": "HaloUI",
+    "description": "Drop-in UI kit for building clean in-game menus with tabs, toggles, and sliders.",
+    "category": "Interface",
+    "game": "Universal",
+    "version": "2.0.0",
+    "updatedAt": "2026-05-11",
+    "icon": "LayoutPanelLeft",
+    "code": "-- HaloUI\n-- version 2.0.0\nlocal HaloUI = {}\nHaloUI.__index = HaloUI\n\nfunction HaloUI.new(title)\n  return setmetatable({ title = title, tabs = {} }, HaloUI)\nend\n\nprint('HaloUI module loaded.')\nreturn HaloUI\n"
+  }
+]
