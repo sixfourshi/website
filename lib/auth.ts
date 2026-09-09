@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
-export const SESSION_COOKIE = 'voidline_session';
+export const SESSION_COOKIE = 'sourhub_session';
 
 function getSecret(): string {
   return process.env.SESSION_SECRET || 'dev-secret-change-me';

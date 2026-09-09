@@ -24,11 +24,11 @@ export function HowToUse() {
     <section className="mx-auto max-w-6xl px-5 py-24">
       <Reveal>
         <div className="mb-10 text-center">
-          <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
-            How to use Voidline
+          <h2 className="font-display text-2xl font-semibold text-white sm:text-3xl">
+            How to use Sour Hub
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
-            Four steps, start to finish.
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-300">
+            Four simple steps from copy to execution.
           </p>
         </div>
       </Reveal>

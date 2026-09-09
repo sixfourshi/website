@@ -26,7 +26,7 @@ export default async function ScriptPage({
       <Navbar />
       <div className="mx-auto max-w-3xl px-5 pb-24 pt-32">
         <Link
-          href="/#scripts"
+          href="/scripts"
           className="mb-8 inline-flex items-center gap-1.5 text-sm text-ink-muted transition-colors hover:text-ink"
         >
           <ArrowLeft size={15} />

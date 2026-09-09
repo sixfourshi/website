@@ -1,11 +1,7 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { Stats } from '@/components/Stats';
-import { Executors } from '@/components/Executors';
-import { ScriptsGrid } from '@/components/ScriptsGrid';
 import { Demo } from '@/components/Demo';
-import { Changelog } from '@/components/Changelog';
-import { HowToUse } from '@/components/HowToUse';
 import { Faq } from '@/components/Faq';
 import { Footer } from '@/components/Footer';
 import { getScripts } from '@/lib/scripts';
@@ -25,11 +21,7 @@ export default async function Home() {
         featureCount={18}
         version={latest?.version ?? '1.0.0'}
       />
-      <Executors />
-      <ScriptsGrid scripts={scripts} />
       <Demo />
-      <Changelog version={latest?.version ?? '1.0.0'} date={latest?.updatedAt ?? ''} />
-      <HowToUse />
       <Faq />
       <Footer />
     </main>

@@ -1,6 +1,6 @@
-# Voidline — Roblox Script Hub
+# Sour Hub — Keyless Roblox Script Hub
 
-A dark-blue script hub built with Next.js 14 (App Router), TypeScript, and
+A dark-blue script hub built with Next.js 15 (App Router), TypeScript, and
 Tailwind CSS. Includes a public landing page, individual script pages, a raw
 text endpoint for each script, and an owner-only dashboard for managing the
 library.

@@ -67,9 +67,9 @@ export function DashboardClient({
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700">
               <Zap className="h-4 w-4 text-white" />
             </span>
-            <span className="font-display text-base font-semibold text-ink">
-              Voidline
-              <span className="ml-2 text-xs font-normal text-ink-faint">
+            <span className="font-display text-base font-semibold text-white">
+              Sour Hub
+              <span className="ml-2 text-xs font-normal text-azure-300">
                 Dashboard
               </span>
             </span>

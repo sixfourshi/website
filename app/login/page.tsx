@@ -46,8 +46,8 @@ export default function LoginPage() {
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700 shadow-glow-sm">
             <Zap className="h-4 w-4 text-white" />
           </span>
-          <span className="font-display text-lg font-semibold text-ink">
-            Voidline
+          <span className="font-display text-lg font-semibold text-white">
+            Sour Hub
           </span>
         </Link>
 

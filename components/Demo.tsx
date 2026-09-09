@@ -6,10 +6,10 @@ export function Demo() {
     <section id="demo" className="mx-auto max-w-5xl px-5 py-24">
       <Reveal>
         <div className="mb-10 text-center">
-          <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
+          <h2 className="font-display text-2xl font-semibold text-white sm:text-3xl">
             See it in action
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-ink-muted">
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-300">
             A quick look at the loader and the script menu in-game.
           </p>
         </div>
