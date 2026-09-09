@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { get, put, list } from '@vercel/blob';
+import { get, put, list, BlobAccessError } from '@vercel/blob';
 import type { RobloxGame } from './games';
 import type { Script } from './scripts';
 
@@ -17,12 +17,42 @@ const TMP_SCRIPTS_PATH = path.join(TMP_DIR, 'sourhub_scripts.json');
 const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
 const SEED_SCRIPTS_PATH = path.join(process.cwd(), 'data', 'scripts.json');
 
+// Track if a configured token was rejected by Vercel Blob (e.g. invalid or revoked credentials)
+let blobAccessFailed = false;
+
+/**
+ * Checks if a valid Vercel Blob token is configured.
+ * A real Vercel Blob read-write token begins with 'vercel_blob_rw_' or 'vercel_blob_'.
+ * Descriptive placeholders or invalid formats are safely bypassed to prevent access errors.
+ */
 export function isBlobStorageConfigured(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN && process.env.BLOB_READ_WRITE_TOKEN.trim().length > 0);
+  if (blobAccessFailed) return false;
+  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (!token) return false;
+  return token.startsWith('vercel_blob_');
+}
+
+function handleBlobAuthError(err: any): boolean {
+  if (
+    err instanceof BlobAccessError ||
+    err?.name === 'BlobAccessError' ||
+    err?.message?.includes('Access denied') ||
+    err?.message?.includes('valid token')
+  ) {
+    if (!blobAccessFailed) {
+      blobAccessFailed = true;
+      console.warn(
+        '[Storage] Vercel Blob token was rejected (Access denied). Falling back to resilient local storage.'
+      );
+    }
+    return true;
+  }
+  return false;
 }
 
 // Read JSON from Vercel Blob using process.env.BLOB_READ_WRITE_TOKEN
 async function readBlobJson<T>(pathname: string): Promise<T | null> {
+  if (!isBlobStorageConfigured()) return null;
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (!token) return null;
 
@@ -35,6 +65,8 @@ async function readBlobJson<T>(pathname: string): Promise<T | null> {
       }
     }
   } catch (err: any) {
+    if (handleBlobAuthError(err)) return null;
+
     // If get throws BlobNotFoundError or isn't supported for that path yet, fallback to list lookup
     try {
       const { blobs } = await list({ prefix: pathname, token });
@@ -50,8 +82,9 @@ async function readBlobJson<T>(pathname: string): Promise<T | null> {
           return (await res.json()) as T;
         }
       }
-    } catch (listErr) {
-      console.warn(`[Storage] Blob read failed for ${pathname}:`, listErr);
+    } catch (listErr: any) {
+      if (handleBlobAuthError(listErr)) return null;
+      console.warn(`[Storage] Blob read fallback failed for ${pathname}:`, listErr?.message || listErr);
     }
   }
   return null;
@@ -59,17 +92,23 @@ async function readBlobJson<T>(pathname: string): Promise<T | null> {
 
 // Write JSON to Vercel Blob using process.env.BLOB_READ_WRITE_TOKEN
 async function writeBlobJson<T>(pathname: string, data: T): Promise<void> {
+  if (!isBlobStorageConfigured()) return;
   const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
   if (!token) return;
 
-  await put(pathname, JSON.stringify(data, null, 2), {
-    access: 'public',
-    token,
-    addRandomSuffix: false,
-    allowOverwrite: true,
-    contentType: 'application/json',
-    cacheControlMaxAge: 0,
-  });
+  try {
+    await put(pathname, JSON.stringify(data, null, 2), {
+      access: 'public',
+      token,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: 'application/json',
+      cacheControlMaxAge: 0,
+    });
+  } catch (err: any) {
+    if (handleBlobAuthError(err)) return;
+    console.warn(`[Storage] Failed writing to Vercel Blob at ${pathname}:`, err?.message || err);
+  }
 }
 
 // Read from /tmp fallback
