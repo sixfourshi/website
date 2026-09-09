@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Image as ImageIcon, Loader2, Users, AlertCircle, Check } from 'lucide-react';
+import { showToast } from './Toast';
 import type { RobloxGame } from '@/lib/games';
 
 export function GameFormModal({
@@ -155,7 +156,9 @@ export function GameFormModal({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Could not save game.');
+        const err = data.error || 'Could not save game.';
+        setError(err);
+        showToast(err, 'error', 4000);
         setSaving(false);
         return;
       }
@@ -164,6 +167,7 @@ export function GameFormModal({
       onSaved(saved);
     } catch {
       setError('Something went wrong. Please try again.');
+      showToast('Something went wrong. Please try again.', 'error', 4000);
       setSaving(false);
     }
   };

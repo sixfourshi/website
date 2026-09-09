@@ -1,5 +1,4 @@
-import fs from 'fs/promises';
-import path from 'path';
+import { getStoredScripts, saveStoredScripts } from './storage';
 
 export type Script = {
   slug: string;
@@ -14,11 +13,25 @@ export type Script = {
   features?: string[];
 };
 
-const DATA_PATH = path.join(process.cwd(), 'data', 'scripts.json');
+export class ScriptValidationError extends Error {
+  statusCode: number;
+  constructor(message: string, statusCode = 400) {
+    super(message);
+    this.name = 'ScriptValidationError';
+    this.statusCode = statusCode;
+  }
+}
 
 export async function getScripts(): Promise<Script[]> {
-  const raw = await fs.readFile(DATA_PATH, 'utf-8');
-  return JSON.parse(raw) as Script[];
+  try {
+    const scripts = await getStoredScripts();
+    if (Array.isArray(scripts) && scripts.length > 0) {
+      return scripts;
+    }
+  } catch (err) {
+    console.warn('[Scripts] Failed reading stored scripts:', err);
+  }
+  return [];
 }
 
 export async function getScriptsByGame(gameSlug: string): Promise<Script[]> {
@@ -28,14 +41,13 @@ export async function getScriptsByGame(gameSlug: string): Promise<Script[]> {
   );
 }
 
-
 export async function getScript(slug: string): Promise<Script | undefined> {
   const scripts = await getScripts();
-  return scripts.find((s) => s.slug === slug);
+  return scripts.find((s) => s.slug.toLowerCase() === slug.toLowerCase());
 }
 
 export async function saveScripts(scripts: Script[]): Promise<void> {
-  await fs.writeFile(DATA_PATH, JSON.stringify(scripts, null, 2), 'utf-8');
+  await saveStoredScripts(scripts);
 }
 
 export function slugify(name: string): string {
@@ -50,20 +62,45 @@ export async function upsertScript(
   input: Partial<Script> & { name: string },
   existingSlug?: string
 ): Promise<Script> {
+  if (!input.name || !input.name.trim()) {
+    throw new ScriptValidationError('Script name is required.');
+  }
+
   const scripts = await getScripts();
-  const slug = existingSlug ?? slugify(input.name);
-  const idx = scripts.findIndex((s) => s.slug === (existingSlug ?? slug));
+  const slug = existingSlug ?? (input.slug ? slugify(input.slug) : slugify(input.name));
+
+  if (!slug) {
+    throw new ScriptValidationError('A valid URL slug is required.');
+  }
+
+  // Prevent duplicate script slug
+  const conflict = scripts.find(
+    (s) =>
+      s.slug.toLowerCase() === slug.toLowerCase() &&
+      s.slug.toLowerCase() !== (existingSlug?.toLowerCase() ?? '')
+  );
+  if (conflict) {
+    throw new ScriptValidationError(
+      `A script with slug "${slug}" already exists ("${conflict.name}").`,
+      409
+    );
+  }
+
+  const idx = scripts.findIndex(
+    (s) => s.slug.toLowerCase() === (existingSlug ?? slug).toLowerCase()
+  );
 
   const record: Script = {
     slug,
-    name: input.name,
-    description: input.description ?? '',
-    category: input.category ?? 'Utility',
-    game: input.game ?? 'Universal',
-    version: input.version ?? '1.0.0',
+    name: input.name.trim(),
+    description: input.description?.trim() ?? '',
+    category: input.category?.trim() ?? 'Utility',
+    game: (input.game?.trim() || 'universal').toLowerCase(),
+    version: input.version?.trim() || '1.0.0',
     updatedAt: new Date().toISOString().slice(0, 10),
-    icon: input.icon ?? 'FileCode',
+    icon: input.icon || 'FileCode',
     code: input.code ?? '',
+    features: input.features ?? [],
   };
 
   if (idx >= 0) {
@@ -71,11 +108,12 @@ export async function upsertScript(
   } else {
     scripts.push(record);
   }
+
   await saveScripts(scripts);
   return record;
 }
 
 export async function deleteScript(slug: string): Promise<void> {
   const scripts = await getScripts();
-  await saveScripts(scripts.filter((s) => s.slug !== slug));
+  await saveScripts(scripts.filter((s) => s.slug.toLowerCase() !== slug.toLowerCase()));
 }

@@ -33,7 +33,8 @@ export function verifySessionToken(token: string | undefined): boolean {
     const age = Date.now() - Number(timestamp);
     if (Number.isNaN(age) || age > 7 * 24 * 60 * 60 * 1000) return false;
 
-    return username === process.env.OWNER_USERNAME;
+    const ownerUser = process.env.OWNER_USERNAME || 'owner';
+    return username === ownerUser;
   } catch {
     return false;
   }

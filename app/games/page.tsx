@@ -5,6 +5,8 @@ import { Footer } from '@/components/Footer';
 import { getScripts } from '@/lib/scripts';
 import { getGames } from '@/lib/games-server';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Supported Games — Sour Hub',
   description:

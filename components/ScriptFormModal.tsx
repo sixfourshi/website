@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, AlertCircle } from 'lucide-react';
+import { showToast } from './Toast';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 
@@ -51,7 +52,9 @@ export function ScriptFormModal({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || 'Could not save script.');
+        const err = data.error || 'Could not save script.';
+        setError(err);
+        showToast(err, 'error', 4000);
         setSaving(false);
         return;
       }
@@ -59,6 +62,7 @@ export function ScriptFormModal({
       onSaved(saved);
     } catch {
       setError('Something went wrong. Try again.');
+      showToast('Something went wrong. Try again.', 'error', 4000);
       setSaving(false);
     }
   };
@@ -77,6 +81,13 @@ export function ScriptFormModal({
             <X size={15} />
           </button>
         </div>
+
+        {error && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-300">
+            <AlertCircle size={15} className="flex-none text-red-400" />
+            <p className="min-w-0 flex-1">{error}</p>
+          </div>
+        )}
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div>

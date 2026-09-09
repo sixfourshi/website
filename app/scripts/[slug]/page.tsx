@@ -11,6 +11,9 @@ import { GameDetailView } from '@/components/GameDetailView';
 import { getScript, getScripts, getScriptsByGame } from '@/lib/scripts';
 import { getGames, getGameBySlug } from '@/lib/games-server';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export async function generateStaticParams() {
   const [scripts, games] = await Promise.all([getScripts(), getGames()]);
   const gameParams = games.map((g) => ({ slug: g.slug }));

@@ -4,6 +4,8 @@ import { getScripts } from '@/lib/scripts';
 import { getGames } from '@/lib/games-server';
 import { DashboardClient } from '@/components/DashboardClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function DashboardPage() {
   const authed = await isAuthenticated();
   if (!authed) redirect('/login');

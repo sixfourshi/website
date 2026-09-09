@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { Icon } from './Icon';
+import { showToast } from './Toast';
 import { ScriptFormModal } from './ScriptFormModal';
 import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
@@ -83,6 +84,7 @@ export function DashboardClient({
 
   // Handle Game Save (create or update)
   const onGameSaved = (savedGame: RobloxGame) => {
+    const isEditMode = Boolean(editingGame);
     setGames((prev) => {
       const idx = prev.findIndex((g) => g.slug === savedGame.slug);
       if (idx >= 0) {
@@ -93,6 +95,13 @@ export function DashboardClient({
       return [...prev, savedGame];
     });
     setEditingGame(undefined);
+    showToast(
+      isEditMode ? `Updated "${savedGame.name}"` : `Added "${savedGame.name}"`,
+      'success',
+      3200,
+      'Saved persistently'
+    );
+    router.refresh();
   };
 
   // Handle Game Delete with chosen scriptAction
@@ -100,34 +109,52 @@ export function DashboardClient({
     slug: string,
     scriptAction: 'keep' | 'reassign' | 'delete'
   ) => {
-    const res = await fetch(`/api/games/${slug}?action=${scriptAction}`, {
-      method: 'DELETE',
-    });
+    const gameName = deletingGame?.name || slug;
+    try {
+      const res = await fetch(`/api/games/${slug}?action=${scriptAction}`, {
+        method: 'DELETE',
+      });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Failed to delete game.');
-    }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete game.');
+      }
 
-    // Update games state
-    setGames((prev) => prev.filter((g) => g.slug !== slug));
+      // Update games state
+      setGames((prev) => prev.filter((g) => g.slug !== slug));
 
-    // Update scripts state according to the chosen scriptAction
-    if (scriptAction === 'delete') {
-      setScripts((prev) => prev.filter((s) => s.game.toLowerCase() !== slug.toLowerCase()));
-    } else if (scriptAction === 'reassign') {
-      setScripts((prev) =>
-        prev.map((s) =>
-          s.game.toLowerCase() === slug.toLowerCase() ? { ...s, game: 'universal' } : s
-        )
+      // Update scripts state according to the chosen scriptAction
+      if (scriptAction === 'delete') {
+        setScripts((prev) => prev.filter((s) => s.game.toLowerCase() !== slug.toLowerCase()));
+      } else if (scriptAction === 'reassign') {
+        setScripts((prev) =>
+          prev.map((s) =>
+            s.game.toLowerCase() === slug.toLowerCase() ? { ...s, game: 'universal' } : s
+          )
+        );
+      }
+
+      setDeletingGame(null);
+      showToast(
+        `Deleted "${gameName}"`,
+        'success',
+        3200,
+        scriptAction === 'reassign'
+          ? 'Associated scripts moved to Universal'
+          : scriptAction === 'delete'
+          ? 'Game and associated scripts removed'
+          : 'Game removed from library'
       );
+      router.refresh();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to delete game.', 'error', 4000);
+      throw err;
     }
-
-    setDeletingGame(null);
   };
 
   // Handle Script Save
   const onScriptSaved = (script: Script) => {
+    const isEditMode = Boolean(editingScript);
     setScripts((prev) => {
       const idx = prev.findIndex((s) => s.slug === script.slug);
       if (idx >= 0) {
@@ -138,14 +165,29 @@ export function DashboardClient({
       return [...prev, script];
     });
     setEditingScript(undefined);
+    showToast(
+      isEditMode ? `Updated "${script.name}"` : `Added "${script.name}"`,
+      'success',
+      3200,
+      'Saved persistently'
+    );
+    router.refresh();
   };
 
   // Handle Script Delete
   const onScriptDelete = async (slug: string) => {
     setDeletingScriptSlug(slug);
     try {
-      await fetch(`/api/scripts/${slug}`, { method: 'DELETE' });
+      const res = await fetch(`/api/scripts/${slug}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Failed to delete script.');
+      }
       setScripts((prev) => prev.filter((s) => s.slug !== slug));
+      showToast('Script deleted successfully', 'success', 3000, 'Removed from library');
+      router.refresh();
+    } catch (err: any) {
+      showToast(err.message || 'Could not delete script.', 'error', 4000);
     } finally {
       setDeletingScriptSlug(null);
     }
