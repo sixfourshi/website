@@ -10,6 +10,7 @@ import {
 } from '@/lib/games-server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   _req: NextRequest,
@@ -19,7 +20,11 @@ export async function GET(
   if (!game) {
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
   }
-  return NextResponse.json(game);
+  return NextResponse.json(game, {
+    headers: {
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    },
+  });
 }
 
 export async function PUT(
@@ -34,6 +39,7 @@ export async function PUT(
     const body = await req.json();
     const record = await upsertGame(body, params.slug);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -49,6 +55,7 @@ export async function PUT(
     if (err instanceof GameValidationError) {
       return NextResponse.json({ error: err.message }, { status: err.statusCode });
     }
+    console.error(`[API/games/${params.slug}] Error updating game:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to update game.' },
       { status: 500 }
@@ -72,6 +79,7 @@ export async function DELETE(
 
     const result = await deleteGame(params.slug, scriptAction);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -80,6 +88,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true, ...result });
   } catch (err: any) {
+    console.error(`[API/games/${params.slug}] Error deleting game:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to delete game.' },
       { status: 500 }

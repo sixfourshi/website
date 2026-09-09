@@ -4,6 +4,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { deleteScript, getScript, upsertScript, ScriptValidationError } from '@/lib/scripts';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   _req: NextRequest,
@@ -13,7 +14,11 @@ export async function GET(
   if (!script) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
-  return NextResponse.json(script);
+  return NextResponse.json(script, {
+    headers: {
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    },
+  });
 }
 
 export async function PUT(
@@ -28,6 +33,7 @@ export async function PUT(
     const body = await req.json();
     const record = await upsertScript(body, params.slug);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -41,6 +47,7 @@ export async function PUT(
     if (err instanceof ScriptValidationError) {
       return NextResponse.json({ error: err.message }, { status: err.statusCode });
     }
+    console.error(`[API/scripts/${params.slug}] Error updating script:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to update script.' },
       { status: 500 }
@@ -59,6 +66,7 @@ export async function DELETE(
   try {
     await deleteScript(params.slug);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -66,6 +74,7 @@ export async function DELETE(
 
     return NextResponse.json({ ok: true });
   } catch (err: any) {
+    console.error(`[API/scripts/${params.slug}] Error deleting script:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to delete script.' },
       { status: 500 }

@@ -24,8 +24,18 @@ export async function getGames(): Promise<RobloxGame[]> {
 }
 
 export async function getGameBySlug(slug: string): Promise<RobloxGame | undefined> {
+  if (!slug) return undefined;
+  const decoded = decodeURIComponent(slug).trim();
+  const normalized = slugify(decoded);
   const games = await getGames();
-  return games.find((g) => g.slug.toLowerCase() === slug.toLowerCase());
+  return games.find((g) => {
+    const gSlug = slugify(g.slug);
+    return (
+      gSlug === normalized ||
+      g.slug.toLowerCase() === decoded.toLowerCase() ||
+      slugify(g.name) === normalized
+    );
+  });
 }
 
 export async function saveGames(games: RobloxGame[]): Promise<void> {

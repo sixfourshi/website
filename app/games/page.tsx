@@ -6,6 +6,7 @@ import { getScripts } from '@/lib/scripts';
 import { getGames } from '@/lib/games-server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: 'Supported Games — Sour Hub',

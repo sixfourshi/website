@@ -118,6 +118,7 @@ export function GameFormModal({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setError('');
 
     if (!form.name.trim()) {
@@ -156,18 +157,19 @@ export function GameFormModal({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        const err = data.error || 'Could not save game.';
+        const err = data.error || 'Could not save game to persistent storage.';
         setError(err);
-        showToast(err, 'error', 4000);
+        showToast(err, 'error', 5000);
         setSaving(false);
         return;
       }
 
       const saved = await res.json();
       onSaved(saved);
-    } catch {
-      setError('Something went wrong. Please try again.');
-      showToast('Something went wrong. Please try again.', 'error', 4000);
+    } catch (err: any) {
+      const msg = err?.message || 'Something went wrong while saving. Please try again.';
+      setError(msg);
+      showToast(msg, 'error', 5000);
       setSaving(false);
     }
   };
@@ -397,8 +399,14 @@ export function GameFormModal({
             <button
               type="submit"
               disabled={saving}
-              className="rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 disabled:opacity-60 transition-all cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
+              {saving && (
+                <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              )}
               {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Game'}
             </button>
           </div>

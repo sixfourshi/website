@@ -13,32 +13,27 @@ import { getGames, getGameBySlug } from '@/lib/games-server';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  const [scripts, games] = await Promise.all([getScripts(), getGames()]);
-  const gameParams = games.map((g) => ({ slug: g.slug }));
-  const scriptParams = scripts.map((s) => ({ slug: s.slug }));
-  return [...gameParams, ...scriptParams];
-}
+export const revalidate = 0;
 
 export async function generateMetadata({
   params,
 }: {
   params: { slug: string };
 }): Promise<Metadata> {
-  const game = await getGameBySlug(params.slug);
+  const slug = decodeURIComponent(params.slug).trim();
+  const game = await getGameBySlug(slug);
   if (game) {
     return {
       title: `${game.name} Scripts — Sour Hub`,
-      description: game.description,
+      description: game.description || `Verified Luau scripts and loader for ${game.name}.`,
     };
   }
 
-  const script = await getScript(params.slug);
+  const script = await getScript(slug);
   if (script) {
     return {
       title: `${script.name} — Sour Hub`,
-      description: script.description,
+      description: script.description || `Verified Luau script for Roblox.`,
     };
   }
 
@@ -52,8 +47,10 @@ export default async function ScriptOrGamePage({
 }: {
   params: { slug: string };
 }) {
-  // Check if requested slug is a game (e.g. volleyball-legends, rivals, etc.)
-  const game = await getGameBySlug(params.slug);
+  const slug = decodeURIComponent(params.slug).trim();
+
+  // 1. Resolve requested slug against fresh Blob games data
+  const game = await getGameBySlug(slug);
   if (game) {
     const scripts = await getScriptsByGame(game.slug);
     return (
@@ -65,8 +62,8 @@ export default async function ScriptOrGamePage({
     );
   }
 
-  // Fallback: Check if requested slug is an individual script
-  const script = await getScript(params.slug);
+  // 2. Fallback: Check if requested slug is an individual script
+  const script = await getScript(slug);
   if (!script) notFound();
 
   return (

@@ -4,10 +4,15 @@ import { isAuthenticated } from '@/lib/auth';
 import { getScripts, upsertScript, ScriptValidationError } from '@/lib/scripts';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   const scripts = await getScripts();
-  return NextResponse.json(scripts);
+  return NextResponse.json(scripts, {
+    headers: {
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -19,6 +24,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const record = await upsertScript(body);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -29,6 +35,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof ScriptValidationError) {
       return NextResponse.json({ error: err.message }, { status: err.statusCode });
     }
+    console.error('[API/scripts] Error creating script:', err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to create script.' },
       { status: 500 }

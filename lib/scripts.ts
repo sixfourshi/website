@@ -35,15 +35,26 @@ export async function getScripts(): Promise<Script[]> {
 }
 
 export async function getScriptsByGame(gameSlug: string): Promise<Script[]> {
+  if (!gameSlug) return [];
+  const normalized = slugify(decodeURIComponent(gameSlug).trim());
   const scripts = await getScripts();
-  return scripts.filter(
-    (s) => s.game.toLowerCase() === gameSlug.toLowerCase()
-  );
+  return scripts.filter((s) => {
+    const sGameNorm = slugify(s.game);
+    return sGameNorm === normalized || s.game.toLowerCase() === gameSlug.toLowerCase();
+  });
 }
 
 export async function getScript(slug: string): Promise<Script | undefined> {
+  if (!slug) return undefined;
+  const decoded = decodeURIComponent(slug).trim();
+  const normalized = slugify(decoded);
   const scripts = await getScripts();
-  return scripts.find((s) => s.slug.toLowerCase() === slug.toLowerCase());
+  return scripts.find(
+    (s) =>
+      slugify(s.slug) === normalized ||
+      s.slug.toLowerCase() === decoded.toLowerCase() ||
+      slugify(s.name) === normalized
+  );
 }
 
 export async function saveScripts(scripts: Script[]): Promise<void> {

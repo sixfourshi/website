@@ -6,6 +6,9 @@ import { Faq } from '@/components/Faq';
 import { Footer } from '@/components/Footer';
 import { getScripts } from '@/lib/scripts';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function Home() {
   const scripts = await getScripts();
   const gameSet = new Set(scripts.map((s) => s.game).filter((g) => g !== 'Universal'));

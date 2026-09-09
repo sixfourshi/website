@@ -4,10 +4,15 @@ import { isAuthenticated } from '@/lib/auth';
 import { getGames, upsertGame, GameValidationError } from '@/lib/games-server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   const games = await getGames();
-  return NextResponse.json(games);
+  return NextResponse.json(games, {
+    headers: {
+      'Cache-Control': 'no-store, max-age=0, must-revalidate',
+    },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -19,6 +24,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const record = await upsertGame(body);
 
+    revalidatePath('/');
     revalidatePath('/scripts');
     revalidatePath('/games');
     revalidatePath('/dashboard');
@@ -30,6 +36,7 @@ export async function POST(req: NextRequest) {
     if (err instanceof GameValidationError) {
       return NextResponse.json({ error: err.message }, { status: err.statusCode });
     }
+    console.error('[API/games] Error creating game:', err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to create game.' },
       { status: 500 }

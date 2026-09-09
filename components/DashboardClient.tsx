@@ -83,18 +83,39 @@ export function DashboardClient({
   }, [scripts]);
 
   // Handle Game Save (create or update)
-  const onGameSaved = (savedGame: RobloxGame) => {
+  const onGameSaved = async (savedGame: RobloxGame) => {
     const isEditMode = Boolean(editingGame);
-    setGames((prev) => {
-      const idx = prev.findIndex((g) => g.slug === savedGame.slug);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = savedGame;
-        return next;
-      }
-      return [...prev, savedGame];
-    });
     setEditingGame(undefined);
+
+    // Refresh the dashboard data from the server after saving instead of updating only React state
+    try {
+      const res = await fetch('/api/games', { cache: 'no-store' });
+      if (res.ok) {
+        const freshGames = await res.json();
+        setGames(freshGames);
+      } else {
+        setGames((prev) => {
+          const idx = prev.findIndex((g) => g.slug === savedGame.slug);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = savedGame;
+            return next;
+          }
+          return [...prev, savedGame];
+        });
+      }
+    } catch {
+      setGames((prev) => {
+        const idx = prev.findIndex((g) => g.slug === savedGame.slug);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = savedGame;
+          return next;
+        }
+        return [...prev, savedGame];
+      });
+    }
+
     showToast(
       isEditMode ? `Updated "${savedGame.name}"` : `Added "${savedGame.name}"`,
       'success',
@@ -120,18 +141,26 @@ export function DashboardClient({
         throw new Error(data.error || 'Failed to delete game.');
       }
 
-      // Update games state
-      setGames((prev) => prev.filter((g) => g.slug !== slug));
-
-      // Update scripts state according to the chosen scriptAction
-      if (scriptAction === 'delete') {
-        setScripts((prev) => prev.filter((s) => s.game.toLowerCase() !== slug.toLowerCase()));
-      } else if (scriptAction === 'reassign') {
-        setScripts((prev) =>
-          prev.map((s) =>
-            s.game.toLowerCase() === slug.toLowerCase() ? { ...s, game: 'universal' } : s
-          )
-        );
+      // Refresh both games and scripts from the server to guarantee consistency
+      try {
+        const [gamesRes, scriptsRes] = await Promise.all([
+          fetch('/api/games', { cache: 'no-store' }),
+          fetch('/api/scripts', { cache: 'no-store' }),
+        ]);
+        if (gamesRes.ok) setGames(await gamesRes.json());
+        if (scriptsRes.ok) setScripts(await scriptsRes.json());
+      } catch {
+        // Fallback local update if network glitch
+        setGames((prev) => prev.filter((g) => g.slug !== slug));
+        if (scriptAction === 'delete') {
+          setScripts((prev) => prev.filter((s) => s.game.toLowerCase() !== slug.toLowerCase()));
+        } else if (scriptAction === 'reassign') {
+          setScripts((prev) =>
+            prev.map((s) =>
+              s.game.toLowerCase() === slug.toLowerCase() ? { ...s, game: 'universal' } : s
+            )
+          );
+        }
       }
 
       setDeletingGame(null);
@@ -153,18 +182,39 @@ export function DashboardClient({
   };
 
   // Handle Script Save
-  const onScriptSaved = (script: Script) => {
+  const onScriptSaved = async (script: Script) => {
     const isEditMode = Boolean(editingScript);
-    setScripts((prev) => {
-      const idx = prev.findIndex((s) => s.slug === script.slug);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = script;
-        return next;
-      }
-      return [...prev, script];
-    });
     setEditingScript(undefined);
+
+    // Refresh scripts from server
+    try {
+      const res = await fetch('/api/scripts', { cache: 'no-store' });
+      if (res.ok) {
+        const freshScripts = await res.json();
+        setScripts(freshScripts);
+      } else {
+        setScripts((prev) => {
+          const idx = prev.findIndex((s) => s.slug === script.slug);
+          if (idx >= 0) {
+            const next = [...prev];
+            next[idx] = script;
+            return next;
+          }
+          return [...prev, script];
+        });
+      }
+    } catch {
+      setScripts((prev) => {
+        const idx = prev.findIndex((s) => s.slug === script.slug);
+        if (idx >= 0) {
+          const next = [...prev];
+          next[idx] = script;
+          return next;
+        }
+        return [...prev, script];
+      });
+    }
+
     showToast(
       isEditMode ? `Updated "${script.name}"` : `Added "${script.name}"`,
       'success',
@@ -183,7 +233,18 @@ export function DashboardClient({
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Failed to delete script.');
       }
-      setScripts((prev) => prev.filter((s) => s.slug !== slug));
+
+      try {
+        const freshRes = await fetch('/api/scripts', { cache: 'no-store' });
+        if (freshRes.ok) {
+          setScripts(await freshRes.json());
+        } else {
+          setScripts((prev) => prev.filter((s) => s.slug !== slug));
+        }
+      } catch {
+        setScripts((prev) => prev.filter((s) => s.slug !== slug));
+      }
+
       showToast('Script deleted successfully', 'success', 3000, 'Removed from library');
       router.refresh();
     } catch (err: any) {
