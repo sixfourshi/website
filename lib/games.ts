@@ -1,0 +1,92 @@
+export interface RobloxGame {
+  slug: string;
+  name: string;
+  universeId: number | null;
+  rootPlaceId?: number;
+  description: string;
+  iconUrl: string;
+  thumbnailUrl: string;
+  isUniversal?: boolean;
+  featuresCount: number;
+}
+
+export const ROBLOX_GAMES: RobloxGame[] = [
+  {
+    slug: 'volleyball-legends',
+    name: 'Volleyball Legends',
+    universeId: 6931042565,
+    rootPlaceId: 73956553001240,
+    description: 'Fast-paced 6v6 competitive volleyball experience. Scripts include auto-spike, magnet dive, curve serve, and stamina lock.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-ed1f3412683078b25ba13dc18524c5d2/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-a7e54c63071c2e78e469b19e15f67b51/768/432/Image/Png/noFilter',
+    featuresCount: 34,
+  },
+  {
+    slug: 'rivals',
+    name: 'Rivals',
+    universeId: 6035872082,
+    rootPlaceId: 17625359962,
+    description: 'Intense 1v1 to 5v5 competitive FPS. Scripts include silent aim, FOV circle customizer, player box ESP, and recoil compensation.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-2f7bb0535e48ac3766835b44ded27a74/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-fb02f48458ff689309df8d52bf516d04/768/432/Image/Png/noFilter',
+    featuresCount: 33,
+  },
+  {
+    slug: 'gakuran',
+    name: 'Gakuran',
+    universeId: 9199655655,
+    rootPlaceId: 128736949265057,
+    description: 'Japanese high-school open world combat. Scripts feature auto-combo chaining, instant block/parry, yen autofarm, and trait reroll.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-a599e83f751f97ee7eb191a1d9fa8ec7/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-f88dff1c6297298d0f8553ac1e61cb98/768/432/Image/Png/noFilter',
+    featuresCount: 29,
+  },
+  {
+    slug: 'redliner',
+    name: 'REDLINER',
+    universeId: 7265339759,
+    rootPlaceId: 94987506187454,
+    description: 'No-speed-limit fast-paced FPS with katana parrying and movement chaining. Scripts offer auto-parry, speed uncapper, and slide booster.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-584d516c4cf3f16f37a8efa4e86e9dfe/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-4d79ac2197e817aed44b8babddd84637/768/432/Image/Png/noFilter',
+    featuresCount: 18,
+  },
+  {
+    slug: 'blade-ball',
+    name: 'Blade Ball',
+    universeId: 4777817887,
+    rootPlaceId: 13772394625,
+    description: 'Deflect homing balls with increasing velocity. Features predictive auto-deflect, curve ball counter, manual spam trigger, and crate farm.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-b7317d44fd85c141d154cede4aacf4b0/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-be150ba07c74cd57deb31791c2675323/768/432/Image/Png/noFilter',
+    featuresCount: 28,
+  },
+  {
+    slug: 'universal',
+    name: 'Universal Scripts',
+    universeId: 28220420,
+    rootPlaceId: 95206881,
+    isUniversal: true,
+    description: 'Compatible across all Roblox games with level 7+ executors. Includes Orbit Farm, Lumen ESP, Driftpath, HaloUI, and Nightfall Macro.',
+    iconUrl: 'https://tr.rbxcdn.com/180DAY-0023459e3957978e242c1d270dafbae2/150/150/Image/Png/noFilter',
+    thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-1d29750b06e247dc4ad9dbf2b4aaa10e/768/432/Image/Png/noFilter',
+    featuresCount: 42,
+  },
+];
+
+export function getGameBySlug(slug: string): RobloxGame | undefined {
+  return ROBLOX_GAMES.find((g) => g.slug === slug);
+}
+
+export function formatPlayerCount(count: number | null | undefined): string {
+  if (count === null || count === undefined || isNaN(count)) {
+    return 'Unavailable';
+  }
+  if (count >= 1_000_000) {
+    return `${(count / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  if (count >= 1_000) {
+    return `${(count / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  }
+  return count.toLocaleString();
+}

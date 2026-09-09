@@ -11,6 +11,7 @@ export type Script = {
   updatedAt: string;
   icon: string;
   code: string;
+  features?: string[];
 };
 
 const DATA_PATH = path.join(process.cwd(), 'data', 'scripts.json');
@@ -19,6 +20,14 @@ export async function getScripts(): Promise<Script[]> {
   const raw = await fs.readFile(DATA_PATH, 'utf-8');
   return JSON.parse(raw) as Script[];
 }
+
+export async function getScriptsByGame(gameSlug: string): Promise<Script[]> {
+  const scripts = await getScripts();
+  return scripts.filter(
+    (s) => s.game.toLowerCase() === gameSlug.toLowerCase()
+  );
+}
+
 
 export async function getScript(slug: string): Promise<Script | undefined> {
   const scripts = await getScripts();

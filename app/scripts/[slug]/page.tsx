@@ -1,28 +1,73 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
 import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Icon } from '@/components/Icon';
 import { CodeViewer } from '@/components/CodeViewer';
 import { LoaderActions } from '@/components/LoaderActions';
-import { getScript, getScripts } from '@/lib/scripts';
+import { GameDetailView } from '@/components/GameDetailView';
+import { getScript, getScripts, getScriptsByGame } from '@/lib/scripts';
+import { ROBLOX_GAMES, getGameBySlug } from '@/lib/games';
 
 export async function generateStaticParams() {
   const scripts = await getScripts();
-  return scripts.map((s) => ({ slug: s.slug }));
+  const gameParams = ROBLOX_GAMES.map((g) => ({ slug: g.slug }));
+  const scriptParams = scripts.map((s) => ({ slug: s.slug }));
+  return [...gameParams, ...scriptParams];
 }
 
-export default async function ScriptPage({
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const game = getGameBySlug(params.slug);
+  if (game) {
+    return {
+      title: `${game.name} Scripts — Sour Hub`,
+      description: game.description,
+    };
+  }
+
+  const script = await getScript(params.slug);
+  if (script) {
+    return {
+      title: `${script.name} — Sour Hub`,
+      description: script.description,
+    };
+  }
+
+  return {
+    title: 'Scripts — Sour Hub',
+  };
+}
+
+export default async function ScriptOrGamePage({
   params,
 }: {
   params: { slug: string };
 }) {
+  // Check if requested slug is a game (e.g. volleyball-legends, rivals, etc.)
+  const game = getGameBySlug(params.slug);
+  if (game) {
+    const scripts = await getScriptsByGame(game.slug);
+    return (
+      <main className="min-h-screen">
+        <Navbar />
+        <GameDetailView game={game} scripts={scripts} />
+        <Footer />
+      </main>
+    );
+  }
+
+  // Fallback: Check if requested slug is an individual script
   const script = await getScript(params.slug);
   if (!script) notFound();
 
   return (
-    <main>
+    <main className="min-h-screen">
       <Navbar />
       <div className="mx-auto max-w-3xl px-5 pb-24 pt-32">
         <Link
@@ -71,3 +116,4 @@ export default async function ScriptPage({
     </main>
   );
 }
+
