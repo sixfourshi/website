@@ -59,24 +59,10 @@ export function GameCard({
       id={`game-card-${game.slug}`}
       className={`group relative w-full overflow-hidden rounded-2xl border transition-all duration-300 ${
         isExpanded
-          ? 'border-azure-500/60 bg-[#070e28] shadow-lg shadow-azure-950/40'
-          : 'border-line/75 bg-[#08102d]/80 hover:border-azure-500/40 hover:bg-[#091232]'
+          ? 'border-azure-400/60 bg-[#0b1739] shadow-xl shadow-azure-950/50 ring-1 ring-azure-400/20'
+          : 'border-azure-500/30 bg-[#0c183d] hover:border-azure-400/60 shadow-md hover:shadow-lg hover:shadow-azure-950/40'
       }`}
     >
-      {/* Roblox Artwork Background Banner (right-side aligned with soft gradient) */}
-      {!thumbError && game.thumbnailUrl ? (
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div
-            className="absolute -right-6 -top-10 bottom-0 w-2/3 sm:w-1/2 bg-cover bg-right opacity-25 transition-transform duration-700 ease-out group-hover:scale-105"
-            style={{ backgroundImage: `url(${game.thumbnailUrl})` }}
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#060b1e] via-[#07102e]/95 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#060b1e]/90 via-transparent to-transparent" />
-        </div>
-      ) : (
-        <div className="pointer-events-none absolute inset-0 z-0 bg-[#08102d]/90" />
-      )}
-
       {/* Card Header (Clicking expands/collapses the card) */}
       <div
         role="button"
@@ -88,74 +74,99 @@ export function GameCard({
             onToggle();
           }
         }}
-        className="relative z-10 flex cursor-pointer flex-col gap-3.5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5 select-none"
+        className="relative overflow-hidden cursor-pointer select-none"
       >
-        {/* Left: Game Icon + Name + Live Player Count */}
-        <div className="flex items-center gap-3.5 min-w-0">
-          <div className="relative h-13 w-13 sm:h-14 sm:w-14 flex-none overflow-hidden rounded-xl border border-line/90 bg-[#050a1a] shadow-md transition-transform duration-300 group-hover:scale-[1.02]">
-            {!imgError && game.iconUrl ? (
-              <Image
-                src={game.iconUrl}
-                alt={game.name}
-                fill
-                sizes="56px"
-                className="object-cover"
-                onError={() => setImgError(true)}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#0c1a44] to-[#060c22] text-azure-300">
-                <Layers size={22} />
-              </div>
-            )}
-          </div>
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="relative flex h-2 w-2 flex-none items-center justify-center">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              <h3 className="truncate font-display text-base font-bold text-white tracking-tight sm:text-lg">
-                {game.name}
-              </h3>
-            </div>
-
-            <div className="mt-1 flex items-center gap-2">
-              <p className="text-xs sm:text-sm font-medium text-emerald-400">
-                {playerDisplay}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Total feature count pill + Play button + Arrow Toggle */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-line/40 sm:border-t-0">
-          {/* Feature Count Pill */}
-          <span className="inline-flex items-center rounded-full border border-azure-500/30 bg-[#0c163b]/90 px-3 py-1 text-xs font-medium text-slate-300 shadow-sm">
-            <span className="font-semibold text-azure-300 mr-1">{totalFeatures}</span>
-            features
-          </span>
-
-          {/* Play Button (Opens Roblox, does NOT toggle card) */}
-          <a
-            href={playUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-azure-500/40 bg-azure-500/20 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:border-azure-400 hover:bg-azure-500 hover:shadow-glow-sm"
-          >
-            <Play size={10} className="fill-current text-white" />
-            <span>Play</span>
-          </a>
-
-          {/* Arrow / Chevron */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition-colors group-hover:text-white">
-            <ChevronDown
-              size={18}
-              className={`transition-transform duration-300 ease-out ${
-                isExpanded ? 'rotate-180 text-azure-300' : 'text-slate-400'
-              }`}
+        {/* Roblox Artwork Background Banner across full width & height of the header */}
+        {game.thumbnailUrl && !thumbError ? (
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+              style={{
+                backgroundImage: `url(${game.thumbnailUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+                backgroundRepeat: 'no-repeat',
+              }}
             />
+            {/* Lighter transparent dark-blue gradient overlay to keep text readable without hiding artwork */}
+            <div className="absolute inset-0 bg-gradient-to-r from-[#09153a]/75 via-[#0b1c48]/55 to-[#09153a]/70" />
+            <div className="absolute inset-0 bg-[#081232]/20" />
+          </div>
+        ) : (
+          <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-r from-[#0e1d48] via-[#12255c] to-[#0e1d48]" />
+        )}
+
+        {/* Header Content */}
+        <div className="relative z-10 flex flex-col gap-3.5 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+          {/* Left: Game Icon + Name + Live Player Count */}
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="relative h-13 w-13 sm:h-14 sm:w-14 flex-none overflow-hidden rounded-xl border border-azure-400/40 bg-[#0d1a40] shadow-lg shadow-black/40 ring-1 ring-white/15 transition-transform duration-300 group-hover:scale-[1.04]">
+              {!imgError && game.iconUrl ? (
+                <Image
+                  src={game.iconUrl}
+                  alt={game.name}
+                  fill
+                  sizes="56px"
+                  unoptimized
+                  referrerPolicy="no-referrer"
+                  className="object-cover brightness-105 contrast-105"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#12245c] to-[#0c183a] text-azure-300">
+                  <Layers size={22} />
+                </div>
+              )}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2 flex-none items-center justify-center">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/80" />
+                </span>
+                <h3 className="truncate font-display text-base font-bold text-white tracking-tight sm:text-lg drop-shadow-sm">
+                  {game.name}
+                </h3>
+              </div>
+
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-xs sm:text-sm font-semibold text-emerald-300 drop-shadow-sm">
+                  {playerDisplay}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Total feature count pill + Play button + Arrow Toggle */}
+          <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-white/10 sm:border-t-0">
+            {/* Feature Count Pill */}
+            <span className="inline-flex items-center rounded-full border border-azure-400/40 bg-[#0c183d]/85 backdrop-blur-sm px-3 py-1 text-xs font-medium text-slate-200 shadow-sm">
+              <span className="font-bold text-azure-300 mr-1">{totalFeatures}</span>
+              features
+            </span>
+
+            {/* Play Button (Opens Roblox, does NOT toggle card) */}
+            <a
+              href={playUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-azure-400/50 bg-azure-600/40 hover:bg-azure-500 hover:border-azure-300 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-glow-sm"
+            >
+              <Play size={10} className="fill-current text-white" />
+              <span>Play</span>
+            </a>
+
+            {/* Arrow / Chevron */}
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-colors group-hover:text-white">
+              <ChevronDown
+                size={18}
+                className={`transition-transform duration-300 ease-out ${
+                  isExpanded ? 'rotate-180 text-azure-300' : 'text-slate-300'
+                }`}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -173,7 +184,7 @@ export function GameCard({
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative z-10 border-t border-line/60 bg-[#060c24]/90 px-4 sm:px-6 pt-4 pb-6"
+              className="relative z-10 border-t border-azure-500/30 bg-[#0b1739] shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] px-4 sm:px-6 pt-4 pb-6"
             >
               {/* Tabs Row */}
               {tabs.length > 0 ? (
@@ -188,8 +199,8 @@ export function GameCard({
                           onClick={() => setActiveTabIndex(idx)}
                           className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 ${
                             isActive
-                              ? 'border border-azure-400 bg-azure-500/25 text-white shadow-glow-sm font-semibold'
-                              : 'border border-line/70 bg-[#091330]/90 text-slate-400 hover:border-azure-500/40 hover:text-slate-200'
+                              ? 'border border-azure-400 bg-azure-500 text-white font-semibold shadow-md shadow-azure-900/50'
+                              : 'border border-azure-500/30 bg-[#10204a] text-slate-200 hover:border-azure-400/60 hover:bg-[#142656] hover:text-white'
                           }`}
                         >
                           {tab.name}
@@ -209,7 +220,7 @@ export function GameCard({
                     >
                       {currentTab.sections.map((section, sIdx) => (
                         <div key={section.name + sIdx} className="space-y-2">
-                          <h4 className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                          <h4 className="text-[11px] font-bold tracking-wider text-azure-300/90 uppercase">
                             {section.name}
                           </h4>
                           <div className="flex flex-wrap gap-2">
@@ -217,27 +228,27 @@ export function GameCard({
                               section.features.map((feat, fIdx) => (
                                 <span
                                   key={feat + fIdx}
-                                  className="inline-flex items-center gap-1.5 rounded-full border border-azure-500/20 bg-[#0a1538]/90 px-3 py-1 text-xs text-slate-200 shadow-sm transition-colors hover:border-azure-400/40 hover:text-white"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-azure-400/25 bg-[#0f1d44] px-3 py-1 text-xs text-slate-100 shadow-sm transition-colors hover:border-azure-400/50 hover:bg-[#132352] hover:text-white"
                                 >
-                                  <span className="h-1.5 w-1.5 rounded-full bg-azure-400 flex-none" />
+                                  <span className="h-1.5 w-1.5 rounded-full bg-azure-400 flex-none shadow-sm shadow-azure-400/80" />
                                   <span>{feat}</span>
                                 </span>
                               ))
                             ) : (
-                              <span className="text-xs text-slate-500 italic">No features listed</span>
+                              <span className="text-xs text-slate-400 italic">No features listed</span>
                             )}
                           </div>
                         </div>
                       ))}
                     </motion.div>
                   ) : (
-                    <div className="py-6 text-center text-xs text-slate-400">
+                    <div className="py-6 text-center text-xs text-slate-300">
                       No sections or features found in this tab.
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="py-6 text-center text-xs text-slate-400">
+                <div className="py-6 text-center text-xs text-slate-300">
                   No feature tabs configured for this game yet.
                 </div>
               )}
