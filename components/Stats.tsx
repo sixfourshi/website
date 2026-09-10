@@ -1,20 +1,21 @@
 import { Reveal } from './Reveal';
+import { formatExecutionCount } from '@/lib/execution-types';
 
 export function Stats({
   scriptCount,
   gameCount,
-  featureCount,
+  totalExecutions = 0,
   version,
 }: {
   scriptCount: number;
   gameCount: number;
-  featureCount: number;
+  totalExecutions?: number;
   version: string;
 }) {
   const items = [
+    { label: 'Total Executions', value: formatExecutionCount(totalExecutions) },
     { label: 'Scripts', value: scriptCount },
     { label: 'Games supported', value: gameCount === 0 ? 'Universal' : gameCount },
-    { label: 'Core features', value: featureCount },
     { label: 'Current version', value: version },
   ];
 

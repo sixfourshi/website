@@ -1,0 +1,412 @@
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import { get, put, BlobNotFoundError } from '@vercel/blob';
+import { getStoredGames, isBlobStorageConfigured } from './storage';
+import {
+  type ExecutionLog,
+  type ExecutionAnalytics,
+  formatExecutionCount,
+} from './execution-types';
+
+export type { ExecutionLog, ExecutionAnalytics };
+export { formatExecutionCount };
+
+export interface ExecutionDataStore {
+  totalExecutions: number;
+  executionsByGame: Record<string, number>;
+  dailyCounts: Record<string, number>; // YYYY-MM-DD -> count
+  recentLogs: ExecutionLog[];
+  recentSessionIds: string[];
+  clearedLogsCount: number;
+  lastUpdated: string;
+}
+
+const BLOB_EXECUTIONS_PATHNAME = 'sourhub/executions.json';
+const TMP_EXECUTIONS_PATH = path.join(os.tmpdir(), 'sourhub_executions.json');
+
+const DEFAULT_STORE: ExecutionDataStore = {
+  totalExecutions: 0,
+  executionsByGame: {},
+  dailyCounts: {},
+  recentLogs: [],
+  recentSessionIds: [],
+  clearedLogsCount: 0,
+  lastUpdated: new Date().toISOString(),
+};
+
+// In-memory IP rate limiter (never logs or persists IPs)
+const rateLimitMap = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const MAX_REQUESTS_PER_WINDOW = 40; // max 40 executions per minute per IP
+
+export function checkRateLimit(ip: string): boolean {
+  if (!ip) return true;
+  const now = Date.now();
+  const timestamps = rateLimitMap.get(ip) || [];
+  const validTimestamps = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+
+  if (validTimestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    return false;
+  }
+
+  validTimestamps.push(now);
+  rateLimitMap.set(ip, validTimestamps);
+
+  // Periodic cleanup if map grows too large
+  if (rateLimitMap.size > 2000) {
+    for (const [key, times] of rateLimitMap.entries()) {
+      const active = times.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+      if (active.length === 0) {
+        rateLimitMap.delete(key);
+      } else {
+        rateLimitMap.set(key, active);
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Read executions data from private Vercel Blob store or local cache.
+ */
+export async function getStoredExecutions(): Promise<ExecutionDataStore> {
+  if (isBlobStorageConfigured()) {
+    try {
+      const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+      const result = await get(BLOB_EXECUTIONS_PATHNAME, {
+        access: 'private',
+        token,
+        useCache: false,
+      });
+
+      if (result && result.statusCode === 200 && result.stream) {
+        const text = await new Response(result.stream).text();
+        if (text && text.trim().length > 0) {
+          const parsed = JSON.parse(text) as ExecutionDataStore;
+          // Ensure valid structure
+          const validated: ExecutionDataStore = {
+            totalExecutions: typeof parsed.totalExecutions === 'number' ? parsed.totalExecutions : 0,
+            executionsByGame: parsed.executionsByGame && typeof parsed.executionsByGame === 'object' ? parsed.executionsByGame : {},
+            dailyCounts: parsed.dailyCounts && typeof parsed.dailyCounts === 'object' ? parsed.dailyCounts : {},
+            recentLogs: Array.isArray(parsed.recentLogs) ? parsed.recentLogs : [],
+            recentSessionIds: Array.isArray(parsed.recentSessionIds) ? parsed.recentSessionIds : [],
+            clearedLogsCount: typeof parsed.clearedLogsCount === 'number' ? parsed.clearedLogsCount : 0,
+            lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+          };
+          writeTmpJson(TMP_EXECUTIONS_PATH, validated).catch(() => {});
+          return validated;
+        }
+      }
+    } catch (err: any) {
+      if (
+        !(
+          err instanceof BlobNotFoundError ||
+          err?.name === 'BlobNotFoundError' ||
+          err?.message?.includes('not found') ||
+          err?.message?.includes('404')
+        )
+      ) {
+        console.warn('[Executions Storage] Blob read notice:', err?.message || err);
+      }
+    }
+  }
+
+  // Fallback to /tmp cache
+  const tmp = await readTmpJson<ExecutionDataStore>(TMP_EXECUTIONS_PATH);
+  if (tmp && typeof tmp.totalExecutions === 'number') {
+    return tmp;
+  }
+
+  return { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
+}
+
+/**
+ * Save executions data persistently to private Vercel Blob.
+ */
+export async function saveStoredExecutions(data: ExecutionDataStore): Promise<void> {
+  await writeTmpJson(TMP_EXECUTIONS_PATH, data);
+
+  if (isBlobStorageConfigured()) {
+    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+    if (!token) return;
+
+    try {
+      await put(BLOB_EXECUTIONS_PATHNAME, JSON.stringify(data, null, 2), {
+        access: 'private',
+        token,
+        addRandomSuffix: false,
+        allowOverwrite: true,
+        contentType: 'application/json',
+        cacheControlMaxAge: 0,
+      });
+    } catch (err: any) {
+      console.warn('[Executions Storage] Failed saving to Vercel Blob:', err?.message || err);
+    }
+  }
+}
+
+async function readTmpJson<T>(tmpPath: string): Promise<T | null> {
+  try {
+    const raw = await fs.readFile(tmpPath, 'utf-8');
+    if (raw && raw.trim().length > 0) {
+      return JSON.parse(raw) as T;
+    }
+  } catch {}
+  return null;
+}
+
+async function writeTmpJson<T>(tmpPath: string, data: T): Promise<void> {
+  try {
+    await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  } catch {}
+}
+
+/**
+ * Match Place/Universe ID against stored games, or safely fetch from Roblox API.
+ */
+export async function resolveRobloxGame(
+  placeId: number,
+  universeId: number
+): Promise<{ gameName: string; status: 'supported' | 'unknown' }> {
+  try {
+    const storedGames = await getStoredGames();
+
+    // Match placeId or universeId against stored games
+    const matched = storedGames.find((g) => {
+      if (g.rootPlaceId && g.rootPlaceId === placeId) return true;
+      if (g.universeId && (g.universeId === universeId || g.universeId === placeId)) return true;
+      return false;
+    });
+
+    if (matched) {
+      return { gameName: matched.name, status: 'supported' };
+    }
+  } catch (err) {
+    console.warn('[Executions] Could not check stored games:', err);
+  }
+
+  // If unknown, safely fetch the experience name from Roblox API
+  let fetchedName: string | null = null;
+
+  if (universeId && universeId > 0) {
+    try {
+      const res = await fetch(`https://games.roblox.com/v1/games?universeIds=${universeId}`, {
+        signal: AbortSignal.timeout(3500),
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.data && json.data.length > 0 && json.data[0]?.name) {
+          fetchedName = String(json.data[0].name).trim();
+        }
+      }
+    } catch {}
+  }
+
+  if (!fetchedName && placeId && placeId > 0) {
+    try {
+      const res = await fetch(`https://apis.roblox.com/universes/v1/places/${placeId}/universe`, {
+        signal: AbortSignal.timeout(3500),
+        headers: { Accept: 'application/json' },
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.universeId) {
+          const uRes = await fetch(`https://games.roblox.com/v1/games?universeIds=${json.universeId}`, {
+            signal: AbortSignal.timeout(3500),
+            headers: { Accept: 'application/json' },
+          });
+          if (uRes.ok) {
+            const uJson = await uRes.json();
+            if (uJson?.data?.[0]?.name) {
+              fetchedName = String(uJson.data[0].name).trim();
+            }
+          }
+        }
+      }
+    } catch {}
+  }
+
+  return {
+    gameName: fetchedName || `Roblox Experience #${placeId || universeId}`,
+    status: 'unknown',
+  };
+}
+
+/**
+ * Record a valid execution.
+ * - Deduplicates by sessionId
+ * - Updates persistent aggregate counters (totalExecutions, executionsByGame, dailyCounts)
+ * - Adds to recentLogs (capped)
+ * - Returns small success response
+ */
+export async function recordExecution({
+  placeId,
+  universeId,
+  sessionId,
+}: {
+  placeId: number;
+  universeId: number;
+  sessionId: string;
+}): Promise<{ success: boolean; message: string; deduplicated?: boolean }> {
+  const store = await getStoredExecutions();
+
+  // Deduplicate: check if sessionId has already been recorded
+  if (store.recentSessionIds.includes(sessionId)) {
+    return {
+      success: true,
+      message: 'Execution already counted.',
+      deduplicated: true,
+    };
+  }
+
+  // Resolve game identity
+  const { gameName, status } = await resolveRobloxGame(placeId, universeId);
+
+  const now = new Date();
+  const timestamp = now.toISOString();
+  const dayKey = timestamp.slice(0, 10); // YYYY-MM-DD
+
+  // Update cumulative totals (never lost even if detailed logs are cleared)
+  store.totalExecutions = (store.totalExecutions || 0) + 1;
+  store.executionsByGame[gameName] = (store.executionsByGame[gameName] || 0) + 1;
+  store.dailyCounts[dayKey] = (store.dailyCounts[dayKey] || 0) + 1;
+
+  // Track session ID for deduplication
+  store.recentSessionIds.unshift(sessionId);
+  if (store.recentSessionIds.length > 5000) {
+    store.recentSessionIds = store.recentSessionIds.slice(0, 5000);
+  }
+
+  // Create detailed execution log
+  const log: ExecutionLog = {
+    id: `exec_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+    sessionId,
+    placeId,
+    universeId,
+    gameName,
+    status,
+    timestamp,
+  };
+
+  store.recentLogs.unshift(log);
+  if (store.recentLogs.length > 3000) {
+    store.recentLogs = store.recentLogs.slice(0, 3000);
+  }
+
+  store.lastUpdated = timestamp;
+
+  // Persist to private Vercel Blob storage
+  await saveStoredExecutions(store);
+
+  return {
+    success: true,
+    message: 'Execution recorded successfully.',
+  };
+}
+
+/**
+ * Owner-only action to clear old detailed logs.
+ * Preserves totalExecutions, executionsByGame, and dailyCounts so
+ * all historical totals and charts remain 100% accurate!
+ */
+export async function clearOldExecutionLogs(
+  option: 'all' | 'older_7_days' | 'older_30_days'
+): Promise<{ clearedCount: number; remainingCount: number }> {
+  const store = await getStoredExecutions();
+  const initialLength = store.recentLogs.length;
+
+  if (option === 'all') {
+    store.clearedLogsCount = (store.clearedLogsCount || 0) + store.recentLogs.length;
+    store.recentLogs = [];
+    store.lastUpdated = new Date().toISOString();
+    await saveStoredExecutions(store);
+    return {
+      clearedCount: initialLength,
+      remainingCount: 0,
+    };
+  }
+
+  const cutoffDays = option === 'older_7_days' ? 7 : 30;
+  const cutoffTime = Date.now() - cutoffDays * 24 * 60 * 60 * 1000;
+
+  const remaining = store.recentLogs.filter((log) => {
+    const logTime = new Date(log.timestamp).getTime();
+    return logTime >= cutoffTime;
+  });
+
+  const cleared = initialLength - remaining.length;
+  store.clearedLogsCount = (store.clearedLogsCount || 0) + cleared;
+  store.recentLogs = remaining;
+  store.lastUpdated = new Date().toISOString();
+
+  await saveStoredExecutions(store);
+
+  return {
+    clearedCount: cleared,
+    remainingCount: remaining.length,
+  };
+}
+
+/**
+ * Compute aggregate analytics for top cards and charts.
+ */
+export function computeAnalytics(store: ExecutionDataStore): ExecutionAnalytics {
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+
+  // Executions today
+  const executionsToday = store.dailyCounts[todayKey] || 0;
+
+  // Executions last 7 days & last 30 days
+  let executionsLast7Days = 0;
+  let executionsLast30Days = 0;
+
+  const timelineDays = 30;
+  const dailyTimeline: { date: string; label: string; count: number }[] = [];
+
+  for (let i = timelineDays - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const count = store.dailyCounts[key] || 0;
+
+    // Month / day label e.g. "Sep 10"
+    const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    dailyTimeline.push({ date: key, label, count });
+
+    if (i < 7) {
+      executionsLast7Days += count;
+    }
+    executionsLast30Days += count;
+  }
+
+  // Executions by game
+  const gameEntries = Object.entries(store.executionsByGame || {}).sort((a, b) => b[1] - a[1]);
+  const total = store.totalExecutions || 0;
+
+  const executionsByGame = gameEntries.map(([name, count]) => ({
+    name,
+    count,
+    percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+  }));
+
+  const mostExecutedGame =
+    gameEntries.length > 0 && gameEntries[0][1] > 0
+      ? { name: gameEntries[0][0], count: gameEntries[0][1] }
+      : null;
+
+  return {
+    totalExecutions: total,
+    executionsToday,
+    executionsLast7Days,
+    executionsLast30Days,
+    mostExecutedGame,
+    executionsByGame,
+    dailyTimeline,
+    totalLogsInStore: store.recentLogs.length,
+    clearedLogsCount: store.clearedLogsCount || 0,
+  };
+}

@@ -3,6 +3,7 @@ import { isAuthenticated } from '@/lib/auth';
 import { getScripts } from '@/lib/scripts';
 import { getGames } from '@/lib/games-server';
 import { getStoredLoaderConfig, getStoredSuggestions } from '@/lib/storage';
+import { getStoredExecutions, computeAnalytics } from '@/lib/executions';
 import { DashboardClient } from '@/components/DashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -12,12 +13,15 @@ export default async function DashboardPage() {
   const authed = await isAuthenticated();
   if (!authed) redirect('/login');
 
-  const [scripts, games, loaderConfig, suggestions] = await Promise.all([
+  const [scripts, games, loaderConfig, suggestions, executionsStore] = await Promise.all([
     getScripts(),
     getGames(),
     getStoredLoaderConfig(),
     getStoredSuggestions(),
+    getStoredExecutions(),
   ]);
+
+  const initialAnalytics = computeAnalytics(executionsStore);
 
   return (
     <DashboardClient
@@ -25,6 +29,8 @@ export default async function DashboardPage() {
       initialGames={games}
       initialLoaderConfig={loaderConfig}
       initialSuggestions={suggestions}
+      initialAnalytics={initialAnalytics}
+      initialExecutionLogs={executionsStore.recentLogs}
     />
   );
 }

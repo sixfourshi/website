@@ -36,14 +36,34 @@ local success, err = pcall(function()
     loadstring(game:HttpGet("https://sourhub.vercel.app/raw/" .. scriptSlug))()
 end)
 
-if not success then
+if success then
+    -- Report execution only after the loader starts successfully
+    local HttpService = game:GetService("HttpService")
+    pcall(function()
+        local req = (syn and syn.request) or (http and http.request) or http_request or request
+        if req and HttpService then
+            req({
+                Url = "https://sourhub.vercel.app/api/executions",
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = HttpService:JSONEncode({
+                    placeId = game.PlaceId,
+                    universeId = game.GameId,
+                    sessionId = HttpService:GenerateGUID(false)
+                })
+            })
+        end
+    end)
+else
     warn("[Sour Hub] Execution notice: " .. tostring(err))
 end
 `;
 
 export const DEFAULT_LOADER_CONFIG: UniversalLoaderConfig = {
   code: DEFAULT_LOADER_CODE,
-  version: '2.4.0',
+  version: '2.5.0',
   enabled: true,
   updatedAt: '2026-09-10',
 };

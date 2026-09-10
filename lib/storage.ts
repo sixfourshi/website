@@ -359,13 +359,27 @@ export async function getStoredLoaderConfig(): Promise<UniversalLoaderConfig> {
     try {
       const fromBlob = await readBlobJson<UniversalLoaderConfig>(BLOB_LOADER_PATHNAME);
       if (fromBlob && typeof fromBlob.code === 'string') {
-        writeTmpJson(TMP_LOADER_PATH, fromBlob).catch(() => {});
-        return {
-          code: fromBlob.code,
-          version: fromBlob.version || DEFAULT_LOADER_CONFIG.version,
+        let currentCode = fromBlob.code;
+        let currentVersion = fromBlob.version || DEFAULT_LOADER_CONFIG.version;
+        // Seamlessly ensure execution tracking is included
+        if (!currentCode.includes('/api/executions')) {
+          currentCode = DEFAULT_LOADER_CODE;
+          currentVersion = '2.5.0';
+          writeBlobJson(BLOB_LOADER_PATHNAME, {
+            ...fromBlob,
+            code: currentCode,
+            version: currentVersion,
+          }).catch(() => {});
+        }
+
+        const config: UniversalLoaderConfig = {
+          code: currentCode,
+          version: currentVersion,
           enabled: fromBlob.enabled !== undefined ? Boolean(fromBlob.enabled) : true,
           updatedAt: fromBlob.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
         };
+        writeTmpJson(TMP_LOADER_PATH, config).catch(() => {});
+        return config;
       }
 
       // First-time seed of default loader configuration to Blob

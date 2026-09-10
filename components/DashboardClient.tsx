@@ -17,6 +17,7 @@ import {
   Layers,
   Image as ImageIcon,
   MessageSquare,
+  Activity,
 } from 'lucide-react';
 import { Icon } from './Icon';
 import { showToast } from './Toast';
@@ -26,29 +27,39 @@ import { DeleteGameModal } from './DeleteGameModal';
 import { DeleteScriptModal } from './DeleteScriptModal';
 import { UniversalLoaderManager } from './UniversalLoaderManager';
 import { SuggestionsTab } from './SuggestionsTab';
+import { ExecutionLogsTab } from './ExecutionLogsTab';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
 import type { UniversalLoaderConfig } from '@/lib/loader-types';
 import type { Suggestion } from '@/lib/suggestions';
+import {
+  formatExecutionCount,
+  type ExecutionAnalytics,
+  type ExecutionLog,
+} from '@/lib/execution-types';
 
 export function DashboardClient({
   initialScripts,
   initialGames,
   initialLoaderConfig,
   initialSuggestions = [],
+  initialAnalytics,
+  initialExecutionLogs = [],
 }: {
   initialScripts: Script[];
   initialGames: RobloxGame[];
   initialLoaderConfig?: UniversalLoaderConfig;
   initialSuggestions?: Suggestion[];
+  initialAnalytics?: ExecutionAnalytics;
+  initialExecutionLogs?: ExecutionLog[];
 }) {
   const router = useRouter();
   const [scripts, setScripts] = useState<Script[]>(initialScripts);
   const [games, setGames] = useState<RobloxGame[]>(initialGames);
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
 
-  const [activeTab, setActiveTab] = useState<'games' | 'scripts' | 'suggestions'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'scripts' | 'suggestions' | 'executions'>('games');
   const [query, setQuery] = useState('');
 
   const pendingSuggestionsCount = useMemo(
@@ -424,10 +435,34 @@ export function DashboardClient({
                 </span>
               )}
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('executions');
+                setQuery('');
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'executions'
+                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
+              }`}
+            >
+              <Activity size={14} />
+              <span>Execution Logs</span>
+              <span
+                className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                  activeTab === 'executions'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-surface text-slate-400'
+                }`}
+              >
+                {formatExecutionCount(initialAnalytics?.totalExecutions || 0)}
+              </span>
+            </button>
           </div>
 
           {/* Search bar (for Games & Scripts) */}
-          {activeTab !== 'suggestions' && (
+          {activeTab !== 'suggestions' && activeTab !== 'executions' && (
             <div className="relative w-full sm:w-72">
               <Search
                 size={15}
@@ -734,6 +769,14 @@ export function DashboardClient({
           <SuggestionsTab
             initialSuggestions={suggestions}
             onSuggestionsUpdated={(fresh) => setSuggestions(fresh)}
+          />
+        )}
+
+        {/* TAB 4: EXECUTION LOGS & TELEMETRY */}
+        {activeTab === 'executions' && (
+          <ExecutionLogsTab
+            initialAnalytics={initialAnalytics}
+            initialLogs={initialExecutionLogs}
           />
         )}
       </div>
