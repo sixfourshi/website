@@ -30,46 +30,71 @@ export const ROBLOX_GAMES: RobloxGame[] = [
     thumbnailUrl: 'https://tr.rbxcdn.com/180DAY-a7e54c63071c2e78e469b19e15f67b51/768/432/Image/Png/noFilter',
     tabs: [
       {
-        name: 'Legit',
+        name: 'Automation',
         sections: [
           {
-            name: 'Assistance',
-            features: ['Auto Spike', 'Magnet Dive', 'Curve Serve', 'Stamina Lock', 'Perfect Timing'],
+            name: 'AUTO PLAY',
+            features: ['Auto Hit', 'Hit Type', 'Miss Chance', 'Receive Range', 'Min Ball Speed', 'Auto Move'],
           },
           {
-            name: 'Court ESP',
-            features: ['Ball Trajectory ESP', 'Landing Zone Marker', 'Jump Indicator'],
+            name: 'MATCH FLOW',
+            features: ['Auto Close Round End'],
+          },
+          {
+            name: 'AUTO JOIN',
+            features: ['Auto Join Match', 'Preferred Team'],
+          },
+          {
+            name: 'SESSION',
+            features: ['Anti-AFK'],
           },
         ],
       },
       {
-        name: 'Rage',
+        name: 'Match',
         sections: [
           {
-            name: 'Auto Play',
-            features: ['Auto Receive', 'Instant Set', 'Super Spike', 'Fast Run', 'Super Jump', 'Instant Win'],
+            name: 'SCORING',
+            features: ['Score Overlay', 'Point Prediction', 'Auto Reset On Loss', 'Set Predictor'],
+          },
+          {
+            name: 'STATS',
+            features: ['Speed Tracker', 'Jump Height Meter', 'Player Stamina Display'],
           },
         ],
       },
       {
-        name: 'Visual',
+        name: 'Hitboxes',
         sections: [
           {
-            name: 'Player ESP',
-            features: ['Player Boxes', 'Stamina Bar', 'Score Overlay', 'Tracer Lines'],
+            name: 'EXPANDER',
+            features: ['Spike Hitbox', 'Block Hitbox', 'Receive Radius', 'Net Collision Helper'],
           },
           {
-            name: 'World',
-            features: ['Fullbright', 'Remove Shadows'],
+            name: 'VISUALS',
+            features: ['Show Hitbox Spheres', 'Hitbox Wireframes'],
           },
         ],
       },
       {
-        name: 'Cosmetics',
+        name: 'Player',
         sections: [
           {
-            name: 'Customs',
-            features: ['Ball Trail', 'Spike Aura', 'Custom Animations', 'Net Glow'],
+            name: 'MOVEMENT',
+            features: ['WalkSpeed Multiplier', 'Infinite Stamina', 'No Slowdown', 'High Jump', 'Instant Sprint'],
+          },
+          {
+            name: 'PHYSICS',
+            features: ['Float Mode', 'No Clip Through Net'],
+          },
+        ],
+      },
+      {
+        name: 'Spin',
+        sections: [
+          {
+            name: 'WHEEL',
+            features: ['Auto Spin Wheel', 'Fast Spin', 'Skip Animation', 'Claim Free Spins'],
           },
         ],
       },

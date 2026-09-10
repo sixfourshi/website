@@ -8,46 +8,71 @@
     "thumbnailUrl": "https://tr.rbxcdn.com/180DAY-a7e54c63071c2e78e469b19e15f67b51/768/432/Image/Png/noFilter",
     "tabs": [
       {
-        "name": "Legit",
+        "name": "Automation",
         "sections": [
           {
-            "name": "Assistance",
-            "features": ["Auto Spike", "Magnet Dive", "Curve Serve", "Stamina Lock", "Perfect Timing"]
+            "name": "AUTO PLAY",
+            "features": ["Auto Hit", "Hit Type", "Miss Chance", "Receive Range", "Min Ball Speed", "Auto Move"]
           },
           {
-            "name": "Court ESP",
-            "features": ["Ball Trajectory ESP", "Landing Zone Marker", "Jump Indicator"]
-          }
-        ]
-      },
-      {
-        "name": "Rage",
-        "sections": [
-          {
-            "name": "Auto Play",
-            "features": ["Auto Receive", "Instant Set", "Super Spike", "Fast Run", "Super Jump", "Instant Win"]
-          }
-        ]
-      },
-      {
-        "name": "Visual",
-        "sections": [
-          {
-            "name": "Player ESP",
-            "features": ["Player Boxes", "Stamina Bar", "Score Overlay", "Tracer Lines"]
+            "name": "MATCH FLOW",
+            "features": ["Auto Close Round End"]
           },
           {
-            "name": "World",
-            "features": ["Fullbright", "Remove Shadows"]
+            "name": "AUTO JOIN",
+            "features": ["Auto Join Match", "Preferred Team"]
+          },
+          {
+            "name": "SESSION",
+            "features": ["Anti-AFK"]
           }
         ]
       },
       {
-        "name": "Cosmetics",
+        "name": "Match",
         "sections": [
           {
-            "name": "Customs",
-            "features": ["Ball Trail", "Spike Aura", "Custom Animations", "Net Glow"]
+            "name": "SCORING",
+            "features": ["Score Overlay", "Point Prediction", "Auto Reset On Loss", "Set Predictor"]
+          },
+          {
+            "name": "STATS",
+            "features": ["Speed Tracker", "Jump Height Meter", "Player Stamina Display"]
+          }
+        ]
+      },
+      {
+        "name": "Hitboxes",
+        "sections": [
+          {
+            "name": "EXPANDER",
+            "features": ["Spike Hitbox", "Block Hitbox", "Receive Radius", "Net Collision Helper"]
+          },
+          {
+            "name": "VISUALS",
+            "features": ["Show Hitbox Spheres", "Hitbox Wireframes"]
+          }
+        ]
+      },
+      {
+        "name": "Player",
+        "sections": [
+          {
+            "name": "MOVEMENT",
+            "features": ["WalkSpeed Multiplier", "Infinite Stamina", "No Slowdown", "High Jump", "Instant Sprint"]
+          },
+          {
+            "name": "PHYSICS",
+            "features": ["Float Mode", "No Clip Through Net"]
+          }
+        ]
+      },
+      {
+        "name": "Spin",
+        "sections": [
+          {
+            "name": "WHEEL",
+            "features": ["Auto Spin Wheel", "Fast Spin", "Skip Animation", "Claim Free Spins"]
           }
         ]
       }
