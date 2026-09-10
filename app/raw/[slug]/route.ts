@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getScript } from '@/lib/scripts';
+import { getStoredLoaderConfig } from '@/lib/storage';
 
 const UNIVERSAL_LOADER = `--[[
    _____                   _    _       _     
@@ -42,11 +43,16 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   if (params.slug === 'loader' || params.slug === 'universal') {
-    return new NextResponse(UNIVERSAL_LOADER, {
+    const config = await getStoredLoaderConfig();
+    const codeToReturn = config.enabled
+      ? config.code
+      : `-- [Sour Hub] Universal loader is currently disabled.\nwarn("[Sour Hub] The universal loader is currently disabled for maintenance.")\n`;
+
+    return new NextResponse(codeToReturn, {
       status: 200,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
-        'Cache-Control': 'no-store',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
       },
     });
   }

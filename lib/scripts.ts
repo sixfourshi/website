@@ -25,7 +25,7 @@ export class ScriptValidationError extends Error {
 export async function getScripts(): Promise<Script[]> {
   try {
     const scripts = await getStoredScripts();
-    if (Array.isArray(scripts) && scripts.length > 0) {
+    if (Array.isArray(scripts)) {
       return scripts;
     }
   } catch (err) {

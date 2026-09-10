@@ -10,13 +10,8 @@ export function Hero() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLoader = async () => {
-    const origin =
-      typeof window !== 'undefined' && window.location.origin
-        ? window.location.origin
-        : 'https://sourhub.vercel.app';
-    const loaderSnippet = `loadstring(game:HttpGet("${origin}/raw/loader"))()`;
-
-    const success = await copyToClipboard(loaderSnippet, 'Universal loader copied to clipboard!');
+    const loaderSnippet = 'loadstring(game:HttpGet("https://sourhub.vercel.app/loader"))()';
+    const success = await copyToClipboard(loaderSnippet, 'Loader copied to clipboard!');
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

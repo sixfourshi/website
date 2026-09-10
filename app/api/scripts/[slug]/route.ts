@@ -72,12 +72,24 @@ export async function DELETE(
     revalidatePath('/dashboard');
     revalidatePath(`/scripts/${params.slug}`);
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      { ok: true, deletedSlug: params.slug },
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
+    );
   } catch (err: any) {
     console.error(`[API/scripts/${params.slug}] Error deleting script:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to delete script.' },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        },
+      }
     );
   }
 }

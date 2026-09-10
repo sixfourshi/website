@@ -22,16 +22,21 @@ import { showToast } from './Toast';
 import { ScriptFormModal } from './ScriptFormModal';
 import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
+import { DeleteScriptModal } from './DeleteScriptModal';
+import { UniversalLoaderManager } from './UniversalLoaderManager';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
+import type { UniversalLoaderConfig } from '@/lib/loader-types';
 
 export function DashboardClient({
   initialScripts,
   initialGames,
+  initialLoaderConfig,
 }: {
   initialScripts: Script[];
   initialGames: RobloxGame[];
+  initialLoaderConfig?: UniversalLoaderConfig;
 }) {
   const router = useRouter();
   const [scripts, setScripts] = useState<Script[]>(initialScripts);
@@ -42,7 +47,7 @@ export function DashboardClient({
 
   // Script modals
   const [editingScript, setEditingScript] = useState<Script | null | undefined>(undefined);
-  const [deletingScriptSlug, setDeletingScriptSlug] = useState<string | null>(null);
+  const [deletingScript, setDeletingScript] = useState<Script | null>(null);
 
   // Game modals
   const [editingGame, setEditingGame] = useState<RobloxGame | null | undefined>(undefined);
@@ -225,33 +230,29 @@ export function DashboardClient({
     router.refresh();
   };
 
-  // Handle Script Delete
-  const onScriptDelete = async (slug: string) => {
-    setDeletingScriptSlug(slug);
+  // Handle Script Delete with confirmed modal and fresh server reload
+  const onScriptDeleteConfirmed = async (slug: string) => {
     try {
       const res = await fetch(`/api/scripts/${slug}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to delete script.');
+        throw new Error(data.error || 'Failed to delete script from persistent storage.');
       }
 
-      try {
-        const freshRes = await fetch('/api/scripts', { cache: 'no-store' });
-        if (freshRes.ok) {
-          setScripts(await freshRes.json());
-        } else {
-          setScripts((prev) => prev.filter((s) => s.slug !== slug));
-        }
-      } catch {
-        setScripts((prev) => prev.filter((s) => s.slug !== slug));
+      // Reload fresh scripts directly from the server
+      const freshRes = await fetch('/api/scripts', { cache: 'no-store' });
+      if (!freshRes.ok) {
+        throw new Error('Script deleted, but failed to reload updated list from server.');
       }
+      const freshScripts = await freshRes.json();
+      setScripts(freshScripts);
 
-      showToast('Script deleted successfully', 'success', 3000, 'Removed from library');
+      setDeletingScript(null);
+      showToast('Script deleted successfully', 'success', 3000, 'Permanently removed from storage');
       router.refresh();
     } catch (err: any) {
       showToast(err.message || 'Could not delete script.', 'error', 4000);
-    } finally {
-      setDeletingScriptSlug(null);
+      throw err;
     }
   };
 
@@ -571,6 +572,9 @@ export function DashboardClient({
         {/* TAB 2: SCRIPTS MANAGEMENT */}
         {activeTab === 'scripts' && (
           <div>
+            {/* Permanent Universal Loader Item */}
+            <UniversalLoaderManager initialConfig={initialLoaderConfig} />
+
             {filteredScripts.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line p-12 text-center">
                 <FileCode2 size={32} className="mx-auto text-slate-500 mb-3" />
@@ -663,9 +667,8 @@ export function DashboardClient({
                                   <Pencil size={13} />
                                 </button>
                                 <button
-                                  onClick={() => onScriptDelete(script.slug)}
-                                  disabled={deletingScriptSlug === script.slug}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-red-800 hover:text-red-400 disabled:opacity-50 transition-colors"
+                                  onClick={() => setDeletingScript(script)}
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-red-800 hover:text-red-400 transition-colors cursor-pointer"
                                   title="Delete script"
                                 >
                                   <Trash2 size={13} />
@@ -691,6 +694,15 @@ export function DashboardClient({
           games={games}
           onClose={() => setEditingScript(undefined)}
           onSaved={onScriptSaved}
+        />
+      )}
+
+      {/* Delete Script Confirmation Modal */}
+      {deletingScript && (
+        <DeleteScriptModal
+          script={deletingScript}
+          onClose={() => setDeletingScript(null)}
+          onConfirmed={onScriptDeleteConfirmed}
         />
       )}
 
