@@ -1,6 +1,6 @@
 {
   "name": "Sour Hub",
-  "description": "Curated collection of keyless Roblox scripts with a clean library and raw-script API",
+  "description": "Free, keyless scripts for the games we build - no ads, checkpoints.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import type { Metadata } from 'next';
 import { ArrowLeft, Clock, Tag } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
@@ -13,33 +12,6 @@ import { getGameBySlug } from '@/lib/games-server';
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 export const revalidate = 0;
-
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  const slug = decodeURIComponent(params.slug).trim();
-  const game = await getGameBySlug(slug);
-  if (game) {
-    return {
-      title: `${game.name} — Sour Hub`,
-      description: `Explore features, tabs, and sections for ${game.name} on Sour Hub.`,
-    };
-  }
-
-  const script = await getScript(slug);
-  if (script) {
-    return {
-      title: `${script.name} — Sour Hub`,
-      description: script.description || `Verified Luau script for Roblox.`,
-    };
-  }
-
-  return {
-    title: 'Scripts — Sour Hub',
-  };
-}
 
 export default async function ScriptOrGamePage({
   params,

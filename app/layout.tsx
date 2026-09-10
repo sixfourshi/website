@@ -4,9 +4,50 @@ import { AppBackground } from '@/components/AppBackground';
 import { ToastContainer } from '@/components/Toast';
 
 export const metadata: Metadata = {
-  title: 'Sour Hub — Roblox Script Hub',
-  description:
-    'Sour Hub is a curated collection of keyless Roblox scripts with a clean, always-updated library and a simple raw-script API for your executor.',
+  metadataBase: new URL('https://sourhub.vercel.app'),
+  title: {
+    default: 'Sour Hub - Keyless',
+    template: 'Sour Hub - Keyless',
+    absolute: 'Sour Hub - Keyless',
+  },
+  description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+  alternates: {
+    canonical: 'https://sourhub.vercel.app',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.png', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/favicon-16x16.png', type: 'image/png', sizes: '16x16' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  openGraph: {
+    title: 'Sour Hub - Best Keyless Script Hub',
+    description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+    url: 'https://sourhub.vercel.app',
+    siteName: 'Sour Hub',
+    type: 'website',
+    images: [
+      {
+        url: 'https://sourhub.vercel.app/icon.png',
+        width: 512,
+        height: 512,
+        alt: 'Sour Hub - Best Keyless Script Hub',
+        type: 'image/png',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Sour Hub - Best Keyless Script Hub',
+    description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+    images: ['https://sourhub.vercel.app/icon.png'],
+  },
 };
 
 export default function RootLayout({
@@ -69,6 +110,11 @@ export default function RootLayout({
             `,
           }}
         />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

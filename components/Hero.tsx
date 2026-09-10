@@ -30,23 +30,23 @@ export function Hero() {
         <Reveal delay={80}>
           <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-azure-500/30 bg-surface/80 px-3.5 py-1.5 text-xs font-medium text-azure-200 shadow-glow-sm">
             <Sparkles size={13} className="text-azure-400" />
-            100% Free &amp; Keyless Forever
+            100% Free &amp; Keyless
           </div>
         </Reveal>
 
         <Reveal delay={140}>
           <h1 className="font-display text-5xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
-            Scripts that are just
+            One loader. Famous games.
             <br />
             <span className="bg-gradient-to-r from-azure-200 via-azure-300 to-azure-400 bg-clip-text text-transparent">
-              keyless forever
+              Zero keys.
             </span>
           </h1>
         </Reveal>
 
         <Reveal delay={200}>
           <p className="mt-6 max-w-xl text-balance text-base leading-relaxed text-slate-200 sm:text-lg">
-            No linkvertise checkpoints. No 24-hour expiring keys. Just clean single-line loaders, instant bypasses, and raw scripts that actually survive game updates.
+            Free, keyless scripts for the games we build - no ads, checkpoints.
           </p>
         </Reveal>
 
@@ -69,7 +69,7 @@ export function Hero() {
               ) : (
                 <>
                   <Copy size={16} className="text-azure-100 transition-transform group-hover:scale-105" />
-                  <span>Copy loader</span>
+                  <span>Copy Loader</span>
                 </>
               )}
             </button>
@@ -77,7 +77,7 @@ export function Hero() {
               href="/scripts"
               className="group inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-azure-700 hover:bg-surface"
             >
-              Browse scripts
+              Browse Games
               <ArrowRight
                 size={16}
                 className="transition-transform group-hover:translate-x-0.5 text-slate-400 group-hover:text-white"

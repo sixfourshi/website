@@ -1,14 +1,7 @@
-import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Changelog } from '@/components/Changelog';
 import { Footer } from '@/components/Footer';
 import { getScripts } from '@/lib/scripts';
-
-export const metadata: Metadata = {
-  title: 'Changelog — Sour Hub',
-  description:
-    'Stay updated with the latest releases, performance improvements, and fixes for Sour Hub scripts.',
-};
 
 export default async function ChangelogPage() {
   const scripts = await getScripts();

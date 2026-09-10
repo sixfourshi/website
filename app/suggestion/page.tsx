@@ -1,13 +1,6 @@
-import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { SuggestionForm } from '@/components/SuggestionForm';
 import { Footer } from '@/components/Footer';
-
-export const metadata: Metadata = {
-  title: 'Suggest a Game or Feature — Sour Hub',
-  description:
-    'Have a game you want us to support or a feature you would like added? Send us your suggestion and we’ll review it for a future Sour Hub update.',
-};
 
 export default function SuggestionPage() {
   return (
