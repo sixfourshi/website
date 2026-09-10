@@ -4,7 +4,7 @@ import { Stats } from '@/components/Stats';
 import { Demo } from '@/components/Demo';
 import { Faq } from '@/components/Faq';
 import { Footer } from '@/components/Footer';
-import { getScripts } from '@/lib/scripts';
+import { getScripts, formatRelativeTime } from '@/lib/scripts';
 import { getStoredExecutions } from '@/lib/executions';
 
 export const dynamic = 'force-dynamic';
@@ -16,13 +16,20 @@ export default async function Home() {
     getStoredExecutions(),
   ]);
   const gameSet = new Set(scripts.map((s) => s.game).filter((g) => g !== 'Universal'));
-  const latest = [...scripts].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0];
+  const sorted = [...scripts].sort((a, b) => {
+    const timeA = new Date(a.updatedAt).getTime() || 0;
+    const timeB = new Date(b.updatedAt).getTime() || 0;
+    return timeB - timeA;
+  });
+  const latest = sorted[0];
+  const lastUpdated = formatRelativeTime(latest?.updatedAt);
 
   return (
     <main>
       <Navbar />
       <Hero />
       <Stats
+        lastUpdated={lastUpdated}
         scriptCount={scripts.length}
         gameCount={gameSet.size}
         totalExecutions={executionsStore.totalExecutions}

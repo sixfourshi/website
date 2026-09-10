@@ -50,10 +50,10 @@ export function Footer() {
             </p>
             <div className="mt-3.5 flex items-center gap-3">
               <a
-                href="https://discord.gg"
+                href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/ENgU3jvBbN'}
                 target="_blank"
                 rel="noreferrer"
-                aria-label="Discord"
+                aria-label="Discord Server"
                 className="group flex h-8.5 w-8.5 items-center justify-center rounded-lg border border-line bg-surface/40 text-ink-muted transition-all hover:border-azure-500/80 hover:bg-[#0d1636] hover:text-[#5865F2] hover:shadow-glow-sm"
               >
                 <DiscordIcon className="h-4 w-4 transition-transform group-hover:scale-110" />

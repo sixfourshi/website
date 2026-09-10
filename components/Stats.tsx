@@ -2,19 +2,21 @@ import { Reveal } from './Reveal';
 import { formatExecutionCount } from '@/lib/execution-types';
 
 export function Stats({
-  scriptCount,
+  lastUpdated = '1 day ago',
   gameCount,
   totalExecutions = 0,
   version,
+  scriptCount,
 }: {
-  scriptCount: number;
+  lastUpdated?: string;
   gameCount: number;
   totalExecutions?: number;
   version: string;
+  scriptCount?: number;
 }) {
   const items = [
     { label: 'Total Executions', value: formatExecutionCount(totalExecutions) },
-    { label: 'Scripts', value: scriptCount },
+    { label: 'Last updated', value: lastUpdated },
     { label: 'Games supported', value: gameCount === 0 ? 'Universal' : gameCount },
     { label: 'Current version', value: version },
   ];
@@ -26,12 +28,12 @@ export function Stats({
           {items.map((item) => (
             <div
               key={item.label}
-              className="flex flex-col items-center gap-1 px-4 py-6 text-center"
+              className="flex flex-col items-center justify-center gap-1 px-3 py-6 text-center sm:px-4"
             >
-              <span className="font-display text-2xl font-semibold text-ink sm:text-3xl">
+              <span className="font-display text-xl font-semibold text-ink sm:text-2xl lg:text-3xl whitespace-nowrap">
                 {item.value}
               </span>
-              <span className="text-xs text-ink-faint">{item.label}</span>
+              <span className="text-xs text-ink-faint whitespace-nowrap">{item.label}</span>
             </div>
           ))}
         </div>

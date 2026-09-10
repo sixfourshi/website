@@ -30,7 +30,8 @@ export function Navbar() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const discordInviteUrl = process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim();
+  const discordInviteUrl =
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/ENgU3jvBbN';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -84,28 +85,15 @@ export function Navbar() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          {discordInviteUrl ? (
-            <a
-              href={discordInviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-lg bg-azure-500 px-4 py-2 text-sm font-medium text-white shadow-glow-sm transition-all hover:bg-azure-400 hover:shadow-glow"
-            >
-              <DiscordIcon className="h-4 w-4" />
-              <span>Discord Server</span>
-            </a>
-          ) : (
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              title="Discord invite link not configured"
-              className="inline-flex items-center gap-2 rounded-lg bg-azure-500/40 px-4 py-2 text-sm font-medium text-white/50 cursor-not-allowed shadow-none"
-            >
-              <DiscordIcon className="h-4 w-4 opacity-50" />
-              <span>Discord Server</span>
-            </button>
-          )}
+          <a
+            href={discordInviteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-lg bg-azure-500 px-4 py-2 text-sm font-medium text-white shadow-glow-sm transition-all hover:bg-azure-400 hover:shadow-glow cursor-pointer"
+          >
+            <DiscordIcon className="h-4 w-4" />
+            <span>Discord Server</span>
+          </a>
         </div>
 
         <button
@@ -140,29 +128,16 @@ export function Navbar() {
               </Link>
             );
           })}
-          {discordInviteUrl ? (
-            <a
-              href={discordInviteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setOpen(false)}
-              className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-azure-500 px-3 py-2.5 text-center text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400"
-            >
-              <DiscordIcon className="h-4 w-4" />
-              <span>Discord Server</span>
-            </a>
-          ) : (
-            <button
-              type="button"
-              disabled
-              aria-disabled="true"
-              title="Discord invite link not configured"
-              className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-azure-500/40 px-3 py-2.5 text-center text-sm font-medium text-white/50 cursor-not-allowed"
-            >
-              <DiscordIcon className="h-4 w-4 opacity-50" />
-              <span>Discord Server</span>
-            </button>
-          )}
+          <a
+            href={discordInviteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => setOpen(false)}
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-azure-500 px-3 py-2.5 text-center text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 cursor-pointer"
+          >
+            <DiscordIcon className="h-4 w-4" />
+            <span>Discord Server</span>
+          </a>
         </div>
       </div>
     </header>

@@ -128,3 +128,57 @@ export async function deleteScript(slug: string): Promise<void> {
   const scripts = await getScripts();
   await saveScripts(scripts.filter((s) => s.slug.toLowerCase() !== slug.toLowerCase()));
 }
+
+export function formatRelativeTime(dateInput?: string | number | Date | null): string {
+  if (!dateInput) return '1 day ago';
+
+  let date: Date;
+  if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+    const [year, month, day] = dateInput.split('-').map(Number);
+    date = new Date(year, month - 1, day, 12, 0, 0);
+  } else {
+    date = new Date(dateInput);
+  }
+
+  const timestamp = date.getTime();
+  if (isNaN(timestamp)) return '1 day ago';
+
+  const now = Date.now();
+  const diffMs = now - timestamp;
+  const diffSec = Math.floor(diffMs / 1000);
+
+  if (diffSec < 60) {
+    return 'Just now';
+  }
+
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) {
+    return diffMin === 1 ? '1m ago' : `${diffMin}m ago`;
+  }
+
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) {
+    return diffHours === 1 ? '1hr ago' : `${diffHours}hrs ago`;
+  }
+
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) {
+    return '1 day ago';
+  }
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 4) {
+    return diffWeeks === 1 ? '1 week ago' : `${diffWeeks} weeks ago`;
+  }
+
+  const diffMonths = Math.floor(diffDays / 30);
+  if (diffMonths < 12) {
+    return diffMonths === 1 ? '1 month ago' : `${diffMonths} months ago`;
+  }
+
+  return `${Math.floor(diffDays / 365)}y ago`;
+}
+

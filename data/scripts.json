@@ -30,7 +30,7 @@
     "category": "Combat",
     "game": "rivals",
     "version": "3.0.4",
-    "updatedAt": "2026-09-05",
+    "updatedAt": "2026-09-09",
     "icon": "Crosshair",
     "features": ["Smooth Aimlock", "Adjustable FOV", "Wall Check", "Recoil Reducer"],
     "code": "-- Sour Hub: Phantom Rivals Suite v3.0.4\n-- Game: RIVALS\nlocal Config = {\n  AimAssist = true,\n  FOV = 85,\n  Smoothing = 0.22,\n  RecoilReduction = 0.80,\n  TeamCheck = true,\n}\n\nprint('[Sour Hub] Phantom Rivals Suite initialized.')\n"
