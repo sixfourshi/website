@@ -74,7 +74,7 @@ export function Hero() {
               )}
             </button>
             <Link
-              href="/scripts"
+              href="/games"
               className="group inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-azure-700 hover:bg-surface"
             >
               Browse Games

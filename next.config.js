@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       {
         protocol: 'https',
@@ -28,17 +29,15 @@ const nextConfig = {
         destination: '/suggestion',
         permanent: true,
       },
-    ];
-  },
-  async rewrites() {
-    return [
       {
-        source: '/games',
-        destination: '/scripts',
+        source: '/scripts',
+        destination: '/games',
+        permanent: true,
       },
       {
-        source: '/games/:slug',
-        destination: '/scripts/:slug',
+        source: '/scripts/:slug',
+        destination: '/games/:slug',
+        permanent: true,
       },
     ];
   },

@@ -533,7 +533,7 @@ export function GameFormModal({
                   URL Slug <span className="text-red-400">*</span>
                 </label>
                 <div className="flex items-center rounded-xl border border-line bg-[#081028] px-3 py-2 text-xs">
-                  <span className="text-slate-500 select-none mr-1">/scripts/</span>
+                  <span className="text-slate-500 select-none mr-1">/games/</span>
                   <input
                     type="text"
                     value={form.slug}

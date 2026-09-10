@@ -103,7 +103,7 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
           {filtered.map((script, i) => (
             <Reveal key={script.slug} delay={(i % 3) * 70}>
               <Link
-                href={`/scripts/${script.slug}`}
+                href={`/games/${script.slug}`}
                 className="group flex h-full flex-col rounded-2xl border border-line/80 bg-[#0e1738]/90 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-azure-500/50 hover:bg-[#121c45] hover:shadow-glow-sm"
               >
                 <div className="mb-4 flex items-start justify-between">

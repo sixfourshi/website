@@ -66,19 +66,20 @@ export function GameCard({
       {/* Unified Continuous Background Artwork across the ENTIRE card (header + expanded panel) */}
       {game.thumbnailUrl && !thumbError ? (
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
-            style={{
-              backgroundImage: `url(${game.thumbnailUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center center',
-              backgroundRepeat: 'no-repeat',
-            }}
+          <Image
+            src={game.thumbnailUrl}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 1200px"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            className="object-cover object-center transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+            onError={() => setThumbError(true)}
           />
           {/* Translucent dark gradient overlay across the whole card so tabs & features remain readable while artwork is clearly visible */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#090b1e]/60 via-[#0b0c24]/65 to-[#08091a]/75" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#090b1e]/75 via-[#0b0c24]/80 to-[#08091a]/85" />
           {/* Subtle ambient tint */}
-          <div className="absolute inset-0 bg-[#160f33]/15" />
+          <div className="absolute inset-0 bg-[#070c1b]/30" />
         </div>
       ) : (
         <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-[#0e1230] to-[#07091c]" />
@@ -106,7 +107,6 @@ export function GameCard({
                 alt={game.name}
                 fill
                 sizes="56px"
-                unoptimized
                 referrerPolicy="no-referrer"
                 className="object-cover brightness-105 contrast-105"
                 onError={() => setImgError(true)}

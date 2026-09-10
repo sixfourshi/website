@@ -4,6 +4,7 @@ import { getScripts } from '@/lib/scripts';
 import { getGames } from '@/lib/games-server';
 import { getStoredLoaderConfig, getStoredSuggestions } from '@/lib/storage';
 import { getStoredExecutions, computeAnalytics } from '@/lib/executions';
+import { getChangelogReleases } from '@/lib/changelog';
 import { DashboardClient } from '@/components/DashboardClient';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +14,13 @@ export default async function DashboardPage() {
   const authed = await isAuthenticated();
   if (!authed) redirect('/login');
 
-  const [scripts, games, loaderConfig, suggestions, executionsStore] = await Promise.all([
+  const [scripts, games, loaderConfig, suggestions, executionsStore, changelog] = await Promise.all([
     getScripts(),
     getGames(),
     getStoredLoaderConfig(),
     getStoredSuggestions(),
     getStoredExecutions(),
+    getChangelogReleases(),
   ]);
 
   const initialAnalytics = computeAnalytics(executionsStore);
@@ -31,6 +33,7 @@ export default async function DashboardPage() {
       initialSuggestions={suggestions}
       initialAnalytics={initialAnalytics}
       initialExecutionLogs={executionsStore.recentLogs}
+      initialChangelog={changelog}
     />
   );
 }

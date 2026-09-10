@@ -598,8 +598,15 @@ export default function ElasticMesh({
     }
 
     let raf = 0;
+    let isPaused = false;
+    const reducedMotionQuery = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+    const prefersReducedMotion = reducedMotionQuery ? reducedMotionQuery.matches : false;
+
     function frame(now: number) {
-      raf = requestAnimationFrame(frame);
+      if (isPaused) return;
+      if (!prefersReducedMotion) {
+        raf = requestAnimationFrame(frame);
+      }
       const p = propsRef.current;
 
       program.uniforms.uShading.value = p.shading;
@@ -636,12 +643,30 @@ export default function ElasticMesh({
       commit();
       renderer.render({ scene: mesh });
     }
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        isPaused = true;
+        cancelAnimationFrame(raf);
+      } else {
+        if (isPaused) {
+          isPaused = false;
+          last = performance.now();
+          if (!prefersReducedMotion) {
+            raf = requestAnimationFrame(frame);
+          }
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
     raf = requestAnimationFrame(frame);
 
     container.appendChild(gl.canvas);
 
     return () => {
       cancelAnimationFrame(raf);
+      document.removeEventListener('visibilitychange', handleVisibility);
       ro.disconnect();
       container.removeEventListener('mousemove', onMove as any);
       container.removeEventListener('mouseenter', onEnter);

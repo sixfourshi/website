@@ -1,19 +1,5 @@
-import { Navbar } from '@/components/Navbar';
-import { GamesList } from '@/components/GamesList';
-import { Footer } from '@/components/Footer';
-import { getGames } from '@/lib/games-server';
+import { permanentRedirect } from 'next/navigation';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
-export default async function ScriptsPage() {
-  const games = await getGames();
-
-  return (
-    <main className="min-h-screen">
-      <Navbar />
-      <GamesList games={games} />
-      <Footer />
-    </main>
-  );
+export default function ScriptsPage() {
+  permanentRedirect('/games');
 }

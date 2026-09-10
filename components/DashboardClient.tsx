@@ -18,6 +18,7 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Activity,
+  History,
 } from 'lucide-react';
 import { Icon } from './Icon';
 import { showToast } from './Toast';
@@ -28,11 +29,13 @@ import { DeleteScriptModal } from './DeleteScriptModal';
 import { UniversalLoaderManager } from './UniversalLoaderManager';
 import { SuggestionsTab } from './SuggestionsTab';
 import { ExecutionLogsTab } from './ExecutionLogsTab';
+import { ChangelogManager } from './ChangelogManager';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
 import type { UniversalLoaderConfig } from '@/lib/loader-types';
 import type { Suggestion } from '@/lib/suggestions';
+import type { ChangelogRelease } from '@/lib/changelog';
 import {
   formatExecutionCount,
   type ExecutionAnalytics,
@@ -46,6 +49,7 @@ export function DashboardClient({
   initialSuggestions = [],
   initialAnalytics,
   initialExecutionLogs = [],
+  initialChangelog = [],
 }: {
   initialScripts: Script[];
   initialGames: RobloxGame[];
@@ -53,13 +57,14 @@ export function DashboardClient({
   initialSuggestions?: Suggestion[];
   initialAnalytics?: ExecutionAnalytics;
   initialExecutionLogs?: ExecutionLog[];
+  initialChangelog?: ChangelogRelease[];
 }) {
   const router = useRouter();
   const [scripts, setScripts] = useState<Script[]>(initialScripts);
   const [games, setGames] = useState<RobloxGame[]>(initialGames);
   const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
 
-  const [activeTab, setActiveTab] = useState<'games' | 'scripts' | 'suggestions' | 'executions'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'scripts' | 'suggestions' | 'executions' | 'changelog'>('games');
   const [query, setQuery] = useState('');
 
   const pendingSuggestionsCount = useMemo(
@@ -302,7 +307,7 @@ export function DashboardClient({
           </Link>
           <div className="flex items-center gap-3">
             <Link
-              href="/scripts"
+              href="/games"
               target="_blank"
               className="hidden sm:flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors"
             >
@@ -459,10 +464,34 @@ export function DashboardClient({
                 {formatExecutionCount(initialAnalytics?.totalExecutions || 0)}
               </span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('changelog');
+                setQuery('');
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'changelog'
+                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
+              }`}
+            >
+              <History size={14} />
+              <span>Changelog</span>
+              <span
+                className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                  activeTab === 'changelog'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-surface text-slate-400'
+                }`}
+              >
+                {initialChangelog?.length || 0}
+              </span>
+            </button>
           </div>
 
           {/* Search bar (for Games & Scripts) */}
-          {activeTab !== 'suggestions' && activeTab !== 'executions' && (
+          {activeTab !== 'suggestions' && activeTab !== 'executions' && activeTab !== 'changelog' && (
             <div className="relative w-full sm:w-72">
               <Search
                 size={15}
@@ -778,6 +807,11 @@ export function DashboardClient({
             initialAnalytics={initialAnalytics}
             initialLogs={initialExecutionLogs}
           />
+        )}
+
+        {/* TAB 5: CHANGELOG MANAGEMENT */}
+        {activeTab === 'changelog' && (
+          <ChangelogManager initialReleases={initialChangelog} />
         )}
       </div>
 

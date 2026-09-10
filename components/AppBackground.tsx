@@ -8,65 +8,128 @@ const ElasticMesh = dynamic(() => import('@/components/ElasticMesh'), {
 });
 
 export function AppBackground() {
-  const [cursor, setCursor] = useState({ x: -400, y: -400, active: false });
-  const [scrollY, setScrollY] = useState(0);
-  const mouseRef = useRef({ x: -400, y: -400 });
-  const posRef = useRef({ x: -400, y: -400 });
-  const scrollRef = useRef(0);
-  const smoothScrollRef = useRef(0);
-  const rafId = useRef<number | null>(null);
+  const [shouldRenderMesh, setShouldRenderMesh] = useState(false);
+  const outerGlowRef = useRef<HTMLDivElement>(null);
+  const innerGlowRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handlePointerMove = (e: PointerEvent) => {
-      mouseRef.current = { x: e.clientX, y: e.clientY };
-      if (!cursor.active) {
-        setCursor((prev) => ({ ...prev, active: true }));
+    // Check for mobile device, coarse pointer, or prefers-reduced-motion
+    const isMobileQuery = window.matchMedia('(max-width: 768px), (pointer: coarse)');
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const isMobileDevice = isMobileQuery.matches || (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0);
+    const prefersReducedMotion = reducedMotionQuery.matches;
+
+    // Only render high-overhead WebGL ElasticMesh on desktop with capable hardware & no reduced motion
+    if (!isMobileDevice && !prefersReducedMotion) {
+      // Delay mounting WebGL until after initial paint so FCP & LCP remain instant
+      const timer = setTimeout(() => {
+        setShouldRenderMesh(true);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Only bind cursor follower on devices with fine pointer (mouse)
+    const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+    if (!hasFinePointer) return;
+
+    let targetX = -400;
+    let targetY = -400;
+    let currentX = -400;
+    let currentY = -400;
+    let isActive = false;
+    let isHidden = false;
+    let rafId: number | null = null;
+    let isLoopRunning = false;
+
+    const updateDOM = () => {
+      if (outerGlowRef.current) {
+        outerGlowRef.current.style.transform = `translate3d(${Math.round(currentX)}px, ${Math.round(currentY)}px, 0) translate(-50%, -50%)`;
+        outerGlowRef.current.style.opacity = isActive ? '1' : '0';
+      }
+      if (innerGlowRef.current) {
+        innerGlowRef.current.style.transform = `translate3d(${Math.round(currentX)}px, ${Math.round(currentY)}px, 0) translate(-50%, -50%)`;
+        innerGlowRef.current.style.opacity = isActive ? '0.85' : '0';
       }
     };
 
+    const loop = () => {
+      if (isHidden) {
+        isLoopRunning = false;
+        return;
+      }
+
+      const dx = targetX - currentX;
+      const dy = targetY - currentY;
+
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
+        currentX += dx * 0.15;
+        currentY += dy * 0.15;
+        updateDOM();
+        rafId = requestAnimationFrame(loop);
+      } else {
+        currentX = targetX;
+        currentY = targetY;
+        updateDOM();
+        isLoopRunning = false;
+      }
+    };
+
+    const startLoop = () => {
+      if (!isLoopRunning && !isHidden) {
+        isLoopRunning = true;
+        rafId = requestAnimationFrame(loop);
+      }
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      targetX = e.clientX;
+      targetY = e.clientY;
+      if (!isActive) {
+        isActive = true;
+      }
+      startLoop();
+    };
+
     const handlePointerLeave = () => {
-      setCursor((prev) => ({ ...prev, active: false }));
+      isActive = false;
+      if (outerGlowRef.current) outerGlowRef.current.style.opacity = '0';
+      if (innerGlowRef.current) innerGlowRef.current.style.opacity = '0';
     };
 
     const handleScroll = () => {
-      scrollRef.current = window.scrollY;
+      if (gridRef.current) {
+        gridRef.current.style.backgroundPositionY = `${-(window.scrollY * 0.25)}px`;
+      }
     };
 
-    scrollRef.current = window.scrollY;
-    smoothScrollRef.current = window.scrollY;
-    setScrollY(window.scrollY);
+    const handleVisibility = () => {
+      if (document.hidden) {
+        isHidden = true;
+        if (rafId) cancelAnimationFrame(rafId);
+        isLoopRunning = false;
+      } else {
+        isHidden = false;
+        if (isActive) startLoop();
+      }
+    };
 
     window.addEventListener('pointermove', handlePointerMove, { passive: true });
     document.addEventListener('mouseleave', handlePointerLeave);
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    const animate = () => {
-      // Smooth lerp for liquid-smooth cursor follower
-      posRef.current.x += (mouseRef.current.x - posRef.current.x) * 0.14;
-      posRef.current.y += (mouseRef.current.y - posRef.current.y) * 0.14;
-
-      setCursor({
-        x: Math.round(posRef.current.x),
-        y: Math.round(posRef.current.y),
-        active: true,
-      });
-
-      // Smooth lerp for natural scrolling parallax
-      smoothScrollRef.current += (scrollRef.current - smoothScrollRef.current) * 0.1;
-      setScrollY(Math.round(smoothScrollRef.current));
-
-      rafId.current = requestAnimationFrame(animate);
-    };
-
-    rafId.current = requestAnimationFrame(animate);
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       document.removeEventListener('mouseleave', handlePointerLeave);
       window.removeEventListener('scroll', handleScroll);
-      if (rafId.current) cancelAnimationFrame(rafId.current);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [cursor.active]);
+  }, []);
 
   return (
     <div
@@ -89,58 +152,46 @@ export function AppBackground() {
         <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-azure-600/12 via-azure-500/6 to-transparent blur-3xl" />
       </div>
 
-      {/* Mouse Cursor Follower Spotlight - smoothly tracks cursor across entire screen */}
+      {/* Mouse Cursor Follower Spotlight (Desktop only via direct DOM transform, zero React rerenders) */}
       <div
-        className="pointer-events-none absolute h-[380px] w-[380px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-azure-500/18 blur-[100px] transition-opacity duration-500"
-        style={{
-          left: `${cursor.x}px`,
-          top: `${cursor.y}px`,
-          opacity: cursor.active ? 1 : 0,
-          willChange: 'left, top',
-        }}
+        ref={outerGlowRef}
+        className="pointer-events-none absolute left-0 top-0 h-[380px] w-[380px] rounded-full bg-azure-500/18 blur-[100px] opacity-0 transition-opacity duration-300 will-change-transform"
       />
-      {/* Secondary tight cursor core glow */}
       <div
-        className="pointer-events-none absolute h-[140px] w-[140px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-azure-400/20 blur-[50px] transition-opacity duration-300"
-        style={{
-          left: `${cursor.x}px`,
-          top: `${cursor.y}px`,
-          opacity: cursor.active ? 0.8 : 0,
-          willChange: 'left, top',
-        }}
+        ref={innerGlowRef}
+        className="pointer-events-none absolute left-0 top-0 h-[140px] w-[140px] rounded-full bg-azure-400/20 blur-[50px] opacity-0 transition-opacity duration-200 will-change-transform"
       />
 
-      {/* ElasticMesh interactive reactive layer covering full viewport across all sections */}
-      <div className="absolute inset-0 h-full w-full opacity-45 mix-blend-screen">
-        <ElasticMesh
-          color1="#070C1B"
-          color2="#0b132b"
-          highlight="#82a9ff"
-          gridColor="#5487ff"
-          showGrid={true}
-          gridDensity={24}
-          gridOpacity={0.24}
-          borderRadius={0}
-          fit={1.25}
-          tilt={10}
-          shading={0.4}
-          stiffness={0.06}
-          damping={0.17}
-          wobble={6}
-          pull={0.52}
-          grabRadius={0.75}
-          interaction="hover"
-          trackGlobalPointer={true}
-        />
-      </div>
+      {/* ElasticMesh interactive reactive layer: Desktop only, omitted on mobile */}
+      {shouldRenderMesh ? (
+        <div className="absolute inset-0 h-full w-full opacity-45 mix-blend-screen transition-opacity duration-700">
+          <ElasticMesh
+            color1="#070C1B"
+            color2="#0b132b"
+            highlight="#82a9ff"
+            gridColor="#5487ff"
+            showGrid={true}
+            gridDensity={24}
+            gridOpacity={0.24}
+            borderRadius={0}
+            fit={1.25}
+            tilt={10}
+            shading={0.4}
+            stiffness={0.06}
+            damping={0.17}
+            wobble={6}
+            pull={0.52}
+            grabRadius={0.75}
+            interaction="hover"
+            trackGlobalPointer={true}
+          />
+        </div>
+      ) : null}
 
-      {/* Full-bleed technical cyber grid overlay with natural vertical scroll motion */}
+      {/* Full-bleed technical cyber grid overlay with natural vertical scroll motion (hardware accelerated) */}
       <div
-        className="absolute inset-0 h-full w-full bg-grid opacity-35"
-        style={{
-          backgroundPositionY: `${-(scrollY * 0.35)}px`,
-          willChange: 'background-position',
-        }}
+        ref={gridRef}
+        className="absolute inset-0 h-full w-full bg-grid opacity-35 will-change-[background-position]"
       />
     </div>
   );

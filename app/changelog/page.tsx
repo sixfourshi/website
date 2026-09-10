@@ -1,20 +1,26 @@
 import { Navbar } from '@/components/Navbar';
 import { Changelog } from '@/components/Changelog';
 import { Footer } from '@/components/Footer';
-import { getScripts } from '@/lib/scripts';
+import { getChangelogReleases } from '@/lib/changelog';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export const metadata = {
+  title: 'Sour Hub - Keyless',
+  alternates: {
+    canonical: 'https://sourhub.vercel.app/changelog',
+  },
+};
 
 export default async function ChangelogPage() {
-  const scripts = await getScripts();
-  const latest = [...scripts].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))[0];
+  const releases = await getChangelogReleases();
 
   return (
     <main className="min-h-screen">
       <Navbar />
       <div className="pt-16">
-        <Changelog
-          version={latest?.version ?? '1.2.4'}
-          date={latest?.updatedAt ?? 'Recent'}
-        />
+        <Changelog releases={releases} />
       </div>
       <Footer />
     </main>
