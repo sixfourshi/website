@@ -69,6 +69,7 @@ export async function PUT(req: NextRequest) {
       const updated = await markReleaseAsLatest(body.id);
       revalidatePath('/changelog');
       revalidatePath('/dashboard');
+      revalidatePath('/');
       return NextResponse.json(updated);
     }
 
@@ -79,6 +80,7 @@ export async function PUT(req: NextRequest) {
       const updated = await reorderChangelogReleases(body.orderedIds);
       revalidatePath('/changelog');
       revalidatePath('/dashboard');
+      revalidatePath('/');
       return NextResponse.json(updated);
     }
 

@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default async function ChangelogPage() {
-  const releases = await getChangelogReleases();
+  const releases = await getChangelogReleases({ forceFresh: true });
 
   return (
     <main className="min-h-screen">

@@ -88,8 +88,8 @@ export const INITIAL_CHANGELOG_RELEASES: ChangelogRelease[] = [
 
 import { getStoredChangelog, saveStoredChangelog } from './storage';
 
-export async function getChangelogReleases(): Promise<ChangelogRelease[]> {
-  const releases = await getStoredChangelog();
+export async function getChangelogReleases(options?: { forceFresh?: boolean }): Promise<ChangelogRelease[]> {
+  const releases = await getStoredChangelog(options);
   // Sort by order ascending if specified, or default to release date newest first
   return [...releases].sort((a, b) => {
     if (typeof a.order === 'number' && typeof b.order === 'number') {
@@ -199,4 +199,64 @@ export async function reorderChangelogReleases(orderedIds: string[]): Promise<Ch
   await saveStoredChangelog(reordered);
   return reordered;
 }
+
+/**
+ * Resolves the active latest release:
+ * - If a release is marked isLatest === true, prefer that release.
+ * - Otherwise sort releases by real date (newest first) and use the first one.
+ */
+export function getActiveLatestRelease(releases: ChangelogRelease[]): ChangelogRelease | undefined {
+  if (!releases || releases.length === 0) return undefined;
+
+  const markedLatest = releases.find((r) => r.isLatest);
+  if (markedLatest) {
+    return markedLatest;
+  }
+
+  const sortedByDate = [...releases].sort((a, b) => {
+    const timeA = new Date(a.date).getTime() || 0;
+    const timeB = new Date(b.date).getTime() || 0;
+    return timeB - timeA;
+  });
+
+  return sortedByDate[0];
+}
+
+/**
+ * Formats a release date as DD/MM/YYYY (e.g. 20/10/2026).
+ * Returns '—' if no date exists or date is invalid.
+ */
+export function formatChangelogDateDDMMYYYY(dateStr?: string | null): string {
+  if (!dateStr || !dateStr.trim()) return '—';
+
+  const trimmed = dateStr.trim();
+  // Match YYYY-MM-DD
+  const ymdMatch = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (ymdMatch) {
+    const year = ymdMatch[1];
+    const month = ymdMatch[2].padStart(2, '0');
+    const day = ymdMatch[3].padStart(2, '0');
+    return `${day}/${month}/${year}`;
+  }
+
+  // Match DD/MM/YYYY already
+  const dmyMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (dmyMatch) {
+    const day = dmyMatch[1].padStart(2, '0');
+    const month = dmyMatch[2].padStart(2, '0');
+    const year = dmyMatch[3];
+    return `${day}/${month}/${year}`;
+  }
+
+  const parsed = new Date(trimmed);
+  if (isNaN(parsed.getTime())) {
+    return '—';
+  }
+
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const year = parsed.getUTCFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 

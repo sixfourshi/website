@@ -2,22 +2,22 @@ import { Reveal } from './Reveal';
 import { formatExecutionCount } from '@/lib/execution-types';
 
 export function Stats({
-  lastUpdated = '1 day ago',
-  gameCount,
+  lastUpdated = '—',
+  gameCount = 0,
   totalExecutions = 0,
-  version,
+  version = '—',
   scriptCount,
 }: {
   lastUpdated?: string;
-  gameCount: number;
+  gameCount?: number;
   totalExecutions?: number;
-  version: string;
+  version?: string;
   scriptCount?: number;
 }) {
   const items = [
     { label: 'Total Executions', value: formatExecutionCount(totalExecutions) },
     { label: 'Last updated', value: lastUpdated },
-    { label: 'Games supported', value: gameCount === 0 ? 'Universal' : gameCount },
+    { label: 'Games supported', value: typeof gameCount === 'number' ? gameCount : 0 },
     { label: 'Current version', value: version },
   ];
 

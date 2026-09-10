@@ -2,14 +2,15 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { get, put, BlobNotFoundError } from '@vercel/blob';
-import type { RobloxGame } from './games';
+import { type RobloxGame, ROBLOX_GAMES } from './games';
 import type { Script } from './scripts';
 import { ChangelogRelease, INITIAL_CHANGELOG_RELEASES } from './changelog';
 
 const BLOB_GAMES_PATHNAME = 'sourhub/games.json';
 const BLOB_SCRIPTS_PATHNAME = 'sourhub/scripts.json';
 const BLOB_LOADER_PATHNAME = 'sourhub/loader.json';
-const BLOB_INIT_MARKER_PATHNAME = 'sourhub/init-marker.json';
+const BLOB_GAMES_MARKER_PATHNAME = 'sourhub/games-marker.json';
+const BLOB_SCRIPTS_MARKER_PATHNAME = 'sourhub/scripts-marker.json';
 const BLOB_SUGGESTIONS_PATHNAME = 'sourhub/suggestions.json';
 const BLOB_CHANGELOG_PATHNAME = 'sourhub/changelog.json';
 const BLOB_CHANGELOG_MARKER_PATHNAME = 'sourhub/changelog-marker.json';
@@ -19,7 +20,8 @@ const TMP_DIR = os.tmpdir();
 const TMP_GAMES_PATH = path.join(TMP_DIR, 'sourhub_games.json');
 const TMP_SCRIPTS_PATH = path.join(TMP_DIR, 'sourhub_scripts.json');
 const TMP_LOADER_PATH = path.join(TMP_DIR, 'sourhub_loader.json');
-const TMP_INIT_MARKER_PATH = path.join(TMP_DIR, 'sourhub_init_marker.json');
+const TMP_GAMES_MARKER_PATH = path.join(TMP_DIR, 'sourhub_games_marker.json');
+const TMP_SCRIPTS_MARKER_PATH = path.join(TMP_DIR, 'sourhub_scripts_marker.json');
 const TMP_SUGGESTIONS_PATH = path.join(TMP_DIR, 'sourhub_suggestions.json');
 const TMP_CHANGELOG_PATH = path.join(TMP_DIR, 'sourhub_changelog.json');
 const TMP_CHANGELOG_MARKER_PATH = path.join(TMP_DIR, 'sourhub_changelog_marker.json');
@@ -28,7 +30,13 @@ const TMP_CHANGELOG_MARKER_PATH = path.join(TMP_DIR, 'sourhub_changelog_marker.j
 let memoryGamesCache: { data: RobloxGame[]; timestamp: number } | null = null;
 let memoryScriptsCache: { data: Script[]; timestamp: number } | null = null;
 let memoryChangelogCache: { data: ChangelogRelease[]; timestamp: number } | null = null;
-const CACHE_TTL_MS = 20_000; // 20-second cache ensures sub-millisecond response for public page rendering
+const CACHE_TTL_MS = 5_000; // 5-second cache ensures quick propagation while preventing thrashing
+
+export function invalidateStorageCache(): void {
+  memoryGamesCache = null;
+  memoryScriptsCache = null;
+  memoryChangelogCache = null;
+}
 
 // Read-only project seed files (bundled at build, used ONLY for first-ever initialization)
 const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
@@ -181,7 +189,7 @@ async function readSeedGames(): Promise<RobloxGame[]> {
       return parsed as RobloxGame[];
     }
   } catch {}
-  return [];
+  return ROBLOX_GAMES;
 }
 
 async function readSeedScripts(): Promise<Script[]> {
@@ -196,21 +204,37 @@ async function readSeedScripts(): Promise<Script[]> {
 }
 
 /**
- * Marks storage as initialized with persistent marker so bundled JSON seed files
+ * Marks storage as initialized with persistent markers so bundled JSON seed files
  * are NEVER automatically re-imported when scripts or games are intentionally deleted to empty.
  */
-async function markStorageInitialized(): Promise<void> {
+async function markGamesStorageInitialized(): Promise<void> {
   const marker: StorageInitMarker = {
     initialized: true,
     initializedAt: new Date().toISOString(),
     version: 1,
   };
-  await writeTmpJson(TMP_INIT_MARKER_PATH, marker);
+  await writeTmpJson(TMP_GAMES_MARKER_PATH, marker);
   if (isBlobStorageConfigured()) {
     try {
-      await writeBlobJson(BLOB_INIT_MARKER_PATHNAME, marker);
+      await writeBlobJson(BLOB_GAMES_MARKER_PATHNAME, marker);
     } catch (err) {
-      console.warn('[Storage] Failed to write init marker to Blob:', sanitizeError(err).message);
+      console.warn('[Storage] Failed to write games init marker to Blob:', sanitizeError(err).message);
+    }
+  }
+}
+
+async function markScriptsStorageInitialized(): Promise<void> {
+  const marker: StorageInitMarker = {
+    initialized: true,
+    initializedAt: new Date().toISOString(),
+    version: 1,
+  };
+  await writeTmpJson(TMP_SCRIPTS_MARKER_PATH, marker);
+  if (isBlobStorageConfigured()) {
+    try {
+      await writeBlobJson(BLOB_SCRIPTS_MARKER_PATHNAME, marker);
+    } catch (err) {
+      console.warn('[Storage] Failed to write scripts init marker to Blob:', sanitizeError(err).message);
     }
   }
 }
@@ -220,8 +244,8 @@ async function markStorageInitialized(): Promise<void> {
  * Reads from private Vercel Blob on every request without caching.
  * Uses bundled seed data strictly on the very first initialization.
  */
-export async function getStoredGames(): Promise<RobloxGame[]> {
-  if (memoryGamesCache && Date.now() - memoryGamesCache.timestamp < CACHE_TTL_MS) {
+export async function getStoredGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
+  if (!options?.forceFresh && memoryGamesCache && Date.now() - memoryGamesCache.timestamp < CACHE_TTL_MS) {
     return memoryGamesCache.data;
   }
 
@@ -236,7 +260,7 @@ export async function getStoredGames(): Promise<RobloxGame[]> {
       }
 
       // Check if persistent storage was already initialized
-      const marker = await readBlobJson<StorageInitMarker>(BLOB_INIT_MARKER_PATHNAME);
+      const marker = await readBlobJson<StorageInitMarker>(BLOB_GAMES_MARKER_PATHNAME);
       if (marker?.initialized) {
         // Storage is already initialized; intentionally empty list must remain empty
         memoryGamesCache = { data: [], timestamp: Date.now() };
@@ -247,7 +271,7 @@ export async function getStoredGames(): Promise<RobloxGame[]> {
       const seed = await readSeedGames();
       try {
         await writeBlobJson(BLOB_GAMES_PATHNAME, seed);
-        await markStorageInitialized();
+        await markGamesStorageInitialized();
         console.info(`[Storage] First-time initialization: seeded ${seed.length} games to private Vercel Blob.`);
       } catch (seedErr: any) {
         console.warn('[Storage] Could not seed private Vercel Blob:', sanitizeError(seedErr).message);
@@ -267,7 +291,7 @@ export async function getStoredGames(): Promise<RobloxGame[]> {
     return fromTmp;
   }
 
-  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_INIT_MARKER_PATH);
+  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_GAMES_MARKER_PATH);
   if (tmpMarker?.initialized) {
     memoryGamesCache = { data: [], timestamp: Date.now() };
     return [];
@@ -276,7 +300,7 @@ export async function getStoredGames(): Promise<RobloxGame[]> {
   // First-ever initialization for local fallback
   const seed = await readSeedGames();
   await writeTmpJson(TMP_GAMES_PATH, seed).catch(() => {});
-  await markStorageInitialized().catch(() => {});
+  await markGamesStorageInitialized().catch(() => {});
   memoryGamesCache = { data: seed, timestamp: Date.now() };
   return seed;
 }
@@ -291,10 +315,10 @@ export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
 
   if (isBlobStorageConfigured()) {
     await writeBlobJson(BLOB_GAMES_PATHNAME, games);
-    await markStorageInitialized();
+    await markGamesStorageInitialized();
     console.info(`[Storage] Confirmed write of ${games.length} games to private Vercel Blob.`);
   } else {
-    await markStorageInitialized();
+    await markGamesStorageInitialized();
   }
 }
 
@@ -304,8 +328,8 @@ export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
  * Bundled scripts.json is used ONLY for the first-ever storage initialization.
  * An intentionally empty script library (length === 0) remains empty.
  */
-export async function getStoredScripts(): Promise<Script[]> {
-  if (memoryScriptsCache && Date.now() - memoryScriptsCache.timestamp < CACHE_TTL_MS) {
+export async function getStoredScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
+  if (!options?.forceFresh && memoryScriptsCache && Date.now() - memoryScriptsCache.timestamp < CACHE_TTL_MS) {
     return memoryScriptsCache.data;
   }
 
@@ -320,7 +344,7 @@ export async function getStoredScripts(): Promise<Script[]> {
       }
 
       // Check if persistent storage was already initialized previously
-      const marker = await readBlobJson<StorageInitMarker>(BLOB_INIT_MARKER_PATHNAME);
+      const marker = await readBlobJson<StorageInitMarker>(BLOB_SCRIPTS_MARKER_PATHNAME);
       if (marker?.initialized) {
         // Storage is already initialized; intentionally empty list must remain empty
         memoryScriptsCache = { data: [], timestamp: Date.now() };
@@ -331,7 +355,7 @@ export async function getStoredScripts(): Promise<Script[]> {
       const seed = await readSeedScripts();
       try {
         await writeBlobJson(BLOB_SCRIPTS_PATHNAME, seed);
-        await markStorageInitialized();
+        await markScriptsStorageInitialized();
         console.info(`[Storage] First-time initialization: seeded ${seed.length} scripts to private Vercel Blob.`);
       } catch (seedErr: any) {
         console.warn('[Storage] Could not seed private Vercel Blob:', sanitizeError(seedErr).message);
@@ -351,7 +375,7 @@ export async function getStoredScripts(): Promise<Script[]> {
     return fromTmp;
   }
 
-  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_INIT_MARKER_PATH);
+  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_SCRIPTS_MARKER_PATH);
   if (tmpMarker?.initialized) {
     memoryScriptsCache = { data: [], timestamp: Date.now() };
     return [];
@@ -360,7 +384,7 @@ export async function getStoredScripts(): Promise<Script[]> {
   // First-ever initialization for local fallback
   const seed = await readSeedScripts();
   await writeTmpJson(TMP_SCRIPTS_PATH, seed).catch(() => {});
-  await markStorageInitialized().catch(() => {});
+  await markScriptsStorageInitialized().catch(() => {});
   memoryScriptsCache = { data: seed, timestamp: Date.now() };
   return seed;
 }
@@ -375,10 +399,10 @@ export async function saveStoredScripts(scripts: Script[]): Promise<void> {
 
   if (isBlobStorageConfigured()) {
     await writeBlobJson(BLOB_SCRIPTS_PATHNAME, scripts);
-    await markStorageInitialized();
+    await markScriptsStorageInitialized();
     console.info(`[Storage] Confirmed write of ${scripts.length} scripts to private Vercel Blob.`);
   } else {
-    await markStorageInitialized();
+    await markScriptsStorageInitialized();
   }
 }
 
@@ -491,8 +515,8 @@ export async function saveStoredSuggestions(suggestions: Suggestion[]): Promise<
  * Retrieve all changelog releases from private Vercel Blob store.
  * Returns empty array if none have been created or if explicitly cleared.
  */
-export async function getStoredChangelog(): Promise<ChangelogRelease[]> {
-  if (memoryChangelogCache && Date.now() - memoryChangelogCache.timestamp < CACHE_TTL_MS) {
+export async function getStoredChangelog(options?: { forceFresh?: boolean }): Promise<ChangelogRelease[]> {
+  if (!options?.forceFresh && memoryChangelogCache && Date.now() - memoryChangelogCache.timestamp < CACHE_TTL_MS) {
     return memoryChangelogCache.data;
   }
 

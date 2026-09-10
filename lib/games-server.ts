@@ -11,9 +11,9 @@ export class GameValidationError extends Error {
   }
 }
 
-export async function getGames(): Promise<RobloxGame[]> {
+export async function getGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
   try {
-    const stored = await getStoredGames();
+    const stored = await getStoredGames(options);
     if (Array.isArray(stored)) {
       return stored.map((g) => normalizeGame(g));
     }

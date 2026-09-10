@@ -14,7 +14,7 @@ export const metadata = {
 };
 
 export default async function GamesPage() {
-  const games = await getGames();
+  const games = await getGames({ forceFresh: true });
 
   return (
     <main className="min-h-screen">
