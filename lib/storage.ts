@@ -9,6 +9,7 @@ const BLOB_GAMES_PATHNAME = 'sourhub/games.json';
 const BLOB_SCRIPTS_PATHNAME = 'sourhub/scripts.json';
 const BLOB_LOADER_PATHNAME = 'sourhub/loader.json';
 const BLOB_INIT_MARKER_PATHNAME = 'sourhub/init-marker.json';
+const BLOB_SUGGESTIONS_PATHNAME = 'sourhub/suggestions.json';
 
 // Local temporary writable path (fallback cache for serverless environment)
 const TMP_DIR = os.tmpdir();
@@ -16,6 +17,7 @@ const TMP_GAMES_PATH = path.join(TMP_DIR, 'sourhub_games.json');
 const TMP_SCRIPTS_PATH = path.join(TMP_DIR, 'sourhub_scripts.json');
 const TMP_LOADER_PATH = path.join(TMP_DIR, 'sourhub_loader.json');
 const TMP_INIT_MARKER_PATH = path.join(TMP_DIR, 'sourhub_init_marker.json');
+const TMP_SUGGESTIONS_PATH = path.join(TMP_DIR, 'sourhub_suggestions.json');
 
 // Read-only project seed files (bundled at build, used ONLY for first-ever initialization)
 const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
@@ -25,6 +27,18 @@ export interface StorageInitMarker {
   initialized: boolean;
   initializedAt: string;
   version: number;
+}
+
+export type SuggestionStatus = 'pending' | 'reviewed' | 'planned' | 'added' | 'rejected';
+
+export interface Suggestion {
+  id: string;
+  gameName: string;
+  robloxLink: string;
+  suggestion: string;
+  status: SuggestionStatus;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 import {
@@ -388,4 +402,42 @@ export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Pro
     console.info('[Storage] Confirmed write of Universal Loader to private Vercel Blob.');
   }
 }
+
+/**
+ * Retrieve all user suggestions from private Vercel Blob store.
+ * Returns empty array if none have been created.
+ */
+export async function getStoredSuggestions(): Promise<Suggestion[]> {
+  if (isBlobStorageConfigured()) {
+    try {
+      const fromBlob = await readBlobJson<Suggestion[]>(BLOB_SUGGESTIONS_PATHNAME);
+      if (Array.isArray(fromBlob)) {
+        writeTmpJson(TMP_SUGGESTIONS_PATH, fromBlob).catch(() => {});
+        return fromBlob;
+      }
+    } catch (err: any) {
+      console.warn('[Storage] Reading suggestions from Vercel Blob failed:', sanitizeError(err).message);
+    }
+  }
+
+  const fromTmp = await readTmpJson<Suggestion[]>(TMP_SUGGESTIONS_PATH);
+  if (Array.isArray(fromTmp)) {
+    return fromTmp;
+  }
+
+  return [];
+}
+
+/**
+ * Persistently save all suggestions to private Vercel Blob store.
+ */
+export async function saveStoredSuggestions(suggestions: Suggestion[]): Promise<void> {
+  await writeTmpJson(TMP_SUGGESTIONS_PATH, suggestions);
+
+  if (isBlobStorageConfigured()) {
+    await writeBlobJson(BLOB_SUGGESTIONS_PATHNAME, suggestions);
+    console.info('[Storage] Confirmed write of suggestions to private Vercel Blob.');
+  }
+}
+
 

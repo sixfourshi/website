@@ -16,6 +16,20 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/executors',
+        destination: '/suggestion',
+        permanent: true,
+      },
+      {
+        source: '/suggestions',
+        destination: '/suggestion',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

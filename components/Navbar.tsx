@@ -7,7 +7,7 @@ import { Menu, X, Zap } from 'lucide-react';
 
 const LINKS = [
   { href: '/scripts', label: 'Games' },
-  { href: '/executors', label: 'Executors' },
+  { href: '/suggestion', label: 'Suggestions' },
   { href: '/changelog', label: 'Changelog' },
   { href: '/#demo', label: 'Demo' },
   { href: '/#faq', label: 'FAQ' },
@@ -28,6 +28,7 @@ export function Navbar() {
   const isLinkActive = (href: string) => {
     if (href.startsWith('/#')) return false;
     if (href === '/scripts') return pathname.startsWith('/scripts') || pathname.startsWith('/games');
+    if (href === '/suggestion') return pathname.startsWith('/suggestion');
     return pathname === href;
   };
 

@@ -16,6 +16,7 @@ import {
   Sparkles,
   Layers,
   Image as ImageIcon,
+  MessageSquare,
 } from 'lucide-react';
 import { Icon } from './Icon';
 import { showToast } from './Toast';
@@ -24,26 +25,36 @@ import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
 import { DeleteScriptModal } from './DeleteScriptModal';
 import { UniversalLoaderManager } from './UniversalLoaderManager';
+import { SuggestionsTab } from './SuggestionsTab';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
 import type { UniversalLoaderConfig } from '@/lib/loader-types';
+import type { Suggestion } from '@/lib/suggestions';
 
 export function DashboardClient({
   initialScripts,
   initialGames,
   initialLoaderConfig,
+  initialSuggestions = [],
 }: {
   initialScripts: Script[];
   initialGames: RobloxGame[];
   initialLoaderConfig?: UniversalLoaderConfig;
+  initialSuggestions?: Suggestion[];
 }) {
   const router = useRouter();
   const [scripts, setScripts] = useState<Script[]>(initialScripts);
   const [games, setGames] = useState<RobloxGame[]>(initialGames);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>(initialSuggestions);
 
-  const [activeTab, setActiveTab] = useState<'games' | 'scripts'>('games');
+  const [activeTab, setActiveTab] = useState<'games' | 'scripts' | 'suggestions'>('games');
   const [query, setQuery] = useState('');
+
+  const pendingSuggestionsCount = useMemo(
+    () => suggestions.filter((s) => s.status === 'pending').length,
+    [suggestions]
+  );
 
   // Script modals
   const [editingScript, setEditingScript] = useState<Script | null | undefined>(undefined);
@@ -383,25 +394,57 @@ export function DashboardClient({
                 {scripts.length}
               </span>
             </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('suggestions');
+                setQuery('');
+              }}
+              className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'suggestions'
+                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
+              }`}
+            >
+              <MessageSquare size={14} />
+              <span>Suggestions</span>
+              {pendingSuggestionsCount > 0 ? (
+                <span className="ml-1 inline-flex items-center rounded-full bg-amber-500/25 px-2 py-0.5 text-[10px] font-bold text-amber-300 border border-amber-500/40 animate-pulse">
+                  {pendingSuggestionsCount}
+                </span>
+              ) : (
+                <span
+                  className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
+                    activeTab === 'suggestions'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-surface text-slate-400'
+                  }`}
+                >
+                  {suggestions.length}
+                </span>
+              )}
+            </button>
           </div>
 
-          {/* Search bar */}
-          <div className="relative w-full sm:w-72">
-            <Search
-              size={15}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={
-                activeTab === 'games'
-                  ? 'Search games by name or ID...'
-                  : 'Search scripts by name or game...'
-              }
-              className="w-full rounded-xl border border-line bg-[#060b1e] py-2 pl-9 pr-4 text-xs text-white placeholder:text-slate-400 focus:border-azure-500 focus:outline-none"
-            />
-          </div>
+          {/* Search bar (for Games & Scripts) */}
+          {activeTab !== 'suggestions' && (
+            <div className="relative w-full sm:w-72">
+              <Search
+                size={15}
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={
+                  activeTab === 'games'
+                    ? 'Search games by name or ID...'
+                    : 'Search scripts by name or game...'
+                }
+                className="w-full rounded-xl border border-line bg-[#060b1e] py-2 pl-9 pr-4 text-xs text-white placeholder:text-slate-400 focus:border-azure-500 focus:outline-none"
+              />
+            </div>
+          )}
         </div>
 
         {/* TAB 1: GAMES MANAGEMENT */}
@@ -684,6 +727,14 @@ export function DashboardClient({
               </div>
             )}
           </div>
+        )}
+
+        {/* TAB 3: SUGGESTIONS MANAGEMENT */}
+        {activeTab === 'suggestions' && (
+          <SuggestionsTab
+            initialSuggestions={suggestions}
+            onSuggestionsUpdated={(fresh) => setSuggestions(fresh)}
+          />
         )}
       </div>
 
