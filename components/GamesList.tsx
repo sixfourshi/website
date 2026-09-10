@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Search, RefreshCw } from 'lucide-react';
 import { RobloxGame } from '@/lib/games';
 import { GameCard } from './GameCard';
@@ -8,14 +9,24 @@ import { Reveal } from './Reveal';
 
 interface GamesListProps {
   games: RobloxGame[];
-  scriptCounts: Record<string, number>;
 }
 
-export function GamesList({ games, scriptCounts }: GamesListProps) {
+export function GamesList({ games }: GamesListProps) {
+  const searchParams = useSearchParams();
+  const initialGameSlug = searchParams?.get('game') || null;
+
+  const [expandedSlug, setExpandedSlug] = useState<string | null>(initialGameSlug);
   const [query, setQuery] = useState('');
   const [playerCounts, setPlayerCounts] = useState<Record<string, number | null>>({});
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [lastUpdated, setLastUpdated] = useState<string>('');
+
+  // If query param ?game=slug is present on mount, expand that game
+  useEffect(() => {
+    if (initialGameSlug) {
+      setExpandedSlug(initialGameSlug);
+    }
+  }, [initialGameSlug]);
 
   const universeIds = useMemo(() => {
     return games
@@ -62,13 +73,29 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
   const filteredGames = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return games;
-    return games.filter(
-      (g) =>
-        g.name.toLowerCase().includes(q) ||
-        g.description.toLowerCase().includes(q) ||
-        g.slug.toLowerCase().includes(q)
-    );
+    return games.filter((g) => {
+      if (g.name.toLowerCase().includes(q) || g.slug.toLowerCase().includes(q)) {
+        return true;
+      }
+      // Also search through feature names and tabs
+      if (Array.isArray(g.tabs)) {
+        return g.tabs.some(
+          (t) =>
+            t.name.toLowerCase().includes(q) ||
+            t.sections.some(
+              (s) =>
+                s.name.toLowerCase().includes(q) ||
+                s.features.some((f) => f.toLowerCase().includes(q))
+            )
+        );
+      }
+      return false;
+    });
   }, [games, query]);
+
+  const handleToggle = (slug: string) => {
+    setExpandedSlug((prev) => (prev === slug ? null : slug));
+  };
 
   return (
     <section className="mx-auto max-w-4xl px-4 pt-28 pb-20 sm:px-6 sm:pt-32 sm:pb-28">
@@ -79,7 +106,7 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
               Supported Games
             </h1>
             <p className="mt-1.5 max-w-lg text-sm text-slate-300">
-              Click a game to expand its features and tabs.
+              Click anywhere on a game card to explore its features, tabs, and sections.
             </p>
           </div>
 
@@ -91,7 +118,7 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
             />
             <input
               type="text"
-              placeholder="Search game..."
+              placeholder="Search game or feature..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="w-full rounded-xl border border-line/80 bg-[#0a122e]/80 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-400 outline-none transition-all focus:border-azure-500 focus:bg-[#0c163a] focus:ring-1 focus:ring-azure-500"
@@ -118,7 +145,7 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
           <button
             type="button"
             onClick={() => fetchPlayerCounts()}
-            className="inline-flex items-center gap-1.5 text-xs text-azure-300 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-azure-300 hover:text-white transition-colors cursor-pointer"
           >
             <RefreshCw size={11} className={status === 'loading' ? 'animate-spin' : ''} />
             <span>Refresh counts</span>
@@ -126,20 +153,27 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
         </div>
       </Reveal>
 
-      {/* Horizontal Game Cards List */}
+      {/* Expandable Game Cards List (Only one expanded at a time) */}
       <div className="space-y-3 sm:space-y-3.5">
         {filteredGames.length > 0 ? (
           filteredGames.map((game, idx) => {
             const count = game.universeId ? playerCounts[String(game.universeId)] : null;
-            const scriptsCount = scriptCounts[game.slug] ?? 0;
+            const isExpanded = expandedSlug === game.slug;
 
             return (
-              <Reveal key={game.slug} delay={idx * 35}>
+              <Reveal key={game.slug} delay={Math.min(idx * 30, 200)}>
                 <GameCard
                   game={game}
-                  scriptsCount={scriptsCount}
+                  isExpanded={isExpanded}
+                  onToggle={() => handleToggle(game.slug)}
                   playerCount={count}
-                  playerCountStatus={status === 'loading' && count === undefined ? 'loading' : status === 'error' && count === undefined ? 'error' : 'success'}
+                  playerCountStatus={
+                    status === 'loading' && count === undefined
+                      ? 'loading'
+                      : status === 'error' && count === undefined
+                      ? 'error'
+                      : 'success'
+                  }
                 />
               </Reveal>
             );
@@ -152,7 +186,7 @@ export function GamesList({ games, scriptCounts }: GamesListProps) {
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-azure-500/30 bg-azure-500/10 px-3 py-1.5 text-xs font-medium text-azure-300 hover:bg-azure-500/20"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-azure-500/30 bg-azure-500/10 px-3 py-1.5 text-xs font-medium text-azure-300 hover:bg-azure-500/20 cursor-pointer"
             >
               Clear search
             </button>

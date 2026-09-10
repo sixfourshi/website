@@ -1,5 +1,5 @@
-import { RobloxGame, ROBLOX_GAMES } from './games';
-import { getScripts, saveScripts, slugify } from './scripts';
+import { RobloxGame, ROBLOX_GAMES, normalizeGame } from './games';
+import { slugify } from './scripts';
 import { getStoredGames, saveStoredGames } from './storage';
 
 export class GameValidationError extends Error {
@@ -15,12 +15,12 @@ export async function getGames(): Promise<RobloxGame[]> {
   try {
     const stored = await getStoredGames();
     if (Array.isArray(stored) && stored.length > 0) {
-      return stored;
+      return stored.map((g) => normalizeGame(g));
     }
   } catch (err) {
     console.warn('[Games] Failed to retrieve stored games, using fallback:', err);
   }
-  return ROBLOX_GAMES;
+  return ROBLOX_GAMES.map((g) => normalizeGame(g));
 }
 
 export async function getGameBySlug(slug: string): Promise<RobloxGame | undefined> {
@@ -39,7 +39,8 @@ export async function getGameBySlug(slug: string): Promise<RobloxGame | undefine
 }
 
 export async function saveGames(games: RobloxGame[]): Promise<void> {
-  await saveStoredGames(games);
+  const normalized = games.map((g) => normalizeGame(g));
+  await saveStoredGames(normalized);
 }
 
 export async function upsertGame(
@@ -106,26 +107,26 @@ export async function upsertGame(
     (g) => g.slug.toLowerCase() === (existingSlug?.toLowerCase() ?? slug.toLowerCase())
   );
 
-  const record: RobloxGame = {
+  const cleanGame = normalizeGame({
+    ...input,
     slug,
     name: input.name.trim(),
     universeId: input.universeId !== undefined && input.universeId !== null ? Number(input.universeId) : null,
     rootPlaceId: input.rootPlaceId ? Number(input.rootPlaceId) : undefined,
-    description: input.description?.trim() ?? '',
     iconUrl: input.iconUrl?.trim() ?? '',
     thumbnailUrl: input.thumbnailUrl?.trim() ?? '',
     isUniversal: Boolean(input.isUniversal),
-    featuresCount: typeof input.featuresCount === 'number' ? input.featuresCount : 10,
-  };
+    tabs: input.tabs,
+  });
 
   if (idx >= 0) {
-    games[idx] = record;
+    games[idx] = cleanGame;
   } else {
-    games.push(record);
+    games.push(cleanGame);
   }
 
   await saveGames(games);
-  return record;
+  return cleanGame;
 }
 
 export type DeleteGameScriptAction = 'keep' | 'reassign' | 'delete';
@@ -133,37 +134,9 @@ export type DeleteGameScriptAction = 'keep' | 'reassign' | 'delete';
 export async function deleteGame(
   slug: string,
   scriptAction: DeleteGameScriptAction = 'reassign'
-): Promise<{ deletedGame: string; scriptsAffected: number }> {
+): Promise<{ deletedGame: string }> {
   const games = await getGames();
   const nextGames = games.filter((g) => g.slug.toLowerCase() !== slug.toLowerCase());
   await saveGames(nextGames);
-
-  // Handle associated scripts
-  const scripts = await getScripts();
-  let scriptsAffected = 0;
-
-  if (scriptAction === 'delete') {
-    const remaining = scripts.filter((s) => {
-      const match = s.game.toLowerCase() === slug.toLowerCase();
-      if (match) scriptsAffected++;
-      return !match;
-    });
-    await saveScripts(remaining);
-  } else if (scriptAction === 'reassign') {
-    const updated = scripts.map((s) => {
-      if (s.game.toLowerCase() === slug.toLowerCase()) {
-        scriptsAffected++;
-        return { ...s, game: 'universal' };
-      }
-      return s;
-    });
-    await saveScripts(updated);
-  } else {
-    // 'keep' - leave scripts with their existing game slug
-    scriptsAffected = scripts.filter(
-      (s) => s.game.toLowerCase() === slug.toLowerCase()
-    ).length;
-  }
-
-  return { deletedGame: slug, scriptsAffected };
+  return { deletedGame: slug };
 }

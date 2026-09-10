@@ -24,6 +24,7 @@ import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
+import { countGameFeatures } from '@/lib/games';
 
 export function DashboardClient({
   initialScripts,
@@ -431,15 +432,15 @@ export function DashboardClient({
                     <thead>
                       <tr className="border-b border-line bg-surface/40 text-slate-400 uppercase tracking-wider text-[11px]">
                         <th className="px-5 py-3.5 font-medium">Game Experience</th>
+                        <th className="px-5 py-3.5 font-medium">Structured Features</th>
                         <th className="px-5 py-3.5 font-medium">Roblox IDs</th>
                         <th className="px-5 py-3.5 font-medium">URL Route</th>
-                        <th className="px-5 py-3.5 font-medium text-center">Scripts</th>
                         <th className="px-5 py-3.5 font-medium text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-line/40">
                       {filteredGames.map((game) => {
-                        const count = scriptsCountByGame[game.slug.toLowerCase()] || 0;
+                        const totalFeats = countGameFeatures(game);
                         return (
                           <tr
                             key={game.slug}
@@ -471,9 +472,31 @@ export function DashboardClient({
                                       </span>
                                     )}
                                   </div>
-                                  <p className="text-[11px] text-slate-400 line-clamp-1 max-w-sm mt-0.5">
-                                    {game.description || 'No description provided.'}
-                                  </p>
+                                  <span className="text-[11px] text-slate-400">
+                                    {game.tabs?.length || 0} tabs configured
+                                  </span>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Structured Features & Tabs */}
+                            <td className="px-5 py-4">
+                              <div className="space-y-1.5">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex items-center rounded-full border border-azure-500/40 bg-azure-950/50 px-2.5 py-0.5 text-xs font-semibold text-azure-300">
+                                    <Sparkles size={11} className="mr-1" />
+                                    {totalFeats} features
+                                  </span>
+                                </div>
+                                <div className="flex flex-wrap gap-1 max-w-xs">
+                                  {game.tabs?.map((t) => (
+                                    <span
+                                      key={t.name}
+                                      className="rounded-full border border-line/60 bg-[#070e26] px-2 py-0.5 text-[10px] text-slate-300"
+                                    >
+                                      {t.name}
+                                    </span>
+                                  ))}
                                 </div>
                               </div>
                             </td>
@@ -505,22 +528,14 @@ export function DashboardClient({
                               </span>
                             </td>
 
-                            {/* Associated scripts count */}
-                            <td className="px-5 py-4 text-center">
-                              <span className="inline-flex items-center gap-1 rounded-full border border-azure-500/30 bg-azure-950/40 px-2.5 py-0.5 text-[11px] font-medium text-azure-300">
-                                <Layers size={11} />
-                                <span>{count}</span>
-                              </span>
-                            </td>
-
                             {/* Actions */}
                             <td className="px-5 py-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 <Link
-                                  href={`/scripts/${game.slug}`}
+                                  href={`/scripts?game=${game.slug}`}
                                   target="_blank"
                                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
-                                  title="View public game page"
+                                  title="View expandable game card"
                                 >
                                   <ExternalLink size={13} />
                                 </Link>
@@ -528,7 +543,7 @@ export function DashboardClient({
                                 <button
                                   onClick={() => setEditingGame(game)}
                                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
-                                  title="Edit Game"
+                                  title="Edit Structured Features & Details"
                                 >
                                   <Pencil size={13} />
                                 </button>
