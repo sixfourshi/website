@@ -46,8 +46,8 @@ export async function GET(
       });
     }
 
-    // Support main universal loader at /raw/loader or /raw/universal
-    if (rawSlug === 'loader' || rawSlug === 'universal') {
+    // Support main universal loader at /raw/loader
+    if (rawSlug === 'loader') {
       const config = await getStoredLoaderConfig();
       const codeToReturn = config.enabled
         ? config.code

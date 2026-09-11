@@ -178,5 +178,22 @@
     "icon": "Hammer",
     "features": ["Grid Snapping", "Coordinate Alignment", "Undo/Redo History", "Part Cloner"],
     "code": "-- Sour Hub: Pulsecraft v1.2.0\nlocal Config = {\n  GridSize = 2,\n  SnapMode = 'World',\n}\n\nprint('[Sour Hub] Pulsecraft ready.')\n"
+  },
+  {
+    "slug": "universal",
+    "name": "Universal",
+    "description": "Universal interface for unsupported games featuring in-game suggestions, execution telemetry, and misc gameplay utilities.",
+    "category": "Interface",
+    "game": "universal",
+    "version": "1.0.0",
+    "updatedAt": "2026-09-11",
+    "icon": "Layers",
+    "features": [
+      "In-Game Suggestions Form",
+      "Player Utilities & Waypoints",
+      "Custom Misc Modifiers",
+      "Execution Telemetry Sync"
+    ],
+    "code": "--[[ \n    Sour Hub: Universal Script (Suggestions + Misc GUI)\n    Active when an unsupported game is detected.\n]]\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"[Sour Hub] Universal Suggestions + Misc GUI loaded successfully.\")\n\n-- Universal interface implementation\nlocal UniversalGUI = {\n    Version = \"1.0.0\",\n    PlaceId = game.PlaceId,\n    Loaded = true,\n}\n\nreturn UniversalGUI\n"
   }
 ]
