@@ -22,9 +22,9 @@ export class ScriptValidationError extends Error {
   }
 }
 
-export async function getScripts(): Promise<Script[]> {
+export async function getScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
   try {
-    const scripts = await getStoredScripts();
+    const scripts = await getStoredScripts(options);
     if (Array.isArray(scripts)) {
       return scripts;
     }
@@ -44,15 +44,18 @@ export async function getScriptsByGame(gameSlug: string): Promise<Script[]> {
   });
 }
 
-export async function getScript(slug: string): Promise<Script | undefined> {
+export async function getScript(
+  slug: string,
+  options?: { forceFresh?: boolean }
+): Promise<Script | undefined> {
   if (!slug) return undefined;
   const decoded = decodeURIComponent(slug).trim();
   const normalized = slugify(decoded);
-  const scripts = await getScripts();
+  const scripts = await getScripts(options);
   return scripts.find(
     (s) =>
-      slugify(s.slug) === normalized ||
       s.slug.toLowerCase() === decoded.toLowerCase() ||
+      slugify(s.slug) === normalized ||
       slugify(s.name) === normalized
   );
 }
@@ -77,24 +80,43 @@ export async function upsertScript(
     throw new ScriptValidationError('Script name is required.');
   }
 
-  const scripts = await getScripts();
-  const slug = existingSlug ?? (input.slug ? slugify(input.slug) : slugify(input.name));
+  const scripts = await getScripts({ forceFresh: true });
 
-  if (!slug) {
-    throw new ScriptValidationError('A valid URL slug is required.');
+  // Generate the slug automatically from the script name if not already provided
+  let baseSlug = input.slug ? slugify(input.slug) : slugify(input.name);
+  if (!baseSlug) {
+    baseSlug = 'script';
   }
 
-  // Prevent duplicate script slug
-  const conflict = scripts.find(
-    (s) =>
-      s.slug.toLowerCase() === slug.toLowerCase() &&
-      s.slug.toLowerCase() !== (existingSlug?.toLowerCase() ?? '')
-  );
-  if (conflict) {
-    throw new ScriptValidationError(
-      `A script with slug "${slug}" already exists ("${conflict.name}").`,
-      409
+  // If updating, preserve the existing slug unless explicitly overridden
+  let slug = existingSlug ? (input.slug ? baseSlug : existingSlug) : baseSlug;
+
+  // Ensure slugs are unique so no two scripts ever collide on the same raw endpoint
+  if (!existingSlug) {
+    let uniqueSlug = slug;
+    let counter = 2;
+    while (
+      scripts.some(
+        (s) => s.slug.toLowerCase() === uniqueSlug.toLowerCase()
+      )
+    ) {
+      uniqueSlug = `${slug}-${counter}`;
+      counter++;
+    }
+    slug = uniqueSlug;
+  } else {
+    // When updating, verify no OTHER script already holds this slug
+    const conflict = scripts.find(
+      (s) =>
+        s.slug.toLowerCase() === slug.toLowerCase() &&
+        s.slug.toLowerCase() !== existingSlug.toLowerCase()
     );
+    if (conflict) {
+      throw new ScriptValidationError(
+        `A script with slug "${slug}" already exists ("${conflict.name}").`,
+        409
+      );
+    }
   }
 
   const idx = scripts.findIndex(

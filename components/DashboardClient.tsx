@@ -19,9 +19,11 @@ import {
   MessageSquare,
   Activity,
   History,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { Icon } from './Icon';
-import { showToast } from './Toast';
+import { copyToClipboard, showToast } from './Toast';
 import { ScriptFormModal } from './ScriptFormModal';
 import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
@@ -75,6 +77,18 @@ export function DashboardClient({
   // Script modals
   const [editingScript, setEditingScript] = useState<Script | null | undefined>(undefined);
   const [deletingScript, setDeletingScript] = useState<Script | null>(null);
+  const [copiedRawSlug, setCopiedRawSlug] = useState<string | null>(null);
+
+  const handleCopyRawUrl = async (slug: string) => {
+    const rawUrl = `https://sourhub.vercel.app/raw/${slug}`;
+    const ok = await copyToClipboard(rawUrl, 'Raw URL copied to clipboard!');
+    if (ok) {
+      setCopiedRawSlug(slug);
+      setTimeout(() => {
+        setCopiedRawSlug((curr) => (curr === slug ? null : curr));
+      }, 2000);
+    }
+  };
 
   // Game modals
   const [editingGame, setEditingGame] = useState<RobloxGame | null | undefined>(undefined);
@@ -758,6 +772,19 @@ export function DashboardClient({
 
                             <td className="px-5 py-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyRawUrl(script.slug)}
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-500 hover:text-azure-300 transition-colors cursor-pointer"
+                                  title={`Copy Raw URL (https://sourhub.vercel.app/raw/${script.slug})`}
+                                  aria-label="Copy Raw URL"
+                                >
+                                  {copiedRawSlug === script.slug ? (
+                                    <Check size={13} className="text-emerald-400" />
+                                  ) : (
+                                    <Copy size={13} />
+                                  )}
+                                </button>
                                 <Link
                                   href={`/scripts/${script.slug}`}
                                   target="_blank"

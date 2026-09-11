@@ -3,6 +3,9 @@ const nextConfig = {
   reactStrictMode: true,
   output: 'standalone',
   skipTrailingSlashRedirect: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@vercel/blob'],
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
