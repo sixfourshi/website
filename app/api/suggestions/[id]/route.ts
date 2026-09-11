@@ -9,6 +9,22 @@ import {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      ...CORS_HEADERS,
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
 const VALID_STATUSES: SuggestionStatus[] = [
   'pending',
   'reviewed',
@@ -27,7 +43,7 @@ export async function PATCH(
   if (!(await isAuthenticated())) {
     return NextResponse.json(
       { error: 'Unauthorized. Owner session required.' },
-      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      { status: 401, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
     );
   }
 
@@ -43,7 +59,7 @@ export async function PATCH(
         {
           error: `Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}`,
         },
-        { status: 400, headers: { 'Cache-Control': 'no-store' } }
+        { status: 400, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
       );
     }
 
@@ -51,7 +67,7 @@ export async function PATCH(
     if (!updated) {
       return NextResponse.json(
         { error: 'Suggestion not found.' },
-        { status: 404, headers: { 'Cache-Control': 'no-store' } }
+        { status: 404, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
       );
     }
 
@@ -61,6 +77,7 @@ export async function PATCH(
         status: 200,
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          ...CORS_HEADERS,
         },
       }
     );
@@ -68,7 +85,7 @@ export async function PATCH(
     const msg = err instanceof Error ? err.message : 'Server error';
     return NextResponse.json(
       { error: msg || 'Failed to update suggestion status.' },
-      { status: 500, headers: { 'Cache-Control': 'no-store' } }
+      { status: 500, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
     );
   }
 }
@@ -83,7 +100,7 @@ export async function DELETE(
   if (!(await isAuthenticated())) {
     return NextResponse.json(
       { error: 'Unauthorized. Owner session required.' },
-      { status: 401, headers: { 'Cache-Control': 'no-store' } }
+      { status: 401, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
     );
   }
 
@@ -95,7 +112,7 @@ export async function DELETE(
     if (!success) {
       return NextResponse.json(
         { error: 'Suggestion not found.' },
-        { status: 404, headers: { 'Cache-Control': 'no-store' } }
+        { status: 404, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
       );
     }
 
@@ -105,6 +122,7 @@ export async function DELETE(
         status: 200,
         headers: {
           'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          ...CORS_HEADERS,
         },
       }
     );
@@ -112,7 +130,7 @@ export async function DELETE(
     const msg = err instanceof Error ? err.message : 'Server error';
     return NextResponse.json(
       { error: msg || 'Failed to delete suggestion.' },
-      { status: 500, headers: { 'Cache-Control': 'no-store' } }
+      { status: 500, headers: { 'Cache-Control': 'no-store', ...CORS_HEADERS } }
     );
   }
 }

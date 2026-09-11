@@ -26,7 +26,8 @@ export function sanitizeInput(input: unknown): string {
 }
 
 /**
- * Validates that the submitted link is a genuine Roblox experience URL from an approved domain.
+ * Validates that the submitted link is a genuine Roblox experience URL or Place ID.
+ * Supports full URLs (roblox.com/games/...) as well as numeric Place IDs sent by Roblox scripts.
  */
 export function isValidRobloxGameUrl(urlStr: string): {
   valid: boolean;
@@ -34,10 +35,28 @@ export function isValidRobloxGameUrl(urlStr: string): {
   error?: string;
 } {
   if (!urlStr || typeof urlStr !== 'string') {
-    return { valid: false, error: 'Roblox game link is required.' };
+    return { valid: false, error: 'Roblox game link or Place ID is required.' };
   }
 
   let trimmed = urlStr.trim();
+
+  // Support numeric Place ID directly (e.g. "2753915549" or "games/2753915549")
+  const numericMatch = trimmed.match(/^(\d{4,16})$/);
+  if (numericMatch) {
+    return {
+      valid: true,
+      normalized: `https://www.roblox.com/games/${numericMatch[1]}`,
+    };
+  }
+
+  const shortGamesMatch = trimmed.match(/^(?:\/)?games\/(\d{4,16})/i);
+  if (shortGamesMatch) {
+    return {
+      valid: true,
+      normalized: `https://www.roblox.com/games/${shortGamesMatch[1]}`,
+    };
+  }
+
   if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
     trimmed = 'https://' + trimmed;
   }
@@ -78,6 +97,7 @@ export function isValidRobloxGameUrl(urlStr: string): {
 
 /**
  * Validates all fields of a suggestion submission payload.
+ * Accommodates payloads from both the website form and in-game Roblox scripts.
  */
 export function validateSuggestionInput(data: unknown): {
   valid: boolean;
@@ -89,9 +109,37 @@ export function validateSuggestionInput(data: unknown): {
   }
 
   const raw = data as Record<string, unknown>;
-  const rawGameName = sanitizeInput(raw.gameName);
-  const rawRobloxLink = sanitizeInput(raw.robloxLink);
-  const rawSuggestion = sanitizeInput(raw.suggestion);
+
+  // Flexible field resolution for game name
+  const rawGameName = sanitizeInput(
+    raw.gameName ?? raw.game ?? raw.game_name ?? raw.title
+  );
+
+  // Flexible field resolution for Roblox link / Place ID
+  let rawLinkValue =
+    raw.robloxLink ??
+    raw.roblox_link ??
+    raw.link ??
+    raw.url ??
+    raw.gameUrl ??
+    raw.gameLink;
+
+  if (
+    (!rawLinkValue || typeof rawLinkValue !== 'string') &&
+    raw.placeId !== undefined &&
+    raw.placeId !== null
+  ) {
+    rawLinkValue = String(raw.placeId);
+  }
+
+  const rawRobloxLink = sanitizeInput(
+    typeof rawLinkValue === 'number' ? String(rawLinkValue) : rawLinkValue
+  );
+
+  // Flexible field resolution for suggestion text
+  const rawSuggestion = sanitizeInput(
+    raw.suggestion ?? raw.text ?? raw.message ?? raw.description ?? raw.feedback
+  );
 
   if (!rawGameName) {
     return { valid: false, error: 'Game Name is required.' };
@@ -105,7 +153,7 @@ export function validateSuggestionInput(data: unknown): {
 
   const urlCheck = isValidRobloxGameUrl(rawRobloxLink);
   if (!urlCheck.valid || !urlCheck.normalized) {
-    return { valid: false, error: urlCheck.error || 'Please enter a valid Roblox game URL.' };
+    return { valid: false, error: urlCheck.error || 'Please enter a valid Roblox game URL or Place ID.' };
   }
   if (urlCheck.normalized.length > 300) {
     return { valid: false, error: 'Roblox game URL is too long (maximum 300 characters).' };
