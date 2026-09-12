@@ -1,6 +1,10 @@
 import { Zap } from 'lucide-react';
 import { Reveal } from './Reveal';
-import type { ChangelogRelease } from '@/lib/changelog';
+import {
+  formatChangelogDateDDMMYYYY,
+  formatChangelogVersion,
+  type ChangelogRelease,
+} from '@/lib/changelog-utils';
 
 export function Changelog({
   releases = [],
@@ -37,7 +41,7 @@ export function Changelog({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-line/60 pb-4">
                   <div className="flex items-center gap-3">
                     <span className="font-display text-xl sm:text-2xl font-bold text-white tracking-tight">
-                      {release.version.startsWith('v') ? release.version : `v${release.version}`}
+                      {formatChangelogVersion(release.version || release.currentVersion)}
                     </span>
                     {release.isLatest && (
                       <span className="rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide text-emerald-400 shadow-sm">
@@ -46,7 +50,7 @@ export function Changelog({
                     )}
                   </div>
                   <div className="text-xs sm:text-sm font-medium text-slate-400">
-                    {release.date}
+                    {formatChangelogDateDDMMYYYY(release.date || release.publishedDate)}
                   </div>
                 </div>
 

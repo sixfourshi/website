@@ -4,7 +4,7 @@ import os from 'os';
 import { get, put, BlobNotFoundError } from '@vercel/blob';
 import { type RobloxGame, ROBLOX_GAMES } from './games';
 import type { Script } from './scripts';
-import { ChangelogRelease, INITIAL_CHANGELOG_RELEASES } from './changelog';
+import { ChangelogRelease, INITIAL_CHANGELOG_RELEASES, normalizeChangelogRelease } from './changelog-utils';
 
 const BLOB_GAMES_PATHNAME = 'sourhub/games.json';
 const BLOB_SCRIPTS_PATHNAME = 'sourhub/scripts.json';
@@ -524,9 +524,10 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
     try {
       const fromBlob = await readBlobJson<ChangelogRelease[]>(BLOB_CHANGELOG_PATHNAME);
       if (Array.isArray(fromBlob)) {
-        writeTmpJson(TMP_CHANGELOG_PATH, fromBlob).catch(() => {});
-        memoryChangelogCache = { data: fromBlob, timestamp: Date.now() };
-        return fromBlob;
+        const normalized = fromBlob.map(normalizeChangelogRelease);
+        writeTmpJson(TMP_CHANGELOG_PATH, normalized).catch(() => {});
+        memoryChangelogCache = { data: normalized, timestamp: Date.now() };
+        return normalized;
       }
 
       // Check if persistent storage was already initialized previously
@@ -537,7 +538,7 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
       }
 
       // Initial first-ever seed to Blob
-      const seed = INITIAL_CHANGELOG_RELEASES;
+      const seed = INITIAL_CHANGELOG_RELEASES.map(normalizeChangelogRelease);
       try {
         await writeBlobJson(BLOB_CHANGELOG_PATHNAME, seed);
         await writeBlobJson(BLOB_CHANGELOG_MARKER_PATHNAME, {
@@ -560,8 +561,9 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
   // Fallback: local /tmp cache
   const fromTmp = await readTmpJson<ChangelogRelease[]>(TMP_CHANGELOG_PATH);
   if (Array.isArray(fromTmp)) {
-    memoryChangelogCache = { data: fromTmp, timestamp: Date.now() };
-    return fromTmp;
+    const normalized = fromTmp.map(normalizeChangelogRelease);
+    memoryChangelogCache = { data: normalized, timestamp: Date.now() };
+    return normalized;
   }
 
   const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_CHANGELOG_MARKER_PATH);
@@ -571,7 +573,7 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
   }
 
   // First-ever initialization for local fallback
-  const seed = INITIAL_CHANGELOG_RELEASES;
+  const seed = INITIAL_CHANGELOG_RELEASES.map(normalizeChangelogRelease);
   await writeTmpJson(TMP_CHANGELOG_PATH, seed).catch(() => {});
   await writeTmpJson(TMP_CHANGELOG_MARKER_PATH, {
     initialized: true,
@@ -586,8 +588,9 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
  * Persistently save changelog releases to private Vercel Blob store.
  */
 export async function saveStoredChangelog(releases: ChangelogRelease[]): Promise<void> {
-  memoryChangelogCache = { data: releases, timestamp: Date.now() };
-  await writeTmpJson(TMP_CHANGELOG_PATH, releases);
+  const normalized = releases.map(normalizeChangelogRelease);
+  memoryChangelogCache = { data: normalized, timestamp: Date.now() };
+  await writeTmpJson(TMP_CHANGELOG_PATH, normalized);
   await writeTmpJson(TMP_CHANGELOG_MARKER_PATH, {
     initialized: true,
     initializedAt: new Date().toISOString(),
@@ -595,13 +598,13 @@ export async function saveStoredChangelog(releases: ChangelogRelease[]): Promise
   }).catch(() => {});
 
   if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_CHANGELOG_PATHNAME, releases);
+    await writeBlobJson(BLOB_CHANGELOG_PATHNAME, normalized);
     await writeBlobJson(BLOB_CHANGELOG_MARKER_PATHNAME, {
       initialized: true,
       initializedAt: new Date().toISOString(),
       version: 1,
     }).catch(() => {});
-    console.info(`[Storage] Confirmed write of ${releases.length} releases to private Vercel Blob.`);
+    console.info(`[Storage] Confirmed write of ${normalized.length} releases to private Vercel Blob.`);
   }
 }
 

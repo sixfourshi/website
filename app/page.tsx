@@ -7,8 +7,10 @@ import { Footer } from '@/components/Footer';
 import { getGames } from '@/lib/games-server';
 import {
   getChangelogReleases,
-  getActiveLatestRelease,
+  getNewestPublishedRelease,
   formatChangelogDateDDMMYYYY,
+  formatChangelogVersion,
+  type ChangelogRelease,
 } from '@/lib/changelog';
 import { getStoredExecutions } from '@/lib/executions';
 
@@ -16,22 +18,42 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home() {
-  const [games, releases, executionsStore] = await Promise.all([
-    getGames({ forceFresh: true }),
-    getChangelogReleases({ forceFresh: true }),
-    getStoredExecutions(),
-  ]);
+  let games: any[] = [];
+  let releases: ChangelogRelease[] = [];
+  let executionsStore: any = { totalExecutions: 0 };
+
+  try {
+    const results = await Promise.allSettled([
+      getGames({ forceFresh: true }),
+      getChangelogReleases({ forceFresh: true }),
+      getStoredExecutions(),
+    ]);
+
+    if (results[0].status === 'fulfilled' && Array.isArray(results[0].value)) {
+      games = results[0].value;
+    }
+    if (results[1].status === 'fulfilled' && Array.isArray(results[1].value)) {
+      releases = results[1].value;
+    }
+    if (results[2].status === 'fulfilled' && results[2].value) {
+      executionsStore = results[2].value;
+    }
+  } catch (err) {
+    console.error('[Home] Error fetching homepage data:', err);
+  }
 
   // Filter out Universal Scripts; count real individual games only
   const realGames = (games || []).filter(
-    (g) => !g.isUniversal && g.slug.toLowerCase() !== 'universal'
+    (g) => !g?.isUniversal && g?.slug?.toLowerCase() !== 'universal'
   );
   const gameCount = realGames.length;
 
-  // Resolve newest published changelog entry (preferring LATEST, otherwise newest by date)
-  const activeRelease = getActiveLatestRelease(releases || []);
-  const lastUpdated = activeRelease ? formatChangelogDateDDMMYYYY(activeRelease.date) : '—';
-  const currentVersion = activeRelease?.version?.trim() ? activeRelease.version.trim() : '—';
+  // Resolve newest published changelog entry strictly sorted by published date (newest first)
+  const newestRelease = getNewestPublishedRelease(releases);
+  const rawDate = newestRelease?.date || newestRelease?.publishedDate || newestRelease?.releaseDate;
+  const lastUpdated = rawDate ? formatChangelogDateDDMMYYYY(rawDate) : '—';
+  const rawVersion = newestRelease?.version || newestRelease?.currentVersion;
+  const currentVersion = rawVersion ? formatChangelogVersion(rawVersion) : '—';
 
   return (
     <main>
@@ -40,7 +62,7 @@ export default async function Home() {
       <Stats
         lastUpdated={lastUpdated}
         gameCount={gameCount}
-        totalExecutions={executionsStore.totalExecutions}
+        totalExecutions={executionsStore?.totalExecutions || 0}
         version={currentVersion}
       />
       <Demo />

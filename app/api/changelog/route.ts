@@ -12,12 +12,19 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  const releases = await getChangelogReleases();
-  return NextResponse.json(releases, {
-    headers: {
-      'Cache-Control': 'no-store, max-age=0, must-revalidate',
-    },
-  });
+  try {
+    const releases = await getChangelogReleases({ forceFresh: true });
+    return NextResponse.json(releases, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, max-age=0, must-revalidate',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+      },
+    });
+  } catch (err: any) {
+    console.error('[API/changelog] Error fetching releases:', err?.message || err);
+    return NextResponse.json([], { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -26,18 +33,34 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
-    if (!body.version || typeof body.version !== 'string' || !body.version.trim()) {
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid JSON request payload' }, { status: 400 });
+    }
+
+    const version = (body.version ?? body.currentVersion ?? body.ver ?? '').toString().trim();
+    const date = (body.date ?? body.publishedDate ?? body.published_date ?? body.releaseDate ?? '').toString().trim();
+    const summary = (body.summary ?? '').toString().trim();
+
+    if (!version) {
       return NextResponse.json({ error: 'Version is required' }, { status: 400 });
     }
-    if (!body.date || typeof body.date !== 'string' || !body.date.trim()) {
+    if (!date) {
       return NextResponse.json({ error: 'Release date is required' }, { status: 400 });
     }
-    if (!body.summary || typeof body.summary !== 'string' || !body.summary.trim()) {
+    if (!summary) {
       return NextResponse.json({ error: 'Summary is required' }, { status: 400 });
     }
 
-    const saved = await upsertChangelogRelease(body);
+    const saved = await upsertChangelogRelease({
+      ...body,
+      version,
+      date,
+      publishedDate: date,
+      releaseDate: date,
+      currentVersion: version,
+      summary,
+    });
 
     revalidatePath('/changelog');
     revalidatePath('/dashboard');

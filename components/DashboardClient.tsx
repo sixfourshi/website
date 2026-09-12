@@ -37,7 +37,7 @@ import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
 import type { UniversalLoaderConfig } from '@/lib/loader-types';
 import type { Suggestion } from '@/lib/suggestions';
-import type { ChangelogRelease } from '@/lib/changelog';
+import type { ChangelogRelease } from '@/lib/changelog-utils';
 import {
   formatExecutionCount,
   type ExecutionAnalytics,

@@ -16,7 +16,12 @@ import {
   ListPlus,
   Loader2,
 } from 'lucide-react';
-import type { ChangelogRelease, ChangelogSection } from '@/lib/changelog';
+import type { ChangelogSection } from '@/lib/changelog-utils';
+import {
+  formatChangelogDateDDMMYYYY,
+  formatChangelogVersion,
+  type ChangelogRelease,
+} from '@/lib/changelog-utils';
 
 interface Props {
   initialReleases: ChangelogRelease[];
@@ -218,7 +223,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                 <div className="space-y-1.5">
                   <div className="flex flex-wrap items-center gap-2.5">
                     <span className="font-display text-lg font-bold text-white">
-                      {release.version.startsWith('v') ? release.version : `v${release.version}`}
+                      {formatChangelogVersion(release.version || release.currentVersion)}
                     </span>
                     {release.isLatest ? (
                       <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-950/60 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-400">
@@ -236,7 +241,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                     )}
                     <span className="flex items-center gap-1 text-xs text-slate-400">
                       <Calendar size={12} />
-                      {release.date}
+                      {formatChangelogDateDDMMYYYY(release.date || release.publishedDate)}
                     </span>
                   </div>
 
