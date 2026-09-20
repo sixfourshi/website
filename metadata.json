@@ -1,5 +1,5 @@
 {
-  "name": "Sour Hub",
+  "name": "Nova Hub",
   "description": "Free, keyless scripts for the games we build - no ads, checkpoints.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

@@ -32,7 +32,7 @@ export function DeleteGameModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md px-4 py-6">
-      <div className="w-full max-w-lg rounded-2xl border border-red-500/40 bg-[#0d0f24] p-6 shadow-2xl">
+      <div className="w-full max-w-lg rounded-2xl border border-red-500/40 bg-[#0c0c0f] p-6 shadow-2xl">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/20 text-red-400 border border-red-500/40 flex-none">
@@ -58,14 +58,14 @@ export function DeleteGameModal({
         {associatedScriptCount > 0 ? (
           <>
             {/* Warning card for scripts */}
-            <div className="mt-5 rounded-xl border border-line/80 bg-[#060b1d] p-4 text-xs text-slate-300">
+            <div className="mt-5 rounded-xl border border-line/80 bg-black/60 p-4 text-xs text-slate-300">
               <div className="flex items-center gap-2 font-medium text-white mb-1">
                 <ShieldAlert size={14} className="text-amber-400" />
                 <span>Associated Scripts Protection</span>
               </div>
               <p className="text-slate-300 leading-relaxed">
                 There are currently{' '}
-                <strong className="text-azure-300">{associatedScriptCount} standalone script(s)</strong> tagged with this game. How would you like to handle them?
+                <strong className="text-white">{associatedScriptCount} standalone script(s)</strong> tagged with this game. How would you like to handle them?
               </p>
             </div>
 
@@ -74,8 +74,8 @@ export function DeleteGameModal({
               <label
                 className={`flex items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
                   scriptAction === 'reassign'
-                    ? 'border-azure-500/60 bg-azure-950/30 text-white'
-                    : 'border-line/60 bg-[#070e24]/60 text-slate-300 hover:border-line'
+                    ? 'border-white/40 bg-white/10 text-white'
+                    : 'border-line/60 bg-[#121216] text-slate-300 hover:border-line'
                 }`}
               >
                 <input
@@ -84,7 +84,7 @@ export function DeleteGameModal({
                   value="reassign"
                   checked={scriptAction === 'reassign'}
                   onChange={() => setScriptAction('reassign')}
-                  className="mt-0.5 text-azure-500 focus:ring-azure-500"
+                  className="mt-0.5 text-white focus:ring-white"
                 />
                 <div>
                   <div className="font-semibold text-xs text-white">
@@ -99,8 +99,8 @@ export function DeleteGameModal({
               <label
                 className={`flex items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
                   scriptAction === 'keep'
-                    ? 'border-azure-500/60 bg-azure-950/30 text-white'
-                    : 'border-line/60 bg-[#070e24]/60 text-slate-300 hover:border-line'
+                    ? 'border-white/40 bg-white/10 text-white'
+                    : 'border-line/60 bg-[#121216] text-slate-300 hover:border-line'
                 }`}
               >
                 <input
@@ -109,7 +109,7 @@ export function DeleteGameModal({
                   value="keep"
                   checked={scriptAction === 'keep'}
                   onChange={() => setScriptAction('keep')}
-                  className="mt-0.5 text-azure-500 focus:ring-azure-500"
+                  className="mt-0.5 text-white focus:ring-white"
                 />
                 <div>
                   <div className="font-semibold text-xs text-white">
@@ -125,7 +125,7 @@ export function DeleteGameModal({
                 className={`flex items-start gap-3 rounded-xl border p-3.5 cursor-pointer transition-all ${
                   scriptAction === 'delete'
                     ? 'border-red-500/60 bg-red-950/30 text-white'
-                    : 'border-line/60 bg-[#070e24]/60 text-slate-300 hover:border-line'
+                    : 'border-line/60 bg-[#121216] text-slate-300 hover:border-line'
                 }`}
               >
                 <input
@@ -148,7 +148,7 @@ export function DeleteGameModal({
             </div>
           </>
         ) : (
-          <div className="mt-5 rounded-xl border border-line/80 bg-[#060b1d] p-4 text-xs text-slate-300 leading-relaxed">
+          <div className="mt-5 rounded-xl border border-line/80 bg-black/60 p-4 text-xs text-slate-300 leading-relaxed">
             This will permanently remove <strong className="text-white">&ldquo;{game.name}&rdquo;</strong> and all of its configured tabs, sections, and features from persistent storage.
           </div>
         )}

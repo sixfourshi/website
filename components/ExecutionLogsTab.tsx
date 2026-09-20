@@ -261,11 +261,11 @@ export function ExecutionLogsTab({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
         <div>
           <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-azure-500/10 text-azure-400 border border-azure-500/20">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-white border border-white/20">
               <Activity size={16} />
             </span>
             <h2 className="font-display text-xl font-bold text-white">Execution Logs &amp; Telemetry</h2>
-            <span className="rounded-full border border-azure-500/30 bg-azure-950/40 px-2.5 py-0.5 text-[11px] font-semibold text-azure-300">
+            <span className="rounded-full border border-white/20 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-zinc-300">
               {formatExecutionCount(totalExecutions)} Total
             </span>
           </div>
@@ -279,10 +279,10 @@ export function ExecutionLogsTab({
             type="button"
             onClick={() => fetchData(false)}
             disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface/60 px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white hover:border-azure-500/40 transition-colors cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-line bg-surface/60 px-3.5 py-2 text-xs font-medium text-slate-300 hover:text-white hover:border-white/40 transition-colors cursor-pointer disabled:opacity-50"
             title="Refresh execution metrics"
           >
-            <RefreshCw size={14} className={refreshing ? 'animate-spin text-azure-400' : ''} />
+            <RefreshCw size={14} className={refreshing ? 'animate-spin text-white' : ''} />
             <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
           </button>
 
@@ -301,10 +301,10 @@ export function ExecutionLogsTab({
       {/* 4 TOP METRIC CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Total Executions */}
-        <div className="rounded-2xl border border-azure-500/30 bg-gradient-to-br from-[#070e24] to-[#040817] p-5 shadow-glow-sm relative overflow-hidden">
+        <div className="rounded-2xl border border-line bg-[#0c0c0f] p-5 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-300">Total Executions</span>
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-azure-500/10 text-azure-400 border border-azure-500/20">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/10 text-white border border-white/20">
               <Activity size={16} />
             </span>
           </div>
@@ -322,7 +322,7 @@ export function ExecutionLogsTab({
         </div>
 
         {/* Card 2: Executions Today */}
-        <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-[#070e24] to-[#040817] p-5 shadow-glow-sm relative overflow-hidden">
+        <div className="rounded-2xl border border-emerald-500/30 bg-[#0c0c0f] p-5 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-300">Executions Today</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -343,7 +343,7 @@ export function ExecutionLogsTab({
         </div>
 
         {/* Card 3: Executions Last 7 Days */}
-        <div className="rounded-2xl border border-purple-500/30 bg-gradient-to-br from-[#070e24] to-[#040817] p-5 shadow-glow-sm relative overflow-hidden">
+        <div className="rounded-2xl border border-purple-500/30 bg-[#0c0c0f] p-5 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-300">Last 7 Days</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
@@ -364,7 +364,7 @@ export function ExecutionLogsTab({
         </div>
 
         {/* Card 4: Most-Executed Game */}
-        <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-[#070e24] to-[#040817] p-5 shadow-glow-sm relative overflow-hidden">
+        <div className="rounded-2xl border border-amber-500/30 bg-[#0c0c0f] p-5 shadow-sm relative overflow-hidden">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-300">Most-Executed Game</span>
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
@@ -388,11 +388,11 @@ export function ExecutionLogsTab({
       {/* CHARTS SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* CHART 1: Executions Over Time (2 cols on large screen) */}
-        <div className="lg:col-span-2 rounded-2xl border border-azure-500/20 bg-[#070e24] p-5 shadow-lg flex flex-col justify-between">
+        <div className="lg:col-span-2 rounded-2xl border border-line bg-[#0c0c0f] p-5 shadow-lg flex flex-col justify-between">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <BarChart3 size={16} className="text-azure-400" />
+                <BarChart3 size={16} className="text-zinc-300" />
                 <h3 className="font-display text-sm font-bold text-white">Executions Over Time</h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">Daily execution frequency recorded by telemetry</p>
@@ -405,7 +405,7 @@ export function ExecutionLogsTab({
                 onClick={() => setTimeframe('7days')}
                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   timeframe === '7days'
-                    ? 'bg-azure-500 text-white shadow-glow-sm'
+                    ? 'bg-white text-black shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -416,7 +416,7 @@ export function ExecutionLogsTab({
                 onClick={() => setTimeframe('30days')}
                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   timeframe === '30days'
-                    ? 'bg-azure-500 text-white shadow-glow-sm'
+                    ? 'bg-white text-black shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -427,7 +427,7 @@ export function ExecutionLogsTab({
                 onClick={() => setTimeframe('all')}
                 className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                   timeframe === 'all'
-                    ? 'bg-azure-500 text-white shadow-glow-sm'
+                    ? 'bg-white text-black shadow-sm'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
@@ -440,7 +440,7 @@ export function ExecutionLogsTab({
           <div className="h-64 w-full pt-2">
             {totalExecutions === 0 ? (
               <div className="h-full w-full rounded-xl border border-line/40 bg-surface/20 flex flex-col items-center justify-center text-center p-6">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-azure-500/10 text-azure-400 border border-azure-500/20 mb-3">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-white border border-white/20 mb-3">
                   <Activity size={24} />
                 </span>
                 <h4 className="text-sm font-semibold text-white">No Executions Recorded Yet</h4>
@@ -456,8 +456,8 @@ export function ExecutionLogsTab({
                 >
                   <defs>
                     <linearGradient id="execGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.4} />
-                      <stop offset="95%" stopColor="#38bdf8" stopOpacity={0.0} />
+                      <stop offset="5%" stopColor="#ffffff" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#ffffff" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
                   <XAxis
@@ -465,32 +465,32 @@ export function ExecutionLogsTab({
                     stroke="#64748b"
                     fontSize={11}
                     tickLine={false}
-                    axisLine={{ stroke: '#1e293b' }}
+                    axisLine={{ stroke: '#27272a' }}
                   />
                   <YAxis
                     stroke="#64748b"
                     fontSize={11}
                     tickLine={false}
-                    axisLine={{ stroke: '#1e293b' }}
+                    axisLine={{ stroke: '#27272a' }}
                     allowDecimals={false}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#070e24',
-                      borderColor: 'rgba(56, 189, 248, 0.3)',
+                      backgroundColor: '#0c0c0f',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
                       borderRadius: '0.75rem',
                       fontSize: '12px',
                       color: '#ffffff',
                       boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
                     }}
-                    itemStyle={{ color: '#38bdf8' }}
+                    itemStyle={{ color: '#ffffff' }}
                     labelStyle={{ color: '#94a3b8', fontWeight: 600 }}
                     formatter={(value: any) => [`${value} executions`, 'Launches']}
                   />
                   <Area
                     type="monotone"
                     dataKey="count"
-                    stroke="#38bdf8"
+                    stroke="#ffffff"
                     strokeWidth={2}
                     fillOpacity={1}
                     fill="url(#execGradient)"
@@ -502,7 +502,7 @@ export function ExecutionLogsTab({
         </div>
 
         {/* CHART 2: Executions by Game (1 col) */}
-        <div className="rounded-2xl border border-azure-500/20 bg-[#070e24] p-5 shadow-lg flex flex-col justify-between">
+        <div className="rounded-2xl border border-line bg-[#0c0c0f] p-5 shadow-lg flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Layers size={16} className="text-emerald-400" />
@@ -542,8 +542,8 @@ export function ExecutionLogsTab({
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#070e24',
-                      borderColor: 'rgba(56, 189, 248, 0.3)',
+                      backgroundColor: '#0c0c0f',
+                      borderColor: 'rgba(255, 255, 255, 0.2)',
                       borderRadius: '0.75rem',
                       fontSize: '12px',
                       color: '#ffffff',
@@ -566,7 +566,7 @@ export function ExecutionLogsTab({
       </div>
 
       {/* DETAILED EXECUTION LOGS TABLE */}
-      <div className="rounded-2xl border border-line bg-[#070e24] shadow-xl overflow-hidden">
+      <div className="rounded-2xl border border-line bg-[#0c0c0f] shadow-xl overflow-hidden">
         {/* Table Header & Search/Filter Toolbar */}
         <div className="p-5 border-b border-line space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -596,7 +596,7 @@ export function ExecutionLogsTab({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search game, place ID, universe..."
-                className="w-full rounded-xl border border-line bg-[#040817] py-2 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 py-2 pl-9 pr-3 text-xs text-white placeholder-slate-500 focus:border-white/40 focus:outline-none"
               />
             </div>
 
@@ -605,7 +605,7 @@ export function ExecutionLogsTab({
               <select
                 value={selectedGame}
                 onChange={(e) => setSelectedGame(e.target.value)}
-                className="w-full rounded-xl border border-line bg-[#040817] px-3 py-2 text-xs text-white focus:border-azure-500 focus:outline-none cursor-pointer"
+                className="w-full rounded-xl border border-line bg-black/60 px-3 py-2 text-xs text-white focus:border-white/40 focus:outline-none cursor-pointer"
               >
                 <option value="all">All Games</option>
                 {uniqueGames.map((g) => (
@@ -621,7 +621,7 @@ export function ExecutionLogsTab({
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value as any)}
-                className="w-full rounded-xl border border-line bg-[#040817] px-3 py-2 text-xs text-white focus:border-azure-500 focus:outline-none cursor-pointer"
+                className="w-full rounded-xl border border-line bg-black/60 px-3 py-2 text-xs text-white focus:border-white/40 focus:outline-none cursor-pointer"
               >
                 <option value="all">All Statuses</option>
                 <option value="supported">Supported Games Only</option>
@@ -634,7 +634,7 @@ export function ExecutionLogsTab({
               <select
                 value={selectedDateFilter}
                 onChange={(e) => setSelectedDateFilter(e.target.value as any)}
-                className="w-full rounded-xl border border-line bg-[#040817] px-3 py-2 text-xs text-white focus:border-azure-500 focus:outline-none cursor-pointer"
+                className="w-full rounded-xl border border-line bg-black/60 px-3 py-2 text-xs text-white focus:border-white/40 focus:outline-none cursor-pointer"
               >
                 <option value="all">All Dates</option>
                 <option value="today">Today</option>
@@ -662,7 +662,7 @@ export function ExecutionLogsTab({
           ) : (
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-line bg-[#040817]/60 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <tr className="border-b border-line bg-black/40 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
                   <th className="px-5 py-3.5">Game Name</th>
                   <th className="px-4 py-3.5">Status</th>
                   <th className="px-4 py-3.5">Place ID</th>
@@ -712,7 +712,7 @@ export function ExecutionLogsTab({
                         <button
                           type="button"
                           onClick={() => handleCopy(String(log.placeId), String(log.placeId), 'Place ID')}
-                          className="inline-flex items-center gap-1.5 hover:text-azure-300 transition-colors cursor-pointer group"
+                          className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group"
                           title="Click to copy Place ID"
                         >
                           <span>{log.placeId}</span>
@@ -734,7 +734,7 @@ export function ExecutionLogsTab({
                         <button
                           type="button"
                           onClick={() => handleCopy(log.sessionId, log.sessionId, 'Session ID')}
-                          className="inline-flex items-center gap-1.5 hover:text-azure-300 transition-colors cursor-pointer group"
+                          className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group"
                           title="Click to copy full Session ID"
                         >
                           <span className="text-[11px]">

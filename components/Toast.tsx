@@ -13,7 +13,7 @@ export interface ToastItem {
   duration?: number;
 }
 
-const TOAST_EVENT = 'sourhub:toast';
+const TOAST_EVENT = 'novahub:toast';
 
 export function showToast(
   message = 'Script copied to clipboard!',
@@ -126,10 +126,10 @@ export function ToastContainer() {
             : 'translate-y-3 opacity-0 scale-95'
         } ${
           isSuccess
-            ? 'border-emerald-500/40 bg-[#071329]/95 text-emerald-100 shadow-emerald-950/50'
+            ? 'border-emerald-500/40 bg-[#0c140e]/95 text-emerald-100 shadow-emerald-950/50'
             : isError
             ? 'border-red-500/40 bg-[#1b0811]/95 text-red-100 shadow-red-950/50'
-            : 'border-azure-500/40 bg-[#08122f]/95 text-azure-100 shadow-azure-950/50'
+            : 'border-white/20 bg-[#121216]/95 text-white shadow-black/80'
         }`}
       >
         <div className="flex-none">
@@ -144,7 +144,7 @@ export function ToastContainer() {
             </span>
           )}
           {!isSuccess && !isError && (
-            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-azure-500/20 text-azure-400">
+            <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-white/15 text-white">
               <Info size={18} />
             </span>
           )}

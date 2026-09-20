@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Public raw loader endpoint: https://sourhub.vercel.app/loader
+ * Public raw loader endpoint: https://novahub.vercel.app/loader
  * Returns pure Luau plain-text code for Roblox executors.
  * Strictly no HTML, markdown, or webpage wrapper.
  */
@@ -14,7 +14,7 @@ export async function GET(_req: NextRequest) {
     const config = await getStoredLoaderConfig();
 
     if (!config.enabled) {
-      const disabledMessage = `-- [Sour Hub] Universal loader is currently disabled.\nwarn("[Sour Hub] The universal loader is currently disabled for maintenance.")\n`;
+      const disabledMessage = `-- [Nova Hub] Universal loader is currently disabled.\nwarn("[Nova Hub] The universal loader is currently disabled for maintenance.")\n`;
       return new NextResponse(disabledMessage, {
         status: 200,
         headers: {
@@ -37,7 +37,7 @@ export async function GET(_req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[Loader Endpoint] Error retrieving universal loader:', err?.message || err);
-    const errorMessage = `-- [Sour Hub] Service temporarily unavailable.\nwarn("[Sour Hub] Could not load universal loader.")\n`;
+    const errorMessage = `-- [Nova Hub] Service temporarily unavailable.\nwarn("[Nova Hub] Could not load universal loader.")\n`;
     return new NextResponse(errorMessage, {
       status: 503,
       headers: {

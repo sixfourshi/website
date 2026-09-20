@@ -1,4 +1,4 @@
-# Sour Hub — Keyless Roblox Script Hub
+# Nova Hub — Keyless Roblox Script Hub
 
 A dark-blue script hub built with Next.js 15 (App Router), TypeScript, and
 Tailwind CSS. Includes a public landing page, individual script pages, a raw

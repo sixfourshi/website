@@ -178,11 +178,11 @@ export function ChangelogManager({ initialReleases }: Props) {
       )}
 
       {/* Header bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-line/80 bg-[#0a112c]/80 p-5 backdrop-blur-md">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl border border-line/80 bg-[#0b0b0e] p-5 backdrop-blur-md">
         <div>
           <h2 className="font-display text-lg font-bold text-white flex items-center gap-2">
             <span>Changelog Management</span>
-            <span className="rounded-full border border-azure-500/40 bg-azure-950/60 px-2.5 py-0.5 text-xs font-normal text-azure-300">
+            <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs font-normal text-zinc-300">
               {releases.length} {releases.length === 1 ? 'Release' : 'Releases'}
             </span>
           </h2>
@@ -196,7 +196,7 @@ export function ChangelogManager({ initialReleases }: Props) {
             setIsCreating(true);
             setEditingRelease(null);
           }}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-azure-500 px-4 py-2.5 text-xs font-medium text-white shadow-glow-sm transition-all hover:bg-azure-400 hover:shadow-glow"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black shadow-glow-sm transition-all hover:bg-zinc-200"
         >
           <Plus size={15} />
           <span>Add Release</span>
@@ -206,7 +206,7 @@ export function ChangelogManager({ initialReleases }: Props) {
       {/* Releases List */}
       <div className="space-y-4">
         {releases.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line/80 bg-[#081028]/50 p-10 text-center">
+          <div className="rounded-2xl border border-dashed border-line/80 bg-black/40 p-10 text-center">
             <Layers className="mx-auto h-8 w-8 text-slate-500" />
             <h3 className="mt-2 text-sm font-medium text-white">No releases yet</h3>
             <p className="mt-1 text-xs text-slate-400">
@@ -217,7 +217,7 @@ export function ChangelogManager({ initialReleases }: Props) {
           releases.map((release, idx) => (
             <div
               key={release.id}
-              className="group rounded-2xl border border-line/80 bg-[#0e1738]/90 p-5 shadow-sm transition-all hover:border-azure-500/40 hover:bg-[#111c44]"
+              className="group rounded-2xl border border-line/80 bg-[#0c0c0f] p-5 shadow-sm transition-all hover:border-white/20 hover:bg-[#121216]"
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1.5">
@@ -233,7 +233,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                     ) : (
                       <button
                         onClick={() => handleMarkLatest(release)}
-                        className="rounded-full border border-line/60 bg-[#060b1e] px-2 py-0.5 text-[10px] text-slate-400 transition-colors hover:border-azure-500/40 hover:text-azure-300"
+                        className="rounded-full border border-line/60 bg-black/60 px-2 py-0.5 text-[10px] text-slate-400 transition-colors hover:border-white/30 hover:text-white"
                         title="Mark this release as Latest"
                       >
                         Set as Latest
@@ -251,10 +251,10 @@ export function ChangelogManager({ initialReleases }: Props) {
 
                   {/* Sections preview count */}
                   <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-400">
-                    <span className="rounded bg-[#060b1e] px-2 py-0.5 border border-line/40">
+                    <span className="rounded bg-black/60 px-2 py-0.5 border border-line/40">
                       {release.sections?.length || 0} {(release.sections?.length === 1 ? 'section' : 'sections')}
                     </span>
-                    <span className="rounded bg-[#060b1e] px-2 py-0.5 border border-line/40">
+                    <span className="rounded bg-black/60 px-2 py-0.5 border border-line/40">
                       {(release.sections || []).reduce((sum, s) => sum + (s.changes?.length || 0), 0)} changes
                     </span>
                   </div>
@@ -265,7 +265,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                   <button
                     onClick={() => handleMoveRelease(idx, 'up')}
                     disabled={idx === 0}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/40 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move up"
                   >
                     <ArrowUp size={13} />
@@ -274,7 +274,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                   <button
                     onClick={() => handleMoveRelease(idx, 'down')}
                     disabled={idx === releases.length - 1}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/40 hover:text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Move down"
                   >
                     <ArrowDown size={13} />
@@ -285,7 +285,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                       setEditingRelease(release);
                       setIsCreating(false);
                     }}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/40 hover:text-white transition-colors"
                     title="Edit release"
                   >
                     <Pencil size={13} />
@@ -306,7 +306,7 @@ export function ChangelogManager({ initialReleases }: Props) {
                 <div className="mt-4 border-t border-line/40 pt-3 space-y-2">
                   {release.sections.map((sec) => (
                     <div key={sec.id || sec.title} className="text-xs">
-                      <span className="font-bold text-azure-400 uppercase tracking-wider text-[10px]">
+                      <span className="font-bold text-zinc-300 uppercase tracking-wider text-[10px]">
                         {sec.title}:
                       </span>{' '}
                       <span className="text-slate-400">
@@ -505,7 +505,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md overflow-y-auto">
-      <div className="w-full max-w-2xl rounded-2xl border border-line/80 bg-[#0a112c] p-6 shadow-2xl my-8">
+      <div className="w-full max-w-2xl rounded-2xl border border-line/80 bg-[#0b0b0e] p-6 shadow-2xl my-8">
         <div className="flex items-center justify-between border-b border-line/60 pb-4">
           <h3 className="font-display text-lg font-bold text-white">
             {initialData ? `Edit Release ${initialData.version}` : 'New Release'}
@@ -531,7 +531,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="v9.6.26"
                 required
-                className="w-full rounded-xl border border-line bg-[#060b1e] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
               />
             </div>
 
@@ -545,17 +545,17 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                 onChange={(e) => setDate(e.target.value)}
                 placeholder="2026-09-06"
                 required
-                className="w-full rounded-xl border border-line bg-[#060b1e] px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 px-3 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
               />
             </div>
 
             <div className="flex flex-col justify-end">
-              <label className="flex items-center gap-2 rounded-xl border border-line/60 bg-[#060b1e] px-3 py-2 text-xs text-slate-200 cursor-pointer hover:border-azure-500/50">
+              <label className="flex items-center gap-2 rounded-xl border border-line/60 bg-black/60 px-3 py-2 text-xs text-slate-200 cursor-pointer hover:border-white/30">
                 <input
                   type="checkbox"
                   checked={isLatest}
                   onChange={(e) => setIsLatest(e.target.checked)}
-                  className="rounded border-line bg-[#0a112c] text-azure-500 focus:ring-azure-500"
+                  className="rounded border-line bg-black text-white focus:ring-0"
                 />
                 <span className="font-medium">Mark as Latest Release</span>
               </label>
@@ -573,7 +573,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
               placeholder="Lobby quality-of-life improvements and smarter automation."
               rows={2}
               required
-              className="w-full rounded-xl border border-line bg-[#060b1e] p-3 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none leading-relaxed"
+              className="w-full rounded-xl border border-line bg-black/60 p-3 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none leading-relaxed"
             />
           </div>
 
@@ -581,7 +581,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
           <div className="space-y-4 border-t border-line/60 pt-4">
             <div className="flex items-center justify-between">
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-azure-400">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
                   Sections & Bullet Changes
                 </h4>
                 <p className="text-[11px] text-slate-400">
@@ -592,7 +592,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
               <button
                 type="button"
                 onClick={handleAddSection}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-azure-500/40 bg-azure-950/40 px-3 py-1.5 text-xs font-medium text-azure-300 hover:bg-azure-900/60 transition-colors"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition-colors"
               >
                 <Plus size={13} />
                 <span>Add Section</span>
@@ -603,7 +603,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
               {sections.map((section, sIdx) => (
                 <div
                   key={section.id}
-                  className="rounded-xl border border-line/80 bg-[#081028] p-4 space-y-3"
+                  className="rounded-xl border border-line/80 bg-[#0c0c0f] p-4 space-y-3"
                 >
                   {/* Section Title & Controls */}
                   <div className="flex items-center justify-between gap-2">
@@ -616,7 +616,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                         value={section.title}
                         onChange={(e) => handleUpdateSectionTitle(section.id, e.target.value)}
                         placeholder="SECTION TITLE (e.g. LOBBY)"
-                        className="w-full max-w-xs rounded-lg border border-line bg-[#060b1e] px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-azure-300 placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                        className="w-full max-w-xs rounded-lg border border-line bg-black/60 px-2.5 py-1 text-xs font-bold uppercase tracking-wider text-zinc-200 placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                       />
                     </div>
 
@@ -655,7 +655,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                   <div className="space-y-2 pl-2">
                     {section.changes.map((change, cIdx) => (
                       <div key={cIdx} className="flex items-center gap-2">
-                        <span className="text-azure-400 select-none">•</span>
+                        <span className="text-zinc-400 select-none">•</span>
                         <input
                           type="text"
                           value={change}
@@ -663,7 +663,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                             handleUpdateChange(section.id, cIdx, e.target.value)
                           }
                           placeholder="e.g. Auto Sell now has separate rarity lists."
-                          className="flex-1 rounded-lg border border-line/60 bg-[#060b1e] px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                          className="flex-1 rounded-lg border border-line/60 bg-black/60 px-2.5 py-1.5 text-xs text-slate-200 placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                         />
                         <button
                           type="button"
@@ -712,12 +712,12 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
                           }
                         }}
                         placeholder="Type a new bullet point and press Enter or Add..."
-                        className="flex-1 rounded-lg border border-line/60 bg-[#060b1e]/60 px-2.5 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                        className="flex-1 rounded-lg border border-line/60 bg-black/40 px-2.5 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                       />
                       <button
                         type="button"
                         onClick={() => handleAddChangeToSection(section.id)}
-                        className="inline-flex items-center gap-1 rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium text-azure-300 hover:bg-azure-900/40 transition-colors"
+                        className="inline-flex items-center gap-1 rounded-lg bg-surface px-2.5 py-1.5 text-xs font-medium text-zinc-200 hover:bg-white/10 transition-colors"
                       >
                         <ListPlus size={13} />
                         <span>Add</span>
@@ -742,7 +742,7 @@ function ReleaseModal({ initialData, isSaving, onSave, onClose }: ModalProps) {
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2 text-xs font-medium text-white shadow-glow-sm hover:bg-azure-400 transition-all disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2 text-xs font-semibold text-black shadow-glow-sm hover:bg-zinc-200 transition-all disabled:opacity-50"
             >
               {isSaving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle size={13} />}
               <span>{initialData ? 'Save Changes' : 'Publish Release'}</span>

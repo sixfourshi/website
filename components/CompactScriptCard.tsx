@@ -39,11 +39,11 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
   };
 
   return (
-    <div className="rounded-2xl border border-line/80 bg-[#0c1638]/90 p-5 sm:p-6 shadow-sm transition-all duration-200 hover:border-azure-500/50 hover:bg-[#0f1b44]">
+    <div className="rounded-2xl border border-line/80 bg-[#0c0c0f] p-5 sm:p-6 shadow-sm transition-all duration-200 hover:border-white/20 hover:bg-[#121216]">
       {/* Top row */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-line/70 bg-[#060b1e] text-azure-300">
+          <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-line/70 bg-black/60 text-white">
             <Icon name={script.icon} size={18} />
           </span>
           <div>
@@ -51,7 +51,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
               <h4 className="font-display text-base font-bold text-white sm:text-lg">
                 {script.name}
               </h4>
-              <span className="rounded-full border border-azure-500/30 bg-azure-500/10 px-2.5 py-0.5 text-[11px] font-medium text-azure-300">
+              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-medium text-zinc-300">
                 v{script.version}
               </span>
             </div>
@@ -60,7 +60,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
           <span className="inline-flex items-center gap-1 rounded-md border border-line/60 bg-base/60 px-2.5 py-1 text-slate-300">
-            <Tag size={11} className="text-azure-400" />
+            <Tag size={11} className="text-zinc-400" />
             {script.category}
           </span>
           <span className="inline-flex items-center gap-1 rounded-md border border-line/60 bg-base/60 px-2.5 py-1 text-slate-400">
@@ -81,7 +81,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
           {script.features.map((feat, i) => (
             <span
               key={i}
-              className="rounded-lg border border-line/60 bg-[#070e26]/80 px-2.5 py-0.5 text-[11px] font-medium text-slate-300"
+              className="rounded-lg border border-line/60 bg-black/40 px-2.5 py-0.5 text-[11px] font-medium text-slate-300"
             >
               ✓ {feat}
             </span>
@@ -98,7 +98,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
           className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
             copied
               ? 'border border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
-              : 'border border-azure-500/40 bg-azure-500/20 text-azure-200 hover:border-azure-400 hover:bg-azure-500 hover:text-white shadow-glow-sm'
+              : 'border border-white/20 bg-white/10 text-white hover:border-white/40 hover:bg-white hover:text-black shadow-glow-sm'
           }`}
         >
           {copied ? (
@@ -119,7 +119,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
           <button
             type="button"
             onClick={() => setShowCode(!showCode)}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-line/70 bg-[#08112e]/70 px-3 py-2 text-xs font-medium text-slate-300 hover:border-azure-500/40 hover:text-white transition-colors"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-line/70 bg-black/40 px-3 py-2 text-xs font-medium text-slate-300 hover:border-white/20 hover:text-white transition-colors"
           >
             <Code2 size={13} />
             <span>{showCode ? 'Hide Code' : 'View Code'}</span>
@@ -130,7 +130,7 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
             href={`/raw/${script.slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-xl border border-line/70 bg-[#08112e]/70 px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors"
+            className="inline-flex items-center gap-1 rounded-xl border border-line/70 bg-black/40 px-2.5 py-2 text-xs font-medium text-slate-400 hover:text-slate-200 transition-colors"
             title="Open raw Lua endpoint"
           >
             <ExternalLink size={12} />
@@ -141,9 +141,9 @@ export function CompactScriptCard({ script }: CompactScriptCardProps) {
 
       {/* Expandable Code Viewer */}
       {showCode && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-line/80 bg-[#050a18]">
-          <div className="flex items-center justify-between border-b border-line/60 bg-[#08102d] px-4 py-2 text-xs text-slate-400">
-            <span className="font-mono text-[11px] text-azure-300">
+        <div className="mt-4 overflow-hidden rounded-xl border border-line/80 bg-black">
+          <div className="flex items-center justify-between border-b border-line/60 bg-[#0c0c0f] px-4 py-2 text-xs text-slate-400">
+            <span className="font-mono text-[11px] text-zinc-300">
               {script.slug}.lua
             </span>
             <span className="text-[11px] text-slate-400">Lua Module</span>

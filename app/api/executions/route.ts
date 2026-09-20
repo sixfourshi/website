@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         status: 'active',
-        service: 'Sour Hub Telemetry',
+        service: 'Nova Hub Telemetry',
         endpoint: '/api/executions',
         message: 'Execution tracking endpoint is operational. Telemetry events are accepted via POST.',
       },

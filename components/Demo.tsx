@@ -22,7 +22,7 @@ export function Demo() {
           <button
             type="button"
             aria-label="Play demo video"
-            className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-azure-500/90 text-white shadow-glow transition-transform duration-300 hover:scale-110"
+            className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-black shadow-glow transition-transform duration-300 hover:scale-110"
           >
             <Play size={22} className="ml-0.5" fill="currentColor" />
           </button>

@@ -4,15 +4,15 @@ import { AppBackground } from '@/components/AppBackground';
 import { ToastContainer } from '@/components/Toast';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://sourhub.vercel.app'),
+  metadataBase: new URL('https://novahub.vercel.app'),
   title: {
-    default: 'Sour Hub - Keyless',
-    template: 'Sour Hub - Keyless',
-    absolute: 'Sour Hub - Keyless',
+    default: 'Nova Hub - Keyless',
+    template: 'Nova Hub - Keyless',
+    absolute: 'Nova Hub - Keyless',
   },
   description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
   alternates: {
-    canonical: 'https://sourhub.vercel.app',
+    canonical: 'https://novahub.vercel.app',
   },
   icons: {
     icon: [
@@ -27,26 +27,26 @@ export const metadata: Metadata = {
     ],
   },
   openGraph: {
-    title: 'Sour Hub - Best Keyless Script Hub',
+    title: 'Nova Hub - Best Keyless Script Hub',
     description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
-    url: 'https://sourhub.vercel.app',
-    siteName: 'Sour Hub',
+    url: 'https://novahub.vercel.app',
+    siteName: 'Nova Hub',
     type: 'website',
     images: [
       {
-        url: 'https://sourhub.vercel.app/icon.png',
+        url: 'https://novahub.vercel.app/icon.png',
         width: 512,
         height: 512,
-        alt: 'Sour Hub - Best Keyless Script Hub',
+        alt: 'Nova Hub - Best Keyless Script Hub',
         type: 'image/png',
       },
     ],
   },
   twitter: {
     card: 'summary',
-    title: 'Sour Hub - Best Keyless Script Hub',
+    title: 'Nova Hub - Best Keyless Script Hub',
     description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
-    images: ['https://sourhub.vercel.app/icon.png'],
+    images: ['https://novahub.vercel.app/icon.png'],
   },
 };
 

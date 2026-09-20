@@ -9,12 +9,12 @@ html {
 }
 
 body {
-  background-color: #070c1b;
-  color: #e7ecfa;
+  background-color: #050505;
+  color: #f4f4f5;
 }
 
 ::selection {
-  background: rgba(53, 104, 242, 0.35);
+  background: rgba(255, 255, 255, 0.2);
   color: #fff;
 }
 
@@ -22,23 +22,23 @@ body {
   width: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #070c1b;
+  background: #050505;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e2a54;
+  background: #27272a;
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #294080;
+  background: #3f3f46;
 }
 
 .bg-grid {
   background-image: linear-gradient(
       to right,
-      rgba(84, 135, 255, 0.06) 1px,
+      rgba(255, 255, 255, 0.04) 1px,
       transparent 1px
     ),
-    linear-gradient(to bottom, rgba(84, 135, 255, 0.06) 1px, transparent 1px);
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 44px 44px;
 }
 

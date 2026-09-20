@@ -191,7 +191,7 @@ export function SuggestionsTab({
   return (
     <div>
       {/* Top search & status filter toolbar */}
-      <div className="mb-6 space-y-3.5 rounded-2xl border border-line/80 bg-[#070e24]/70 p-4">
+      <div className="mb-6 space-y-3.5 rounded-2xl border border-line/80 bg-[#0c0c0f] p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           {/* Search Box */}
           <div className="relative flex-1">
@@ -204,7 +204,7 @@ export function SuggestionsTab({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search suggestions by game name, feature text, or link..."
-              className="w-full rounded-xl border border-line/70 bg-base/80 py-2 pl-9 pr-3.5 text-xs text-white placeholder:text-slate-500 transition-colors focus:border-azure-500 focus:outline-none"
+              className="w-full rounded-xl border border-line/70 bg-base/80 py-2 pl-9 pr-3.5 text-xs text-white placeholder:text-slate-500 transition-colors focus:border-zinc-500 focus:outline-none"
             />
           </div>
 
@@ -222,7 +222,7 @@ export function SuggestionsTab({
             onClick={() => setStatusFilter('all')}
             className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer ${
               statusFilter === 'all'
-                ? 'bg-azure-500 text-white shadow-sm'
+                ? 'bg-white text-black font-semibold shadow-sm'
                 : 'border border-line/60 bg-base/50 text-slate-400 hover:text-slate-200'
             }`}
           >
@@ -308,7 +308,7 @@ export function SuggestionsTab({
               setQuery('');
               setStatusFilter('all');
             }}
-            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-azure-300 hover:bg-surface cursor-pointer"
+            className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/60 px-3.5 py-1.5 text-xs font-medium text-white hover:bg-surface cursor-pointer"
           >
             Reset filter
           </button>
@@ -322,7 +322,7 @@ export function SuggestionsTab({
             return (
               <div
                 key={item.id}
-                className="flex flex-col justify-between rounded-2xl border border-line/80 bg-[#0e1738]/90 p-5 shadow-sm transition-all hover:border-azure-500/40 hover:bg-[#121c45]"
+                className="flex flex-col justify-between rounded-2xl border border-line/80 bg-[#0c0c0f] p-5 shadow-sm transition-all hover:border-white/20 hover:bg-[#121216]"
               >
                 {/* Top row: Game name, date, status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line/50 pb-3">
@@ -344,7 +344,7 @@ export function SuggestionsTab({
                       href={item.robloxLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-lg border border-line bg-base/60 px-2.5 py-1 text-xs font-medium text-azure-300 hover:border-azure-500/60 hover:text-white transition-all cursor-pointer"
+                      className="inline-flex items-center gap-1 rounded-lg border border-line bg-base/60 px-2.5 py-1 text-xs font-medium text-slate-300 hover:border-white/30 hover:text-white transition-all cursor-pointer"
                       title="Open Roblox Game in new tab"
                     >
                       <span>Open Link</span>
@@ -355,7 +355,7 @@ export function SuggestionsTab({
 
                 {/* Middle: Suggestion text */}
                 <div className="my-3.5">
-                  <div className="rounded-xl border border-line/60 bg-[#060b1d]/80 p-3.5 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
+                  <div className="rounded-xl border border-line/60 bg-black/40 p-3.5 text-xs sm:text-sm text-slate-200 leading-relaxed whitespace-pre-wrap">
                     {item.suggestion}
                   </div>
                 </div>

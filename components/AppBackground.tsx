@@ -134,45 +134,45 @@ export function AppBackground() {
   return (
     <div
       aria-hidden="true"
-      className="pointer-events-none fixed inset-0 z-0 h-[100dvh] w-full overflow-hidden bg-[#070C1B]"
+      className="pointer-events-none fixed inset-0 z-0 h-[100dvh] w-full overflow-hidden bg-[#050505]"
     >
       {/* Ambient aura gradients distributed throughout viewport */}
       <div className="pointer-events-none absolute inset-0 h-full w-full">
         {/* Top hero ambient aura */}
-        <div className="pointer-events-none absolute left-1/2 -top-24 h-[620px] w-[960px] -translate-x-1/2 rounded-full bg-azure-600/22 blur-[150px] animate-glow-pulse" />
+        <div className="pointer-events-none absolute left-1/2 -top-24 h-[640px] w-[1000px] -translate-x-1/2 rounded-full bg-white/[0.04] blur-[150px] animate-glow-pulse" />
 
         {/* Mid-section ambient aura (Demo / Scripts / Stats) */}
-        <div className="pointer-events-none absolute left-1/4 top-[35%] h-[580px] w-[820px] -translate-x-1/2 rounded-full bg-azure-500/18 blur-[160px]" />
+        <div className="pointer-events-none absolute left-1/4 top-[35%] h-[600px] w-[860px] -translate-x-1/2 rounded-full bg-white/[0.03] blur-[160px]" />
 
         {/* Lower-section ambient aura (FAQ & content depth) */}
-        <div className="pointer-events-none absolute right-1/4 bottom-0 h-[680px] w-[920px] rounded-full bg-azure-600/22 blur-[160px]" />
+        <div className="pointer-events-none absolute right-1/4 bottom-0 h-[700px] w-[960px] rounded-full bg-white/[0.03] blur-[160px]" />
 
-        {/* Lateral edge ambient lights to prevent dark borders on wide viewports */}
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-azure-600/12 via-azure-500/6 to-transparent blur-3xl" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-azure-600/12 via-azure-500/6 to-transparent blur-3xl" />
+        {/* Lateral edge ambient lights to prevent harsh lines */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-white/[0.015] to-transparent blur-3xl" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-white/[0.015] to-transparent blur-3xl" />
       </div>
 
       {/* Mouse Cursor Follower Spotlight (Desktop only via direct DOM transform, zero React rerenders) */}
       <div
         ref={outerGlowRef}
-        className="pointer-events-none absolute left-0 top-0 h-[380px] w-[380px] rounded-full bg-azure-500/18 blur-[100px] opacity-0 transition-opacity duration-300 will-change-transform"
+        className="pointer-events-none absolute left-0 top-0 h-[380px] w-[380px] rounded-full bg-white/[0.04] blur-[100px] opacity-0 transition-opacity duration-300 will-change-transform"
       />
       <div
         ref={innerGlowRef}
-        className="pointer-events-none absolute left-0 top-0 h-[140px] w-[140px] rounded-full bg-azure-400/20 blur-[50px] opacity-0 transition-opacity duration-200 will-change-transform"
+        className="pointer-events-none absolute left-0 top-0 h-[140px] w-[140px] rounded-full bg-white/[0.06] blur-[50px] opacity-0 transition-opacity duration-200 will-change-transform"
       />
 
       {/* ElasticMesh interactive reactive layer: Desktop only, omitted on mobile */}
       {shouldRenderMesh ? (
-        <div className="absolute inset-0 h-full w-full opacity-45 mix-blend-screen transition-opacity duration-700">
+        <div className="absolute inset-0 h-full w-full opacity-40 mix-blend-screen transition-opacity duration-700">
           <ElasticMesh
-            color1="#070C1B"
-            color2="#0b132b"
-            highlight="#82a9ff"
-            gridColor="#5487ff"
+            color1="#050505"
+            color2="#0e0e11"
+            highlight="#3f3f46"
+            gridColor="#27272a"
             showGrid={true}
             gridDensity={24}
-            gridOpacity={0.24}
+            gridOpacity={0.22}
             borderRadius={0}
             fit={1.25}
             tilt={10}

@@ -35,7 +35,7 @@ export function ClearLogsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-[#070e24] p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-2xl border border-red-500/30 bg-[#0c0c0f] p-6 shadow-2xl">
         <div className="flex items-center justify-between pb-4 border-b border-line">
           <div className="flex items-center gap-3">
             <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 text-red-400 border border-red-500/30">
@@ -55,9 +55,9 @@ export function ClearLogsModal({
         </div>
 
         <div className="my-5 space-y-4">
-          <div className="rounded-xl border border-azure-500/30 bg-azure-950/30 p-3.5 flex items-start gap-3">
-            <ShieldCheck size={18} className="text-azure-400 flex-none mt-0.5" />
-            <p className="text-xs text-azure-200 leading-relaxed">
+          <div className="rounded-xl border border-white/20 bg-white/5 p-3.5 flex items-start gap-3">
+            <ShieldCheck size={18} className="text-zinc-300 flex-none mt-0.5" />
+            <p className="text-xs text-zinc-200 leading-relaxed">
               <strong>Cumulative totals are preserved:</strong> Your Total Executions counter, game distribution, and historical charts will remain 100% accurate.
             </p>
           </div>
@@ -67,14 +67,14 @@ export function ClearLogsModal({
               Select what to clear:
             </label>
             <div className="space-y-2">
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface/40 cursor-pointer hover:border-azure-500/50 transition-colors">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface/40 cursor-pointer hover:border-white/40 transition-colors">
                 <input
                   type="radio"
                   name="clearType"
                   value="older_30_days"
                   checked={clearType === 'older_30_days'}
                   onChange={() => setClearType('older_30_days')}
-                  className="accent-azure-500"
+                  className="accent-white"
                 />
                 <div>
                   <div className="text-xs font-medium text-white">Logs older than 30 days</div>
@@ -82,14 +82,14 @@ export function ClearLogsModal({
                 </div>
               </label>
 
-              <label className="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface/40 cursor-pointer hover:border-azure-500/50 transition-colors">
+              <label className="flex items-center gap-3 p-3 rounded-xl border border-line bg-surface/40 cursor-pointer hover:border-white/40 transition-colors">
                 <input
                   type="radio"
                   name="clearType"
                   value="older_7_days"
                   checked={clearType === 'older_7_days'}
                   onChange={() => setClearType('older_7_days')}
-                  className="accent-azure-500"
+                  className="accent-white"
                 />
                 <div>
                   <div className="text-xs font-medium text-white">Logs older than 7 days</div>
@@ -123,7 +123,7 @@ export function ClearLogsModal({
               value={confirmText}
               onChange={(e) => setConfirmText(e.target.value)}
               placeholder="CLEAR"
-              className="w-full rounded-xl border border-line bg-[#040817] px-3.5 py-2 text-xs font-mono text-white placeholder-slate-600 focus:border-red-500 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-black/60 px-3.5 py-2 text-xs font-mono text-white placeholder-slate-600 focus:border-red-500 focus:outline-none"
             />
           </div>
         </div>

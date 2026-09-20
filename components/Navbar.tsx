@@ -51,17 +51,17 @@ export function Navbar() {
     <header
       className={`fixed top-0 z-50 w-full transition-all duration-300 ${
         scrolled
-          ? 'border-b border-line/80 bg-[#040816]/85 backdrop-blur-xl shadow-lg shadow-black/20'
+          ? 'border-b border-white/[0.08] bg-[#09090b]/90 backdrop-blur-xl shadow-lg shadow-black/80'
           : 'border-b border-transparent bg-transparent'
       }`}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
         <Link href="/" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700 shadow-glow-sm">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-gradient-to-br from-zinc-700 via-zinc-800 to-black shadow-glow-sm">
             <Zap className="h-4.5 w-4.5 text-white" size={18} />
           </span>
           <span className="font-display text-lg font-semibold tracking-tight text-white">
-            Sour Hub
+            Nova Hub
           </span>
         </Link>
 
@@ -74,8 +74,8 @@ export function Navbar() {
                 href={link.href}
                 className={`rounded-lg px-3.5 py-1.5 text-sm transition-all ${
                   active
-                    ? 'border border-azure-500/30 bg-azure-500/15 font-medium text-azure-200 shadow-glow-sm'
-                    : 'text-slate-300 hover:bg-surface/50 hover:text-white'
+                    ? 'border border-white/20 bg-white/10 font-medium text-white shadow-glow-sm'
+                    : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 {link.label}
@@ -89,7 +89,7 @@ export function Navbar() {
             href={discordInviteUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg bg-azure-500 px-4 py-2 text-sm font-medium text-white shadow-glow-sm transition-all hover:bg-azure-400 hover:shadow-glow cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black shadow-glow-sm transition-all hover:bg-zinc-200 hover:shadow-glow cursor-pointer"
           >
             <DiscordIcon className="h-4 w-4" />
             <span>Discord Server</span>
@@ -106,7 +106,7 @@ export function Navbar() {
       </div>
 
       <div
-        className={`overflow-hidden border-b border-line/80 bg-[#040816]/95 backdrop-blur-xl transition-[max-height] duration-300 md:hidden ${
+        className={`overflow-hidden border-b border-white/[0.08] bg-[#09090b]/95 backdrop-blur-xl transition-[max-height] duration-300 md:hidden ${
           open ? 'max-h-80' : 'max-h-0'
         }`}
       >
@@ -120,8 +120,8 @@ export function Navbar() {
                 onClick={() => setOpen(false)}
                 className={`rounded-lg px-3 py-2.5 text-sm transition-colors ${
                   active
-                    ? 'border border-azure-500/30 bg-azure-500/15 font-medium text-azure-200'
-                    : 'text-slate-300 hover:bg-surface hover:text-white'
+                    ? 'border border-white/20 bg-white/10 font-medium text-white'
+                    : 'text-zinc-400 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 {link.label}
@@ -133,7 +133,7 @@ export function Navbar() {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setOpen(false)}
-            className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-azure-500 px-3 py-2.5 text-center text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 cursor-pointer"
+            className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-white px-3 py-2.5 text-center text-sm font-semibold text-black shadow-glow-sm hover:bg-zinc-200 cursor-pointer"
           >
             <DiscordIcon className="h-4 w-4" />
             <span>Discord Server</span>

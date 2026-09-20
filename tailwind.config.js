@@ -8,30 +8,30 @@ module.exports = {
     extend: {
       colors: {
         base: {
-          DEFAULT: '#070C1B',
-          elevated: '#0C1430',
+          DEFAULT: '#050505',
+          elevated: '#0c0c0e',
         },
         surface: {
-          DEFAULT: '#101A3D',
-          hover: '#16224A',
+          DEFAULT: '#121215',
+          hover: '#19191e',
         },
-        line: '#1E2A54',
+        line: '#27272a',
         ink: {
-          DEFAULT: '#E7ECFA',
-          muted: '#93A1CC',
-          faint: '#5C6890',
+          DEFAULT: '#f4f4f5',
+          muted: '#a1a1aa',
+          faint: '#71717a',
         },
         azure: {
-          50: '#EEF4FF',
-          100: '#DCE7FF',
-          200: '#B3CBFF',
-          300: '#82A9FF',
-          400: '#5487FF',
-          500: '#3568F2',
-          600: '#264ECC',
-          700: '#1E3EA3',
-          800: '#182F7A',
-          900: '#13224F',
+          50: '#fafafa',
+          100: '#f4f4f5',
+          200: '#e4e4e7',
+          300: '#d4d4d8',
+          400: '#a1a1aa',
+          500: '#71717a',
+          600: '#52525b',
+          700: '#3f3f46',
+          800: '#27272a',
+          900: '#18181b',
         },
       },
       fontFamily: {
@@ -40,9 +40,9 @@ module.exports = {
       },
       backgroundImage: {
         'grid-lines':
-          'linear-gradient(to right, rgba(84,135,255,0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(84,135,255,0.07) 1px, transparent 1px)',
+          'linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px)',
         'radial-glow':
-          'radial-gradient(circle at 50% 0%, rgba(53,104,242,0.35), transparent 60%)',
+          'radial-gradient(circle at 50% 0%, rgba(255,255,255,0.08), transparent 65%)',
       },
       keyframes: {
         'fade-up': {
@@ -50,8 +50,8 @@ module.exports = {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'glow-pulse': {
-          '0%, 100%': { opacity: '0.5' },
-          '50%': { opacity: '0.9' },
+          '0%, 100%': { opacity: '0.4' },
+          '50%': { opacity: '0.8' },
         },
         'accordion-down': {
           '0%': { height: '0', opacity: '0' },
@@ -63,8 +63,8 @@ module.exports = {
         'glow-pulse': 'glow-pulse 6s ease-in-out infinite',
       },
       boxShadow: {
-        glow: '0 0 40px rgba(53,104,242,0.25)',
-        'glow-sm': '0 0 20px rgba(53,104,242,0.18)',
+        glow: '0 0 45px rgba(255,255,255,0.08)',
+        'glow-sm': '0 0 22px rgba(255,255,255,0.05)',
       },
     },
   },

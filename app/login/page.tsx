@@ -39,21 +39,21 @@ export default function LoginPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5">
       <div className="pointer-events-none absolute inset-0 bg-grid [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,black,transparent)]" />
-      <div className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-azure-600/25 blur-[130px]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[420px] w-[620px] -translate-x-1/2 rounded-full bg-white/[0.03] blur-[130px]" />
 
       <div className="relative w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700 shadow-glow-sm">
+          <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-gradient-to-br from-zinc-700 via-zinc-800 to-black shadow-glow-sm">
             <Zap className="h-4 w-4 text-white" />
           </span>
           <span className="font-display text-lg font-semibold text-white">
-            Sour Hub
+            Nova Hub
           </span>
         </Link>
 
         <div className="rounded-2xl border border-line bg-surface/60 p-7 shadow-glow-sm backdrop-blur-sm">
           <div className="mb-6 flex flex-col items-center text-center">
-            <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-base/60 text-azure-300">
+            <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-base/60 text-zinc-300">
               <Lock size={17} />
             </span>
             <h1 className="font-display text-lg font-semibold text-ink">
@@ -74,7 +74,7 @@ export default function LoginPage() {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoComplete="username"
-                className="w-full rounded-xl border border-line bg-base/60 px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-azure-600 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-base/60 px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-zinc-500 focus:outline-none"
               />
             </div>
             <div>
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                className="w-full rounded-xl border border-line bg-base/60 px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-azure-600 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-base/60 px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:border-zinc-500 focus:outline-none"
               />
             </div>
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-azure-500 py-2.5 text-sm font-medium text-white shadow-glow-sm transition-all hover:bg-azure-400 disabled:opacity-60"
+              className="w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-black shadow-glow-sm transition-all hover:bg-zinc-200 disabled:opacity-60 cursor-pointer"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>

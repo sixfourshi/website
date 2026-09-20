@@ -80,7 +80,7 @@ export function DashboardClient({
   const [copiedRawSlug, setCopiedRawSlug] = useState<string | null>(null);
 
   const handleCopyRawUrl = async (slug: string) => {
-    const rawUrl = `https://sourhub.vercel.app/raw/${slug}`;
+    const rawUrl = `https://novahub.vercel.app/raw/${slug}`;
     const ok = await copyToClipboard(rawUrl, 'Raw URL copied to clipboard!');
     if (ok) {
       setCopiedRawSlug(slug);
@@ -309,12 +309,12 @@ export function DashboardClient({
       <header className="sticky top-0 z-30 border-b border-line bg-base/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700 shadow-glow-sm">
-              <Zap className="h-4 w-4 text-white" />
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white shadow-sm">
+              <Zap className="h-4 w-4 text-black" />
             </span>
             <span className="font-display text-base font-semibold text-white">
-              Sour Hub
-              <span className="ml-2 rounded-full border border-azure-500/40 bg-azure-950/60 px-2 py-0.5 text-[11px] font-normal text-azure-300">
+              Nova Hub
+              <span className="ml-2 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[11px] font-normal text-zinc-300">
                 Owner Dashboard
               </span>
             </span>
@@ -330,7 +330,7 @@ export function DashboardClient({
             </Link>
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 rounded-lg border border-line px-3.5 py-1.5 text-xs text-ink-muted transition-colors hover:border-azure-700 hover:text-ink"
+              className="flex items-center gap-1.5 rounded-lg border border-line px-3.5 py-1.5 text-xs text-ink-muted transition-colors hover:border-white/30 hover:text-white"
             >
               <LogOut size={13} />
               Log out
@@ -356,7 +356,7 @@ export function DashboardClient({
             <button
               id="add-game-btn"
               onClick={() => setEditingGame(null)}
-              className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-azure-600 to-cyan-500 px-4 py-2.5 text-xs font-semibold text-white shadow-glow-sm hover:from-azure-500 hover:to-cyan-400 transition-all cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-semibold text-black shadow-glow-sm hover:bg-zinc-200 transition-all cursor-pointer"
             >
               <Plus size={15} />
               <span>Add Game</span>
@@ -366,7 +366,7 @@ export function DashboardClient({
             <button
               id="add-script-btn"
               onClick={() => setEditingScript(null)}
-              className="flex items-center gap-2 rounded-xl border border-azure-500/50 bg-azure-950/40 px-4 py-2.5 text-xs font-semibold text-azure-200 hover:bg-azure-900/60 hover:text-white transition-all cursor-pointer"
+              className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/20 transition-all cursor-pointer"
             >
               <Plus size={15} />
               <span>Add Script</span>
@@ -384,7 +384,7 @@ export function DashboardClient({
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                 activeTab === 'games'
-                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  ? 'bg-white text-black shadow-sm'
                   : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
               }`}
             >
@@ -393,7 +393,7 @@ export function DashboardClient({
               <span
                 className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
                   activeTab === 'games'
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-black/10 text-black font-bold'
                     : 'bg-surface text-slate-400'
                 }`}
               >
@@ -408,7 +408,7 @@ export function DashboardClient({
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
                 activeTab === 'scripts'
-                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  ? 'bg-white text-black shadow-sm'
                   : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
               }`}
             >
@@ -417,7 +417,7 @@ export function DashboardClient({
               <span
                 className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
                   activeTab === 'scripts'
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-black/10 text-black font-bold'
                     : 'bg-surface text-slate-400'
                 }`}
               >
@@ -432,7 +432,7 @@ export function DashboardClient({
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'suggestions'
-                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  ? 'bg-white text-black shadow-sm'
                   : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
               }`}
             >
@@ -446,7 +446,7 @@ export function DashboardClient({
                 <span
                   className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
                     activeTab === 'suggestions'
-                      ? 'bg-white/20 text-white'
+                      ? 'bg-black/10 text-black font-bold'
                       : 'bg-surface text-slate-400'
                   }`}
                 >
@@ -462,7 +462,7 @@ export function DashboardClient({
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'executions'
-                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  ? 'bg-white text-black shadow-sm'
                   : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
               }`}
             >
@@ -471,7 +471,7 @@ export function DashboardClient({
               <span
                 className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
                   activeTab === 'executions'
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-black/10 text-black font-bold'
                     : 'bg-surface text-slate-400'
                 }`}
               >
@@ -486,7 +486,7 @@ export function DashboardClient({
               }}
               className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'changelog'
-                  ? 'bg-azure-500 text-white shadow-glow-sm'
+                  ? 'bg-white text-black shadow-sm'
                   : 'border border-line bg-surface/40 text-slate-300 hover:text-white'
               }`}
             >
@@ -495,7 +495,7 @@ export function DashboardClient({
               <span
                 className={`ml-1 rounded-full px-1.5 py-0.2 text-[10px] ${
                   activeTab === 'changelog'
-                    ? 'bg-white/20 text-white'
+                    ? 'bg-black/10 text-black font-bold'
                     : 'bg-surface text-slate-400'
                 }`}
               >
@@ -519,7 +519,7 @@ export function DashboardClient({
                     ? 'Search games by name or ID...'
                     : 'Search scripts by name or game...'
                 }
-                className="w-full rounded-xl border border-line bg-[#060b1e] py-2 pl-9 pr-4 text-xs text-white placeholder:text-slate-400 focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 py-2 pl-9 pr-4 text-xs text-white placeholder:text-slate-400 focus:border-zinc-500 focus:outline-none"
               />
             </div>
           )}
@@ -540,7 +540,7 @@ export function DashboardClient({
                 {!query && (
                   <button
                     onClick={() => setEditingGame(null)}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-azure-500 px-4 py-2 text-xs font-medium text-white shadow-glow-sm hover:bg-azure-400"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black shadow-sm hover:bg-zinc-200"
                   >
                     <Plus size={14} />
                     <span>Add Game</span>
@@ -548,7 +548,7 @@ export function DashboardClient({
                 )}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-line bg-[#070e24]/60">
+              <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
@@ -579,7 +579,7 @@ export function DashboardClient({
                                     className="h-10 w-10 rounded-xl object-cover border border-line/60 flex-none"
                                   />
                                 ) : (
-                                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-line bg-surface/60 text-azure-400">
+                                  <div className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-line bg-surface/60 text-zinc-400">
                                     <ImageIcon size={18} />
                                   </div>
                                 )}
@@ -589,7 +589,7 @@ export function DashboardClient({
                                       {game.name}
                                     </span>
                                     {game.isUniversal && (
-                                      <span className="rounded-full bg-cyan-950/60 border border-cyan-500/40 px-2 py-0.5 text-[10px] text-cyan-300 font-medium">
+                                      <span className="rounded-full bg-zinc-800/80 border border-white/20 px-2 py-0.5 text-[10px] text-zinc-200 font-medium">
                                         Universal
                                       </span>
                                     )}
@@ -605,7 +605,7 @@ export function DashboardClient({
                             <td className="px-5 py-4">
                               <div className="space-y-1.5">
                                 <div className="flex items-center gap-2">
-                                  <span className="inline-flex items-center rounded-full border border-azure-500/40 bg-azure-950/50 px-2.5 py-0.5 text-xs font-semibold text-azure-300">
+                                  <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-zinc-300">
                                     <Sparkles size={11} className="mr-1" />
                                     {totalFeats} features
                                   </span>
@@ -614,7 +614,7 @@ export function DashboardClient({
                                   {game.tabs?.map((t) => (
                                     <span
                                       key={t.name}
-                                      className="rounded-full border border-line/60 bg-[#070e26] px-2 py-0.5 text-[10px] text-slate-300"
+                                      className="rounded-full border border-line/60 bg-black/40 px-2 py-0.5 text-[10px] text-slate-300"
                                     >
                                       {t.name}
                                     </span>
@@ -629,7 +629,7 @@ export function DashboardClient({
                                 <div className="space-y-0.5">
                                   <div>
                                     <span className="text-slate-400">Universe: </span>
-                                    <span className="text-azure-300">{game.universeId}</span>
+                                    <span className="text-zinc-300">{game.universeId}</span>
                                   </div>
                                   {game.rootPlaceId && (
                                     <div>
@@ -645,7 +645,7 @@ export function DashboardClient({
 
                             {/* Route slug */}
                             <td className="px-5 py-4 font-mono text-[11px] text-slate-300">
-                              <span className="rounded-md border border-line/60 bg-[#060b1e] px-2 py-1 text-azure-300">
+                              <span className="rounded-md border border-line/60 bg-black/60 px-2 py-1 text-zinc-300">
                                 /{game.slug}
                               </span>
                             </td>
@@ -656,7 +656,7 @@ export function DashboardClient({
                                 <Link
                                   href={`/scripts?game=${game.slug}`}
                                   target="_blank"
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors"
                                   title="View expandable game card"
                                 >
                                   <ExternalLink size={13} />
@@ -664,7 +664,7 @@ export function DashboardClient({
 
                                 <button
                                   onClick={() => setEditingGame(game)}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors"
                                   title="Edit Structured Features & Details"
                                 >
                                   <Pencil size={13} />
@@ -708,7 +708,7 @@ export function DashboardClient({
                 {!query && (
                   <button
                     onClick={() => setEditingScript(null)}
-                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-azure-500 px-4 py-2 text-xs font-medium text-white shadow-glow-sm hover:bg-azure-400"
+                    className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black shadow-sm hover:bg-zinc-200"
                   >
                     <Plus size={14} />
                     <span>Add Script</span>
@@ -716,7 +716,7 @@ export function DashboardClient({
                 )}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-line bg-[#070e24]/60">
+              <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
@@ -741,7 +741,7 @@ export function DashboardClient({
                           >
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
-                                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-line bg-surface/60 text-azure-300">
+                                <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-line bg-surface/60 text-zinc-300">
                                   <Icon name={script.icon} size={15} />
                                 </span>
                                 <span className="font-semibold text-white">
@@ -752,8 +752,8 @@ export function DashboardClient({
 
                             {/* Assigned Game */}
                             <td className="px-5 py-4">
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-[#060b1e] px-2.5 py-1 text-[11px] text-slate-300">
-                                <Gamepad2 size={11} className="text-azure-400" />
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-line/60 bg-black/60 px-2.5 py-1 text-[11px] text-slate-300">
+                                <Gamepad2 size={11} className="text-zinc-400" />
                                 <span>{matchedGame?.name || script.game || 'Universal'}</span>
                               </span>
                             </td>
@@ -775,8 +775,8 @@ export function DashboardClient({
                                 <button
                                   type="button"
                                   onClick={() => handleCopyRawUrl(script.slug)}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-500 hover:text-azure-300 transition-colors cursor-pointer"
-                                  title={`Copy Raw URL (https://sourhub.vercel.app/raw/${script.slug})`}
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors cursor-pointer"
+                                  title={`Copy Raw URL (https://novahub.vercel.app/raw/${script.slug})`}
                                   aria-label="Copy Raw URL"
                                 >
                                   {copiedRawSlug === script.slug ? (
@@ -788,14 +788,14 @@ export function DashboardClient({
                                 <Link
                                   href={`/scripts/${script.slug}`}
                                   target="_blank"
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors"
                                   title="View public page"
                                 >
                                   <ExternalLink size={13} />
                                 </Link>
                                 <button
                                   onClick={() => setEditingScript(script)}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-azure-600 hover:text-white transition-colors"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors"
                                   title="Edit script"
                                 >
                                   <Pencil size={13} />

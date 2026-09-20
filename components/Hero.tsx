@@ -10,7 +10,7 @@ export function Hero() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLoader = async () => {
-    const loaderSnippet = 'loadstring(game:HttpGet("https://sourhub.vercel.app/loader"))()';
+    const loaderSnippet = 'loadstring(game:HttpGet("https://novahub.vercel.app/loader"))()';
     const success = await copyToClipboard(loaderSnippet, 'Loader copied to clipboard!');
     if (success) {
       setCopied(true);
@@ -22,14 +22,14 @@ export function Hero() {
     <section className="relative pb-24 pt-40">
       <div className="relative mx-auto flex max-w-3xl flex-col items-center px-5 text-center">
         <Reveal>
-          <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface/60 shadow-glow">
-            <Zap className="h-8 w-8 text-azure-300" />
+          <div className="mb-7 flex h-16 w-16 items-center justify-center rounded-2xl border border-white/15 bg-[#0e0e12] shadow-glow">
+            <Zap className="h-8 w-8 text-white" />
           </div>
         </Reveal>
 
         <Reveal delay={80}>
-          <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-azure-500/30 bg-surface/80 px-3.5 py-1.5 text-xs font-medium text-azure-200 shadow-glow-sm">
-            <Sparkles size={13} className="text-azure-400" />
+          <div className="mb-5 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3.5 py-1.5 text-xs font-medium text-zinc-300 shadow-glow-sm">
+            <Sparkles size={13} className="text-zinc-400" />
             100% Free &amp; Keyless
           </div>
         </Reveal>
@@ -38,14 +38,14 @@ export function Hero() {
           <h1 className="font-display text-5xl font-semibold leading-[1.08] tracking-tight text-white sm:text-6xl">
             One loader. Famous games.
             <br />
-            <span className="bg-gradient-to-r from-azure-200 via-azure-300 to-azure-400 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent">
               Zero keys.
             </span>
           </h1>
         </Reveal>
 
         <Reveal delay={200}>
-          <p className="mt-6 max-w-xl text-balance text-base leading-relaxed text-slate-200 sm:text-lg">
+          <p className="mt-6 max-w-xl text-balance text-base leading-relaxed text-zinc-300 sm:text-lg">
             Free, keyless scripts for the games we build - no ads, checkpoints.
           </p>
         </Reveal>
@@ -55,10 +55,10 @@ export function Hero() {
             <button
               type="button"
               onClick={handleCopyLoader}
-              className={`group inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium text-white shadow-glow transition-all hover:-translate-y-0.5 cursor-pointer ${
+              className={`group inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold shadow-glow transition-all hover:-translate-y-0.5 cursor-pointer ${
                 copied
-                  ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-950/40'
-                  : 'bg-azure-500 hover:bg-azure-400'
+                  ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-950/40'
+                  : 'bg-white hover:bg-zinc-200 text-black'
               }`}
             >
               {copied ? (
@@ -68,19 +68,19 @@ export function Hero() {
                 </>
               ) : (
                 <>
-                  <Copy size={16} className="text-azure-100 transition-transform group-hover:scale-105" />
+                  <Copy size={16} className="text-black transition-transform group-hover:scale-105" />
                   <span>Copy Loader</span>
                 </>
               )}
             </button>
             <Link
               href="/games"
-              className="group inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-surface/60 px-6 py-3 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-azure-700 hover:bg-surface"
+              className="group inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-[#121216] px-6 py-3 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:border-white/30 hover:bg-[#18181d]"
             >
               Browse Games
               <ArrowRight
                 size={16}
-                className="transition-transform group-hover:translate-x-0.5 text-slate-400 group-hover:text-white"
+                className="transition-transform group-hover:translate-x-0.5 text-zinc-400 group-hover:text-white"
               />
             </Link>
           </div>

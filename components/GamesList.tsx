@@ -121,13 +121,13 @@ export function GamesList({ games }: GamesListProps) {
               placeholder="Search game or feature..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full rounded-xl border border-line/80 bg-[#0a122e]/80 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-400 outline-none transition-all focus:border-azure-500 focus:bg-[#0c163a] focus:ring-1 focus:ring-azure-500"
+              className="w-full rounded-xl border border-line bg-black/60 py-2.5 pl-9 pr-4 text-sm text-white placeholder-slate-500 outline-none transition-all focus:border-white/40 focus:ring-1 focus:ring-white/40"
             />
           </div>
         </div>
 
         {/* Live Status Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line/50 bg-[#070e28]/70 px-4 py-2.5 text-xs text-slate-300">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line/60 bg-[#0c0c0f] px-4 py-2.5 text-xs text-slate-300">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -145,7 +145,7 @@ export function GamesList({ games }: GamesListProps) {
           <button
             type="button"
             onClick={() => fetchPlayerCounts()}
-            className="inline-flex items-center gap-1.5 text-xs text-azure-300 hover:text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs text-slate-300 hover:text-white transition-colors cursor-pointer"
           >
             <RefreshCw size={11} className={status === 'loading' ? 'animate-spin' : ''} />
             <span>Refresh counts</span>
@@ -179,14 +179,14 @@ export function GamesList({ games }: GamesListProps) {
             );
           })
         ) : (
-          <div className="rounded-2xl border border-line/60 bg-[#08102d]/70 p-10 text-center">
+          <div className="rounded-2xl border border-line/60 bg-[#0c0c0f] p-10 text-center">
             <p className="text-sm text-slate-300">
               No games found matching &ldquo;{query}&rdquo;.
             </p>
             <button
               type="button"
               onClick={() => setQuery('')}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-azure-500/30 bg-azure-500/10 px-3 py-1.5 text-xs font-medium text-azure-300 hover:bg-azure-500/20 cursor-pointer"
+              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/10 cursor-pointer"
             >
               Clear search
             </button>

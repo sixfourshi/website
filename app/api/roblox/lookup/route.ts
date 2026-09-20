@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       const placeRes = await fetch(
         `https://apis.roblox.com/universes/v1/places/${rawId}/universe`,
         {
-          headers: { Accept: 'application/json', 'User-Agent': 'SourHub/1.0' },
+          headers: { Accept: 'application/json', 'User-Agent': 'NovaHub/1.0' },
           next: { revalidate: 60 },
         }
       );
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
     const gamesRes = await fetch(
       `https://games.roblox.com/v1/games?universeIds=${universeId}`,
       {
-        headers: { Accept: 'application/json', 'User-Agent': 'SourHub/1.0' },
+        headers: { Accept: 'application/json', 'User-Agent': 'NovaHub/1.0' },
         next: { revalidate: 30 },
       }
     );
@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
         const placeDetailsRes = await fetch(
           `https://games.roblox.com/v1/games/multiget-place-details?placeIds=${rawId}`,
           {
-            headers: { Accept: 'application/json', 'User-Agent': 'SourHub/1.0' },
+            headers: { Accept: 'application/json', 'User-Agent': 'NovaHub/1.0' },
           }
         );
         if (placeDetailsRes.ok) {
@@ -101,11 +101,11 @@ export async function GET(req: NextRequest) {
     const [iconRes, thumbRes] = await Promise.allSettled([
       fetch(
         `https://thumbnails.roblox.com/v1/games/icons?universeIds=${universeId}&size=150x150&format=Png&isCircular=false`,
-        { headers: { Accept: 'application/json', 'User-Agent': 'SourHub/1.0' } }
+        { headers: { Accept: 'application/json', 'User-Agent': 'NovaHub/1.0' } }
       ).then((r) => (r.ok ? r.json() : null)),
       fetch(
         `https://thumbnails.roblox.com/v1/games/multiget/thumbnails?universeIds=${universeId}&countPerUniverse=1&defaults=true&size=768x432&format=Png`,
-        { headers: { Accept: 'application/json', 'User-Agent': 'SourHub/1.0' } }
+        { headers: { Accept: 'application/json', 'User-Agent': 'NovaHub/1.0' } }
       ).then((r) => (r.ok ? r.json() : null)),
     ]);
 

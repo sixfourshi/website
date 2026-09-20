@@ -25,7 +25,7 @@ export function HowToUse() {
       <Reveal>
         <div className="mb-10 text-center">
           <h2 className="font-display text-2xl font-semibold text-white sm:text-3xl">
-            How to use Sour Hub
+            How to use Nova Hub
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-300">
             Four simple steps from copy to execution.
@@ -36,8 +36,8 @@ export function HowToUse() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {STEPS.map((step, i) => (
           <Reveal key={step.title} delay={i * 80}>
-            <div className="h-full rounded-2xl border border-line bg-surface/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-azure-700">
-              <span className="font-display text-3xl font-semibold text-azure-500/40">
+            <div className="h-full rounded-2xl border border-line bg-surface/50 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-white/30">
+              <span className="font-display text-3xl font-semibold text-zinc-600">
                 {String(i + 1).padStart(2, '0')}
               </span>
               <h3 className="mt-4 font-display text-base font-semibold text-ink">

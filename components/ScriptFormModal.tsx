@@ -71,7 +71,7 @@ export function ScriptFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4 py-6">
-      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-[#09122f] p-6 shadow-glow">
+      <div className="max-h-[92vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-line bg-[#0c0c0f] p-6 shadow-glow">
         <div className="mb-5 flex items-center justify-between border-b border-line/60 pb-3">
           <h2 className="font-display text-lg font-semibold text-white">
             {isEdit ? 'Edit Script' : 'Add Script'}
@@ -98,7 +98,7 @@ export function ScriptFormModal({
               required
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
-              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
             />
           </div>
 
@@ -110,7 +110,7 @@ export function ScriptFormModal({
             <select
               value={form.game.toLowerCase()}
               onChange={(e) => update('game', e.target.value)}
-              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
             >
               <option value="universal">Universal (All Games)</option>
               {games
@@ -134,7 +134,7 @@ export function ScriptFormModal({
               value={form.description}
               onChange={(e) => update('description', e.target.value)}
               rows={2}
-              className="w-full resize-none rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+              className="w-full resize-none rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
             />
           </div>
 
@@ -146,7 +146,7 @@ export function ScriptFormModal({
               <input
                 value={form.category}
                 onChange={(e) => update('category', e.target.value)}
-                className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
               />
             </div>
             <div>
@@ -156,7 +156,7 @@ export function ScriptFormModal({
               <input
                 value={form.version}
                 onChange={(e) => update('version', e.target.value)}
-                className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
               />
             </div>
           </div>
@@ -166,7 +166,7 @@ export function ScriptFormModal({
             <select
               value={form.icon}
               onChange={(e) => update('icon', e.target.value)}
-              className="w-full rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 text-sm text-white focus:border-azure-500 focus:outline-none"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-2.5 text-sm text-white focus:border-zinc-500 focus:outline-none"
             >
               {ICON_OPTIONS.map((opt) => (
                 <option key={opt} value={opt}>
@@ -184,7 +184,7 @@ export function ScriptFormModal({
               value={form.code}
               onChange={(e) => update('code', e.target.value)}
               rows={8}
-              className="w-full resize-y rounded-xl border border-line bg-[#060b1e] px-4 py-2.5 font-mono text-xs text-white focus:border-azure-500 focus:outline-none"
+              className="w-full resize-y rounded-xl border border-line bg-black/60 px-4 py-2.5 font-mono text-xs text-white focus:border-zinc-500 focus:outline-none"
             />
           </div>
 
@@ -201,10 +201,10 @@ export function ScriptFormModal({
             <button
               type="submit"
               disabled={saving}
-              className="flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-glow-sm hover:bg-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {saving && (
-                <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 animate-spin text-black" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>

@@ -9,7 +9,7 @@
     "updatedAt": "2026-09-02",
     "icon": "Zap",
     "features": ["Smart Spike Timing", "Angle Predictor", "Curveball Serve", "Stamina Lock"],
-    "code": "-- Sour Hub: Apex Volleyball Hub v2.1.0\n-- Game: Volleyball Legends\nlocal Players = game:GetService('Players')\nlocal LocalPlayer = Players.LocalPlayer\n\nlocal Config = {\n  AutoSpike = true,\n  PerfectAngle = true,\n  MagnetDive = true,\n  CurveServePower = 88,\n  PingCompensation = true,\n}\n\nprint('[Sour Hub] Apex Volleyball Hub loaded successfully.')\n"
+    "code": "-- Nova Hub: Apex Volleyball Hub v2.1.0\n-- Game: Volleyball Legends\nlocal Players = game:GetService('Players')\nlocal LocalPlayer = Players.LocalPlayer\n\nlocal Config = {\n  AutoSpike = true,\n  PerfectAngle = true,\n  MagnetDive = true,\n  CurveServePower = 88,\n  PingCompensation = true,\n}\n\nprint('[Nova Hub] Apex Volleyball Hub loaded successfully.')\n"
   },
   {
     "slug": "vl-swift-dive",
@@ -21,7 +21,7 @@
     "updatedAt": "2026-08-25",
     "icon": "Shield",
     "features": ["Auto Dive Trigger", "Range Threshold", "Instant Recovery", "Zero Stamina Drain"],
-    "code": "-- Sour Hub: Swift Dive Assistant v1.4.2\n-- Game: Volleyball Legends\nlocal Config = {\n  TriggerRadius = 14,\n  ReactionDelayMs = 25,\n  AutoRecover = true,\n}\n\nprint('[Sour Hub] Swift Dive Assistant active.')\n"
+    "code": "-- Nova Hub: Swift Dive Assistant v1.4.2\n-- Game: Volleyball Legends\nlocal Config = {\n  TriggerRadius = 14,\n  ReactionDelayMs = 25,\n  AutoRecover = true,\n}\n\nprint('[Nova Hub] Swift Dive Assistant active.')\n"
   },
   {
     "slug": "rivals-phantom",
@@ -33,7 +33,7 @@
     "updatedAt": "2026-09-09",
     "icon": "Crosshair",
     "features": ["Smooth Aimlock", "Adjustable FOV", "Wall Check", "Recoil Reducer"],
-    "code": "-- Sour Hub: Phantom Rivals Suite v3.0.4\n-- Game: RIVALS\nlocal Config = {\n  AimAssist = true,\n  FOV = 85,\n  Smoothing = 0.22,\n  RecoilReduction = 0.80,\n  TeamCheck = true,\n}\n\nprint('[Sour Hub] Phantom Rivals Suite initialized.')\n"
+    "code": "-- Nova Hub: Phantom Rivals Suite v3.0.4\n-- Game: RIVALS\nlocal Config = {\n  AimAssist = true,\n  FOV = 85,\n  Smoothing = 0.22,\n  RecoilReduction = 0.80,\n  TeamCheck = true,\n}\n\nprint('[Nova Hub] Phantom Rivals Suite initialized.')\n"
   },
   {
     "slug": "rivals-lumen-esp",
@@ -45,7 +45,7 @@
     "updatedAt": "2026-08-29",
     "icon": "Eye",
     "features": ["Box ESP", "Health Bar", "Equipped Weapon", "Distance Meter"],
-    "code": "-- Sour Hub: Lumen ESP Rivals v2.8.1\n-- Game: RIVALS\nlocal ESP = {\n  Boxes = true,\n  Names = true,\n  Health = true,\n  Weapon = true,\n  MaxDistance = 600,\n}\n\nprint('[Sour Hub] Lumen ESP active for RIVALS.')\n"
+    "code": "-- Nova Hub: Lumen ESP Rivals v2.8.1\n-- Game: RIVALS\nlocal ESP = {\n  Boxes = true,\n  Names = true,\n  Health = true,\n  Weapon = true,\n  MaxDistance = 600,\n}\n\nprint('[Nova Hub] Lumen ESP active for RIVALS.')\n"
   },
   {
     "slug": "gakuran-fighter",
@@ -57,7 +57,7 @@
     "updatedAt": "2026-09-01",
     "icon": "Swords",
     "features": ["Auto Combo Chain", "Frame-Perfect Parry", "Infinite Stamina", "Style Auto-Reroll"],
-    "code": "-- Sour Hub: Nishikata Combat Engine v1.9.0\n-- Game: Gakuran\nlocal Config = {\n  AutoCombo = true,\n  InstantParry = true,\n  InfiniteStamina = true,\n  TargetStyle = 'Hakari',\n}\n\nprint('[Sour Hub] Nishikata Combat Engine running.')\n"
+    "code": "-- Nova Hub: Nishikata Combat Engine v1.9.0\n-- Game: Gakuran\nlocal Config = {\n  AutoCombo = true,\n  InstantParry = true,\n  InfiniteStamina = true,\n  TargetStyle = 'Hakari',\n}\n\nprint('[Nova Hub] Nishikata Combat Engine running.')\n"
   },
   {
     "slug": "gakuran-auto-yen",
@@ -69,7 +69,7 @@
     "updatedAt": "2026-08-18",
     "icon": "Coins",
     "features": ["Job Auto-Complete", "Daily Quest Farm", "Yen Collector", "Safe Town Teleports"],
-    "code": "-- Sour Hub: Gakuran Auto-Yen & Quests v1.3.5\n-- Game: Gakuran\nlocal Config = {\n  AutoJob = true,\n  FastTeleports = true,\n  AntiAfk = true,\n}\n\nprint('[Sour Hub] Auto-Yen active.')\n"
+    "code": "-- Nova Hub: Gakuran Auto-Yen & Quests v1.3.5\n-- Game: Gakuran\nlocal Config = {\n  AutoJob = true,\n  FastTeleports = true,\n  AntiAfk = true,\n}\n\nprint('[Nova Hub] Auto-Yen active.')\n"
   },
   {
     "slug": "redliner-kinetic",
@@ -81,7 +81,7 @@
     "updatedAt": "2026-09-04",
     "icon": "Flame",
     "features": ["Velocity Uncapper", "Predictive Parry", "Slide Chain Boost", "Katana Deflect"],
-    "code": "-- Sour Hub: Kinetic Overdrive v2.2.0\n-- Game: REDLINER\nlocal Config = {\n  VelocityBoost = 1.45,\n  AutoParry = true,\n  WallSlideFriction = 0.05,\n}\n\nprint('[Sour Hub] Kinetic Overdrive injected.')\n"
+    "code": "-- Nova Hub: Kinetic Overdrive v2.2.0\n-- Game: REDLINER\nlocal Config = {\n  VelocityBoost = 1.45,\n  AutoParry = true,\n  WallSlideFriction = 0.05,\n}\n\nprint('[Nova Hub] Kinetic Overdrive injected.')\n"
   },
   {
     "slug": "blade-ball-vanguard",
@@ -93,7 +93,7 @@
     "updatedAt": "2026-09-03",
     "icon": "Sparkles",
     "features": ["Predictive Deflect", "Curve Ball Detection", "Clash Spam Clicker", "Auto Ability Trigger"],
-    "code": "-- Sour Hub: Vanguard Blade v3.4.0\n-- Game: Blade Ball\nlocal Config = {\n  AutoParry = true,\n  DeflectionOffset = 0.12,\n  CurveCompensation = true,\n  SpamMode = true,\n}\n\nprint('[Sour Hub] Vanguard Blade loaded.')\n"
+    "code": "-- Nova Hub: Vanguard Blade v3.4.0\n-- Game: Blade Ball\nlocal Config = {\n  AutoParry = true,\n  DeflectionOffset = 0.12,\n  CurveCompensation = true,\n  SpamMode = true,\n}\n\nprint('[Nova Hub] Vanguard Blade loaded.')\n"
   },
   {
     "slug": "blade-ball-crate-afk",
@@ -105,7 +105,7 @@
     "updatedAt": "2026-08-22",
     "icon": "Gift",
     "features": ["Auto Wheel Spin", "Crate Opener", "AFK Reconnect", "Coin Collector"],
-    "code": "-- Sour Hub: Blade Ball Wheel & AFK v1.6.0\n-- Game: Blade Ball\nlocal Config = {\n  AutoSpin = true,\n  AutoOpenCrates = true,\n  AutoRejoin = true,\n}\n\nprint('[Sour Hub] Blade Ball AFK tool active.')\n"
+    "code": "-- Nova Hub: Blade Ball Wheel & AFK v1.6.0\n-- Game: Blade Ball\nlocal Config = {\n  AutoSpin = true,\n  AutoOpenCrates = true,\n  AutoRejoin = true,\n}\n\nprint('[Nova Hub] Blade Ball AFK tool active.')\n"
   },
   {
     "slug": "orbit-farm",
@@ -117,7 +117,7 @@
     "updatedAt": "2026-08-14",
     "icon": "Orbit",
     "features": ["Universal Auto-Farm", "Safe Teleporting", "Auto-Sell Loop", "Anti-Detection Delay"],
-    "code": "-- Sour Hub: Orbit Farm v2.4.0\n-- Universal Experience Engine\nlocal Config = {\n  AutoFarm = true,\n  AutoSell = true,\n  Radius = 120,\n}\n\nprint('[Sour Hub] Orbit Farm initialized.')\n"
+    "code": "-- Nova Hub: Orbit Farm v2.4.0\n-- Universal Experience Engine\nlocal Config = {\n  AutoFarm = true,\n  AutoSell = true,\n  Radius = 120,\n}\n\nprint('[Nova Hub] Orbit Farm initialized.')\n"
   },
   {
     "slug": "driftpath",
@@ -129,7 +129,7 @@
     "updatedAt": "2026-08-02",
     "icon": "Waypoints",
     "features": ["Speed Multiplier", "Smooth Fly Bypass", "Noclip Toggle", "Waypoint Recorder"],
-    "code": "-- Sour Hub: Driftpath v1.9.2\n-- Universal Experience Engine\nlocal Config = {\n  Speed = 32,\n  Fly = false,\n  Noclip = false,\n}\n\nprint('[Sour Hub] Driftpath loaded.')\n"
+    "code": "-- Nova Hub: Driftpath v1.9.2\n-- Universal Experience Engine\nlocal Config = {\n  Speed = 32,\n  Fly = false,\n  Noclip = false,\n}\n\nprint('[Nova Hub] Driftpath loaded.')\n"
   },
   {
     "slug": "lumen-esp",
@@ -141,7 +141,7 @@
     "updatedAt": "2026-07-20",
     "icon": "Eye",
     "features": ["Universal Box ESP", "Skeleton Tracers", "Distance Sliders", "Team Color Awareness"],
-    "code": "-- Sour Hub: Lumen ESP Universal v3.1.1\nlocal Settings = {\n  MaxDistance = 800,\n  TeamColors = true,\n  Tracers = false,\n}\n\nprint('[Sour Hub] Lumen ESP Universal ready.')\n"
+    "code": "-- Nova Hub: Lumen ESP Universal v3.1.1\nlocal Settings = {\n  MaxDistance = 800,\n  TeamColors = true,\n  Tracers = false,\n}\n\nprint('[Nova Hub] Lumen ESP Universal ready.')\n"
   },
   {
     "slug": "haloui",
@@ -153,7 +153,7 @@
     "updatedAt": "2026-05-11",
     "icon": "LayoutPanelLeft",
     "features": ["Draggable Interface", "Multi-Tab System", "Color Picker", "Hotkey Rebinding"],
-    "code": "-- Sour Hub: HaloUI v2.0.0\nlocal HaloUI = {}\nHaloUI.__index = HaloUI\n\nfunction HaloUI.new(title)\n  return setmetatable({ title = title, tabs = {} }, HaloUI)\nend\n\nprint('[Sour Hub] HaloUI framework loaded.')\nreturn HaloUI\n"
+    "code": "-- Nova Hub: HaloUI v2.0.0\nlocal HaloUI = {}\nHaloUI.__index = HaloUI\n\nfunction HaloUI.new(title)\n  return setmetatable({ title = title, tabs = {} }, HaloUI)\nend\n\nprint('[Nova Hub] HaloUI framework loaded.')\nreturn HaloUI\n"
   },
   {
     "slug": "nightfall-macro",
@@ -165,7 +165,7 @@
     "updatedAt": "2026-08-28",
     "icon": "Workflow",
     "features": ["Macro Recorder", "Step Sequencer", "Microsecond Accuracy", "Emergency Killswitch"],
-    "code": "-- Sour Hub: Nightfall Macro v4.0.3\nlocal Macro = {\n  Loops = 100,\n  Interval = 0.05,\n}\n\nprint('[Sour Hub] Nightfall Macro engine running.')\n"
+    "code": "-- Nova Hub: Nightfall Macro v4.0.3\nlocal Macro = {\n  Loops = 100,\n  Interval = 0.05,\n}\n\nprint('[Nova Hub] Nightfall Macro engine running.')\n"
   },
   {
     "slug": "pulsecraft",
@@ -177,7 +177,7 @@
     "updatedAt": "2026-06-30",
     "icon": "Hammer",
     "features": ["Grid Snapping", "Coordinate Alignment", "Undo/Redo History", "Part Cloner"],
-    "code": "-- Sour Hub: Pulsecraft v1.2.0\nlocal Config = {\n  GridSize = 2,\n  SnapMode = 'World',\n}\n\nprint('[Sour Hub] Pulsecraft ready.')\n"
+    "code": "-- Nova Hub: Pulsecraft v1.2.0\nlocal Config = {\n  GridSize = 2,\n  SnapMode = 'World',\n}\n\nprint('[Nova Hub] Pulsecraft ready.')\n"
   },
   {
     "slug": "universal",
@@ -194,6 +194,6 @@
       "Custom Misc Modifiers",
       "Execution Telemetry Sync"
     ],
-    "code": "--[[ \n    Sour Hub: Universal Script (Suggestions + Misc GUI)\n    Active when an unsupported game is detected.\n]]\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"[Sour Hub] Universal Suggestions + Misc GUI loaded successfully.\")\n\n-- Universal interface implementation\nlocal UniversalGUI = {\n    Version = \"1.0.0\",\n    PlaceId = game.PlaceId,\n    Loaded = true,\n}\n\nreturn UniversalGUI\n"
+    "code": "--[[ \n    Nova Hub: Universal Script (Suggestions + Misc GUI)\n    Active when an unsupported game is detected.\n]]\n\nlocal Players = game:GetService(\"Players\")\nlocal LocalPlayer = Players.LocalPlayer\n\nprint(\"[Nova Hub] Universal Suggestions + Misc GUI loaded successfully.\")\n\n-- Universal interface implementation\nlocal UniversalGUI = {\n    Version = \"1.0.0\",\n    PlaceId = game.PlaceId,\n    Loaded = true,\n}\n\nreturn UniversalGUI\n"
   }
 ]

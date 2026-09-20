@@ -27,21 +27,21 @@ export function Footer() {
   return (
     <footer
       id="site-footer"
-      className="relative z-10 w-full border-t border-line/80 bg-[#040816]/95 backdrop-blur-2xl shadow-[0_-12px_30px_rgba(2,6,23,0.8)]"
+      className="relative z-10 w-full border-t border-white/[0.08] bg-[#070709]/95 backdrop-blur-2xl shadow-[0_-12px_30px_rgba(0,0,0,0.95)]"
     >
       {/* Clean top accent highlight for seamless transition from the grid background */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-azure-500/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
 
       {/* Compact, neatly aligned dark footer container */}
       <div className="relative mx-auto max-w-4xl px-5 pt-6 pb-5 sm:px-8 sm:pt-7 sm:pb-6">
         <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-start">
           <div className="max-w-sm">
             <Link href="/" className="flex items-center gap-2.5">
-              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-azure-400 to-azure-700 shadow-glow-sm">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/15 bg-gradient-to-br from-zinc-700 via-zinc-800 to-black shadow-glow-sm">
                 <Zap className="h-3.5 w-3.5 text-white" />
               </span>
               <span className="font-display text-base font-semibold text-white">
-                Sour Hub
+                Nova Hub
               </span>
             </Link>
             <p className="mt-2.5 text-sm leading-relaxed text-ink-muted">
@@ -54,7 +54,7 @@ export function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Discord Server"
-                className="group flex h-8.5 w-8.5 items-center justify-center rounded-lg border border-line bg-surface/40 text-ink-muted transition-all hover:border-azure-500/80 hover:bg-[#0d1636] hover:text-[#5865F2] hover:shadow-glow-sm"
+                className="group flex h-8.5 w-8.5 items-center justify-center rounded-lg border border-white/10 bg-[#121216] text-ink-muted transition-all hover:border-white/25 hover:bg-[#18181d] hover:text-white hover:shadow-glow-sm"
               >
                 <DiscordIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
               </a>
@@ -81,7 +81,7 @@ export function Footer() {
         </div>
 
         <div className="mt-6 flex flex-col items-center justify-between gap-2.5 border-t border-line/60 pt-4 text-xs text-ink-faint sm:mt-7 sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} Sour Hub. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Nova Hub. All rights reserved.</p>
           <p>Not affiliated with Roblox Corporation.</p>
         </div>
       </div>

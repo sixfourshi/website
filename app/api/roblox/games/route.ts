@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
         next: { revalidate: 30 },
         headers: {
           Accept: 'application/json',
-          'User-Agent': 'SourHub/1.0',
+          'User-Agent': 'NovaHub/1.0',
         },
       }
     );

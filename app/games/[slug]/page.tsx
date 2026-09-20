@@ -14,9 +14,9 @@ export const dynamicParams = true;
 export const revalidate = 0;
 
 export const metadata = {
-  title: 'Sour Hub - Keyless',
+  title: 'Nova Hub - Keyless',
   alternates: {
-    canonical: 'https://sourhub.vercel.app/games',
+    canonical: 'https://novahub.vercel.app/games',
   },
 };
 
@@ -54,7 +54,7 @@ export default async function GameOrScriptPage({
         {/* Script header */}
         <div className="mt-4 flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3.5">
-            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-surface text-azure-400">
+            <span className="flex h-12 w-12 flex-none items-center justify-center rounded-xl bg-surface text-white">
               <Icon name={script.icon} size={24} />
             </span>
             <div>

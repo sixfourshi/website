@@ -59,8 +59,8 @@ export function GameCard({
       id={`game-card-${game.slug}`}
       className={`group relative w-full overflow-hidden rounded-2xl border transition-all duration-300 ${
         isExpanded
-          ? 'border-[#5b469b]/60 bg-[#090b1e] shadow-2xl shadow-[#1f103d]/40 ring-1 ring-[#7c5cd6]/30'
-          : 'border-white/10 bg-[#0a0c22]/90 hover:border-[#5b469b]/40 hover:bg-[#0c0e28] shadow-md hover:shadow-lg'
+          ? 'border-white/20 bg-[#121216]/95 shadow-2xl shadow-black/90 ring-1 ring-white/10'
+          : 'border-white/10 bg-[#0c0c0f]/90 hover:border-white/20 hover:bg-[#131317] shadow-md hover:shadow-xl'
       }`}
     >
       {/* Unified Continuous Background Artwork across the ENTIRE card (header + expanded panel) */}
@@ -77,12 +77,12 @@ export function GameCard({
             onError={() => setThumbError(true)}
           />
           {/* Translucent dark gradient overlay across the whole card so tabs & features remain readable while artwork is clearly visible */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#090b1e]/75 via-[#0b0c24]/80 to-[#08091a]/85" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-[#0c0c0f]/80 to-[#09090b]/90" />
           {/* Subtle ambient tint */}
-          <div className="absolute inset-0 bg-[#070c1b]/30" />
+          <div className="absolute inset-0 bg-black/30" />
         </div>
       ) : (
-        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-[#0e1230] to-[#07091c]" />
+        <div className="pointer-events-none absolute inset-0 z-0 bg-gradient-to-b from-[#18181b] to-[#09090b]" />
       )}
 
       {/* Card Header (Clicking expands/collapses the card) */}
@@ -100,7 +100,7 @@ export function GameCard({
       >
         {/* Left: Game Icon + Name + Live Player Count */}
         <div className="flex items-center gap-3.5 min-w-0">
-          <div className="relative h-13 w-13 sm:h-14 sm:w-14 flex-none overflow-hidden rounded-xl border border-white/20 bg-[#0a0c20] shadow-xl shadow-black/50 transition-transform duration-300 group-hover:scale-[1.03]">
+          <div className="relative h-13 w-13 sm:h-14 sm:w-14 flex-none overflow-hidden rounded-xl border border-white/10 bg-[#09090b] shadow-xl shadow-black/80 transition-transform duration-300 group-hover:scale-[1.03]">
             {!imgError && game.iconUrl ? (
               <Image
                 src={game.iconUrl}
@@ -112,7 +112,7 @@ export function GameCard({
                 onError={() => setImgError(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[#1b1542] to-[#0a0c20] text-purple-300">
+              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-800 to-[#0c0c0f] text-zinc-300">
                 <Layers size={22} />
               </div>
             )}
@@ -140,8 +140,8 @@ export function GameCard({
         {/* Right: Total feature count pill + Play button + Arrow Toggle */}
         <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t border-white/10 sm:border-t-0">
           {/* Feature Count Pill */}
-          <span className="inline-flex items-center rounded-full border border-[#7c5cd6]/40 bg-[#120d2a]/60 backdrop-blur-sm px-3.5 py-1 text-xs font-medium text-slate-200 shadow-sm">
-            <span className="font-bold text-[#c4b5fd] mr-1">{totalFeatures}</span>
+          <span className="inline-flex items-center rounded-full border border-white/15 bg-black/60 backdrop-blur-sm px-3.5 py-1 text-xs font-medium text-zinc-300 shadow-sm">
+            <span className="font-bold text-white mr-1">{totalFeatures}</span>
             features
           </span>
 
@@ -151,18 +151,18 @@ export function GameCard({
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-[#7c5cd6]/45 bg-[#25154d]/50 hover:bg-[#341e6c]/70 hover:border-[#9375ea] px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-glow-sm"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 hover:border-white/35 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-glow-sm"
           >
             <Play size={10} className="fill-current text-white" />
             <span>Play</span>
           </a>
 
           {/* Arrow / Chevron */}
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-300 transition-colors group-hover:text-white">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors group-hover:text-white">
             <ChevronDown
               size={17}
               className={`transition-transform duration-300 ease-out ${
-                isExpanded ? 'rotate-180 text-purple-300' : 'text-slate-400'
+                isExpanded ? 'rotate-180 text-white' : 'text-zinc-400'
               }`}
             />
           </div>
@@ -183,7 +183,7 @@ export function GameCard({
             {/* Expanded Content Panel: translucent wash (not solid!) allowing continuous background artwork to shine through */}
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative z-10 border-t border-white/10 bg-black/25 backdrop-blur-[1px] px-4 sm:px-6 pt-4 pb-6"
+              className="relative z-10 border-t border-white/10 bg-black/50 backdrop-blur-[1px] px-4 sm:px-6 pt-4 pb-6"
             >
               {/* Tabs Row */}
               {tabs.length > 0 ? (
@@ -198,8 +198,8 @@ export function GameCard({
                           onClick={() => setActiveTabIndex(idx)}
                           className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200 cursor-pointer ${
                             isActive
-                              ? 'border border-[#8b5cf6]/80 bg-[#25154d]/60 text-purple-200 font-semibold shadow-sm'
-                              : 'border border-white/10 bg-black/35 text-slate-300 hover:border-white/25 hover:bg-black/50 hover:text-white'
+                              ? 'border border-white/30 bg-white/15 text-white font-semibold shadow-sm'
+                              : 'border border-white/10 bg-black/60 text-zinc-400 hover:border-white/20 hover:bg-zinc-900 hover:text-white'
                           }`}
                         >
                           {tab.name}
@@ -219,7 +219,7 @@ export function GameCard({
                     >
                       {currentTab.sections.map((section, sIdx) => (
                         <div key={section.name + sIdx} className="space-y-2">
-                          <h4 className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                          <h4 className="text-[11px] font-bold tracking-wider text-zinc-400 uppercase">
                             {section.name}
                           </h4>
                           <div className="flex flex-wrap gap-2">
@@ -227,9 +227,9 @@ export function GameCard({
                               section.features.map((feat, fIdx) => (
                                 <span
                                   key={feat + fIdx}
-                                  className="inline-flex items-center gap-1.5 rounded-full border border-[#7c5cd6]/25 bg-black/45 hover:bg-black/65 px-3 py-1 text-xs text-slate-200 backdrop-blur-xs transition-colors shadow-sm"
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 hover:bg-zinc-900 px-3 py-1 text-xs text-zinc-200 backdrop-blur-xs transition-colors shadow-sm"
                                 >
-                                  <span className="h-1.5 w-1.5 rounded-full bg-[#a855f7] flex-none shadow-sm shadow-purple-500/80" />
+                                  <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 flex-none shadow-sm shadow-white/30" />
                                   <span>{feat}</span>
                                 </span>
                               ))

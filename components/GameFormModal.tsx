@@ -443,7 +443,7 @@ export function GameFormModal({
               <h2 className="font-display text-lg font-bold text-white">
                 {isEdit ? 'Edit Game & Structured Features' : 'Add Supported Game'}
               </h2>
-              <span className="rounded-full border border-azure-500/40 bg-azure-950/60 px-2.5 py-0.5 text-xs font-semibold text-azure-300">
+              <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-xs font-semibold text-zinc-300">
                 {totalFeatures} features total
               </span>
             </div>
@@ -453,7 +453,7 @@ export function GameFormModal({
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:text-white hover:border-azure-600 transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:text-white hover:border-white/40 transition-colors"
           >
             <X size={16} />
           </button>
@@ -461,8 +461,8 @@ export function GameFormModal({
 
         <form onSubmit={onSubmit} className="space-y-6">
           {/* SECTION 1: ROBLOX GAME DETAILS */}
-          <div className="space-y-4 rounded-xl border border-line/60 bg-[#060b1e]/70 p-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-azure-300 flex items-center gap-2">
+          <div className="space-y-4 rounded-xl border border-line/60 bg-[#08080a] p-4">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
               <Layers size={14} />
               <span>1. Game Information & Roblox Assets</span>
             </h3>
@@ -471,7 +471,7 @@ export function GameFormModal({
             <div>
               <label className="block text-xs font-medium text-slate-300 mb-1.5 flex items-center justify-between">
                 <span>Roblox Place ID or Universe ID</span>
-                <span className="text-[11px] text-azure-400">Auto-fills game details & artwork</span>
+                <span className="text-[11px] text-zinc-400">Auto-fills game details & artwork</span>
               </label>
               <div className="relative">
                 <input
@@ -479,13 +479,13 @@ export function GameFormModal({
                   value={form.robloxId}
                   onChange={(e) => onRobloxIdChange(e.target.value)}
                   placeholder="e.g. 17625359962 (Rivals) or Universe ID"
-                  className="w-full rounded-xl border border-line bg-[#081028] px-4 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                  className="w-full rounded-xl border border-line bg-black/60 px-4 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => fetchRobloxMetadata(form.robloxId)}
                   disabled={fetchingRoblox || !form.robloxId.trim()}
-                  className="absolute right-1.5 top-1.5 rounded-lg bg-azure-600 px-3 py-1 text-[11px] font-medium text-white hover:bg-azure-500 disabled:opacity-50 transition-colors"
+                  className="absolute right-1.5 top-1.5 rounded-lg bg-white px-3 py-1 text-[11px] font-semibold text-black hover:bg-zinc-200 disabled:opacity-50 transition-colors"
                 >
                   {fetchingRoblox ? (
                     <span className="flex items-center gap-1">
@@ -524,7 +524,7 @@ export function GameFormModal({
                   onChange={(e) => onNameChange(e.target.value)}
                   placeholder="e.g. Rivals"
                   required
-                  className="w-full rounded-xl border border-line bg-[#081028] px-4 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                  className="w-full rounded-xl border border-line bg-black/60 px-4 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                 />
               </div>
 
@@ -532,7 +532,7 @@ export function GameFormModal({
                 <label className="block text-xs font-medium text-slate-300 mb-1">
                   URL Slug <span className="text-red-400">*</span>
                 </label>
-                <div className="flex items-center rounded-xl border border-line bg-[#081028] px-3 py-2 text-xs">
+                <div className="flex items-center rounded-xl border border-line bg-black/60 px-3 py-2 text-xs">
                   <span className="text-slate-500 select-none mr-1">/games/</span>
                   <input
                     type="text"
@@ -543,7 +543,7 @@ export function GameFormModal({
                     }}
                     placeholder="rivals"
                     required
-                    className="w-full bg-transparent text-azure-300 font-mono focus:outline-none"
+                    className="w-full bg-transparent text-white font-mono focus:outline-none"
                   />
                 </div>
               </div>
@@ -559,7 +559,7 @@ export function GameFormModal({
                     value={form.iconUrl}
                     onChange={(e) => setForm((prev) => ({ ...prev, iconUrl: e.target.value }))}
                     placeholder="https://tr.rbxcdn.com/..."
-                    className="w-full rounded-xl border border-line bg-[#081028] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                    className="w-full rounded-xl border border-line bg-black/60 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                   />
                   {form.iconUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -580,7 +580,7 @@ export function GameFormModal({
                     value={form.thumbnailUrl}
                     onChange={(e) => setForm((prev) => ({ ...prev, thumbnailUrl: e.target.value }))}
                     placeholder="https://tr.rbxcdn.com/..."
-                    className="w-full rounded-xl border border-line bg-[#081028] px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                    className="w-full rounded-xl border border-line bg-black/60 px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                   />
                   {form.thumbnailUrl && (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -601,7 +601,7 @@ export function GameFormModal({
                 id="isUniversal"
                 checked={form.isUniversal}
                 onChange={(e) => setForm((prev) => ({ ...prev, isUniversal: e.target.checked }))}
-                className="h-4 w-4 rounded border-line bg-[#081028] text-azure-500 focus:ring-0"
+                className="h-4 w-4 rounded border-line bg-black/60 text-white focus:ring-0"
               />
               <label htmlFor="isUniversal" className="text-xs text-slate-300 cursor-pointer">
                 Is Universal Experience (compatible across all Roblox games)
@@ -610,10 +610,10 @@ export function GameFormModal({
           </div>
 
           {/* SECTION 2: STRUCTURED FEATURE EDITOR (tabs -> sections -> features) */}
-          <div className="space-y-4 rounded-xl border border-azure-500/40 bg-[#060b1e]/90 p-4 shadow-inner">
+          <div className="space-y-4 rounded-xl border border-white/10 bg-[#08080a] p-4 shadow-inner">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-line/60 pb-3">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-azure-300 flex items-center gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-2">
                   <Sparkles size={14} />
                   <span>2. Structured Features Editor (tabs → sections → features)</span>
                 </h3>
@@ -625,7 +625,7 @@ export function GameFormModal({
               <button
                 type="button"
                 onClick={handleAddTab}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-azure-500/50 bg-azure-500/20 px-3 py-1.5 text-xs font-semibold text-azure-200 hover:bg-azure-500 hover:text-white transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white hover:bg-white/20 transition-all cursor-pointer"
               >
                 <Plus size={13} />
                 <span>Add Tab</span>
@@ -641,8 +641,8 @@ export function GameFormModal({
                     key={tab.name + idx}
                     className={`group flex items-center rounded-full border transition-all ${
                       isActive
-                        ? 'border-azure-400 bg-azure-500/30 text-white shadow-glow-sm'
-                        : 'border-line/70 bg-[#091330] text-slate-400 hover:border-azure-500/40 hover:text-slate-200'
+                        ? 'border-white/40 bg-white/20 text-white font-semibold shadow-sm'
+                        : 'border-line/70 bg-black/60 text-slate-400 hover:border-white/20 hover:text-slate-200'
                     }`}
                   >
                     <button
@@ -660,7 +660,7 @@ export function GameFormModal({
                           type="button"
                           onClick={() => handleMoveTab(idx, 'left')}
                           title="Move tab left"
-                          className="hover:text-azure-300 p-0.5"
+                          className="hover:text-white p-0.5"
                         >
                           <ChevronLeft size={11} />
                         </button>
@@ -670,7 +670,7 @@ export function GameFormModal({
                           type="button"
                           onClick={() => handleMoveTab(idx, 'right')}
                           title="Move tab right"
-                          className="hover:text-azure-300 p-0.5"
+                          className="hover:text-white p-0.5"
                         >
                           <ChevronRight size={11} />
                         </button>
@@ -679,7 +679,7 @@ export function GameFormModal({
                         type="button"
                         onClick={() => handleRenameTab(idx)}
                         title="Rename tab"
-                        className="hover:text-azure-300 px-0.5 text-[10px]"
+                        className="hover:text-white px-0.5 text-[10px]"
                       >
                         ✎
                       </button>
@@ -701,11 +701,11 @@ export function GameFormModal({
 
             {/* Selected Tab Content: Sections & Features */}
             {currentTab ? (
-              <div className="space-y-4 rounded-xl border border-line/70 bg-[#070e28] p-4 mt-3">
+              <div className="space-y-4 rounded-xl border border-line/70 bg-[#0b0b0e] p-4 mt-3">
                 <div className="flex items-center justify-between border-b border-line/50 pb-2.5">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold text-white">
-                      Sections in <span className="text-azure-300">&ldquo;{currentTab.name}&rdquo;</span>
+                      Sections in <span className="text-zinc-200">&ldquo;{currentTab.name}&rdquo;</span>
                     </span>
                     <span className="text-[11px] text-slate-400">
                       ({currentTab.sections.reduce((acc, s) => acc + s.features.length, 0)} features)
@@ -715,7 +715,7 @@ export function GameFormModal({
                   <button
                     type="button"
                     onClick={handleAddSection}
-                    className="inline-flex items-center gap-1 rounded-lg border border-line/80 bg-[#0c163a] px-2.5 py-1 text-xs text-slate-300 hover:border-azure-500 hover:text-white transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1 rounded-lg border border-line/80 bg-white/5 px-2.5 py-1 text-xs text-slate-300 hover:border-white/25 hover:text-white transition-colors cursor-pointer"
                   >
                     <Plus size={12} />
                     <span>Add Section</span>
@@ -728,7 +728,7 @@ export function GameFormModal({
                     {currentTab.sections.map((section, secIdx) => (
                       <div
                         key={secIdx}
-                        className="rounded-xl border border-line/60 bg-[#050a1d]/80 p-3.5 space-y-2.5"
+                        className="rounded-xl border border-line/60 bg-black/40 p-3.5 space-y-2.5"
                       >
                         {/* Section Header */}
                         <div className="flex items-center justify-between gap-3">
@@ -738,7 +738,7 @@ export function GameFormModal({
                               value={section.name}
                               onChange={(e) => handleRenameSection(secIdx, e.target.value)}
                               placeholder="Section Name (e.g. SILENT AIM)"
-                              className="font-mono text-[11px] font-bold tracking-wider text-azure-300 uppercase bg-transparent border-b border-transparent focus:border-azure-400 focus:outline-none w-48"
+                              className="font-mono text-[11px] font-bold tracking-wider text-zinc-300 uppercase bg-transparent border-b border-transparent focus:border-zinc-500 focus:outline-none w-48"
                             />
                             <span className="text-[10px] text-slate-500">
                               ({section.features.length} features)
@@ -782,16 +782,16 @@ export function GameFormModal({
                           {section.features.map((feat, featIdx) => (
                             <span
                               key={feat + featIdx}
-                              className="group inline-flex items-center gap-1 rounded-full border border-azure-500/25 bg-[#0a1538] px-2.5 py-0.5 text-xs text-slate-200"
+                              className="group inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/60 px-2.5 py-0.5 text-xs text-slate-200"
                             >
-                              <span className="h-1.5 w-1.5 rounded-full bg-azure-400 flex-none" />
+                              <span className="h-1.5 w-1.5 rounded-full bg-zinc-300 flex-none" />
                               <span>{feat}</span>
                               {featIdx > 0 && (
                                 <button
                                   type="button"
                                   onClick={() => handleMoveFeature(secIdx, featIdx, 'left')}
                                   title="Move left"
-                                  className="hidden group-hover:inline text-slate-400 hover:text-azure-300"
+                                  className="hidden group-hover:inline text-slate-400 hover:text-white"
                                 >
                                   <ChevronLeft size={10} />
                                 </button>
@@ -801,7 +801,7 @@ export function GameFormModal({
                                   type="button"
                                   onClick={() => handleMoveFeature(secIdx, featIdx, 'right')}
                                   title="Move right"
-                                  className="hidden group-hover:inline text-slate-400 hover:text-azure-300"
+                                  className="hidden group-hover:inline text-slate-400 hover:text-white"
                                 >
                                   <ChevronRight size={10} />
                                 </button>
@@ -842,12 +842,12 @@ export function GameFormModal({
                               }
                             }}
                             placeholder="Add feature (or paste comma-separated list)..."
-                            className="flex-1 rounded-lg border border-line/70 bg-[#081028] px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                            className="flex-1 rounded-lg border border-line/70 bg-black/60 px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
                           />
                           <button
                             type="button"
                             onClick={() => handleAddFeature(secIdx)}
-                            className="rounded-lg bg-azure-600/60 px-3 py-1.5 text-xs font-medium text-white hover:bg-azure-500 transition-colors cursor-pointer"
+                            className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/25 transition-colors cursor-pointer"
                           >
                             Add
                           </button>
@@ -874,8 +874,8 @@ export function GameFormModal({
           <div className="flex items-center justify-between pt-3 border-t border-line/60">
             <div className="text-xs text-slate-400">
               Total:&nbsp;
-              <span className="font-semibold text-azure-300">{tabs.length} tabs</span>,&nbsp;
-              <span className="font-semibold text-azure-300">{totalFeatures} features</span>
+              <span className="font-semibold text-zinc-300">{tabs.length} tabs</span>,&nbsp;
+              <span className="font-semibold text-zinc-300">{totalFeatures} features</span>
             </div>
 
             <div className="flex gap-3">
@@ -889,10 +889,10 @@ export function GameFormModal({
               <button
                 type="submit"
                 disabled={saving}
-                className="flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm hover:bg-azure-400 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer"
+                className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-glow-sm hover:bg-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
                 {saving && (
-                  <svg className="h-4 w-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 animate-spin text-black" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>

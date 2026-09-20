@@ -62,9 +62,9 @@ export function DeleteScriptModal({
         </div>
 
         {/* Script preview card */}
-        <div className="mt-5 rounded-xl border border-line/80 bg-[#060b1d] p-4 text-xs text-slate-300">
+        <div className="mt-5 rounded-xl border border-line/80 bg-black/40 p-4 text-xs text-slate-300">
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-line bg-surface/60 text-azure-300">
+            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-lg border border-line bg-surface/60 text-zinc-200">
               <Icon name={script.icon} size={18} />
             </span>
             <div className="min-w-0 flex-1">
@@ -72,7 +72,7 @@ export function DeleteScriptModal({
                 {script.name}
               </div>
               <div className="font-mono text-[11px] text-slate-400 mt-0.5">
-                slug: <span className="text-azure-300">{script.slug}</span>
+                slug: <span className="text-white font-medium">{script.slug}</span>
                 {script.version && <span className="ml-2 text-slate-500">• v{script.version}</span>}
               </div>
             </div>

@@ -30,7 +30,7 @@ function highlight(line: string): React.ReactNode[] {
     }
     if (KEYWORDS.has(tok)) {
       return (
-        <span key={i} className="text-azure-300">
+        <span key={i} className="text-zinc-100 font-medium">
           {tok}
         </span>
       );
@@ -69,7 +69,7 @@ export function CodeViewer({ code }: { code: string }) {
         </div>
         <button
           onClick={onCopy}
-          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-muted transition-colors hover:border-azure-700 hover:text-ink"
+          className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-muted transition-colors hover:border-white/40 hover:text-white"
         >
           {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
           {copied ? 'Copied' : 'Copy'}

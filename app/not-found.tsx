@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 export default function NotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-5 text-center">
-      <p className="font-display text-6xl font-semibold text-azure-500/40">
+      <p className="font-display text-6xl font-semibold text-white/30">
         404
       </p>
       <h1 className="mt-3 font-display text-xl font-semibold text-ink">
@@ -15,7 +15,7 @@ export default function NotFound() {
       </p>
       <Link
         href="/"
-        className="mt-7 flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm transition-colors hover:bg-azure-400"
+        className="mt-7 flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-glow-sm transition-colors hover:bg-zinc-200"
       >
         <ArrowLeft size={15} />
         Back home

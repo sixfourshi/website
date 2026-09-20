@@ -90,11 +90,11 @@ export function SuggestionForm() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="rounded-3xl border border-line/80 bg-[#0b122c]/90 p-6 sm:p-10 shadow-2xl shadow-black/50 backdrop-blur-xl transition-all">
+      <div className="rounded-3xl border border-line bg-[#0c0c0f] p-6 sm:p-10 shadow-2xl shadow-black/80 backdrop-blur-xl transition-all">
         {/* Glowing badge */}
         <div className="flex justify-center mb-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-azure-500/30 bg-azure-500/10 px-3.5 py-1 text-xs font-medium text-azure-300">
-            <Sparkles size={12} className="text-azure-400" />
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-3.5 py-1 text-xs font-medium text-zinc-300">
+            <Sparkles size={12} className="text-zinc-400" />
             <span>Community Requests</span>
           </div>
         </div>
@@ -106,7 +106,7 @@ export function SuggestionForm() {
 
         <p className="mt-3 text-center text-xs sm:text-sm text-slate-300 max-w-lg mx-auto leading-relaxed">
           Have a game you want us to support or a feature you would like added? Send us your suggestion
-          and we’ll review it for a future Sour Hub update.
+          and we’ll review it for a future Nova Hub update.
         </p>
 
         {/* Success Notice Banner */}
@@ -126,9 +126,9 @@ export function SuggestionForm() {
           <div>
             <label htmlFor="game-name-input" className="block text-xs font-medium text-slate-200 mb-2">
               <span className="flex items-center gap-1.5">
-                <Gamepad2 size={13} className="text-azure-400" />
+                <Gamepad2 size={13} className="text-zinc-400" />
                 <span>Game Name</span>
-                <span className="text-azure-400">*</span>
+                <span className="text-zinc-500">*</span>
               </span>
             </label>
             <input
@@ -140,7 +140,7 @@ export function SuggestionForm() {
               maxLength={100}
               onChange={(e) => setGameName(e.target.value)}
               placeholder="e.g. Blade Ball, Rivals, Deepwoken, Da Hood"
-              className="w-full rounded-xl border border-line/80 bg-[#060b1d]/90 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-azure-500 focus:outline-none focus:ring-1 focus:ring-azure-500 disabled:opacity-50"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
             />
           </div>
 
@@ -148,9 +148,9 @@ export function SuggestionForm() {
           <div>
             <label htmlFor="roblox-link-input" className="block text-xs font-medium text-slate-200 mb-2">
               <span className="flex items-center gap-1.5">
-                <Link2 size={13} className="text-azure-400" />
+                <Link2 size={13} className="text-zinc-400" />
                 <span>Roblox Game Link</span>
-                <span className="text-azure-400">*</span>
+                <span className="text-zinc-500">*</span>
               </span>
             </label>
             <input
@@ -162,7 +162,7 @@ export function SuggestionForm() {
               maxLength={300}
               onChange={(e) => setRobloxLink(e.target.value)}
               placeholder="https://www.roblox.com/games/13772394625/..."
-              className="w-full rounded-xl border border-line/80 bg-[#060b1d]/90 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-azure-500 focus:outline-none focus:ring-1 focus:ring-azure-500 disabled:opacity-50"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
             />
             <p className="mt-1.5 text-[11px] text-slate-400">
               Paste the experience link directly from <strong className="text-slate-300">roblox.com/games/...</strong>
@@ -174,9 +174,9 @@ export function SuggestionForm() {
             <div className="flex items-center justify-between mb-2">
               <label htmlFor="suggestion-textarea" className="block text-xs font-medium text-slate-200">
                 <span className="flex items-center gap-1.5">
-                  <MessageSquarePlus size={13} className="text-azure-400" />
+                  <MessageSquarePlus size={13} className="text-zinc-400" />
                   <span>Suggestion</span>
-                  <span className="text-azure-400">*</span>
+                  <span className="text-zinc-500">*</span>
                 </span>
               </label>
               <span className="text-[11px] text-slate-400 font-mono">
@@ -192,7 +192,7 @@ export function SuggestionForm() {
               value={suggestion}
               onChange={(e) => setSuggestion(e.target.value)}
               placeholder="Describe the requested features, exploits, ESP options, auto-farm routines, or script improvements you would like to see supported..."
-              className="w-full rounded-xl border border-line/80 bg-[#060b1d]/90 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-azure-500 focus:outline-none focus:ring-1 focus:ring-azure-500 disabled:opacity-50 leading-relaxed resize-y"
+              className="w-full rounded-xl border border-line bg-black/60 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-500 transition-all focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50 leading-relaxed resize-y"
             />
           </div>
 
@@ -202,7 +202,7 @@ export function SuggestionForm() {
               ref={submitBtnRef}
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-azure-600 via-azure-500 to-cyan-500 px-6 py-3.5 text-xs sm:text-sm font-semibold text-white shadow-glow-sm hover:shadow-glow hover:from-azure-500 hover:to-cyan-400 transition-all disabled:opacity-60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-white px-6 py-3.5 text-xs sm:text-sm font-semibold text-black shadow-sm hover:bg-zinc-200 transition-all disabled:opacity-60 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -218,8 +218,8 @@ export function SuggestionForm() {
             </button>
           </div>
 
-          <p className="text-center text-[11px] text-slate-400 pt-1">
-            All suggestions are saved securely and reviewed by the Sour Hub development team.
+          <p className="text-center text-[11px] text-blue-200/70 pt-1">
+            All suggestions are saved securely and reviewed by the Nova Hub development team.
           </p>
         </form>
       </div>

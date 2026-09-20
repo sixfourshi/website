@@ -35,8 +35,8 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
       <Reveal>
         <div className="mb-8 flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
           <div>
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-azure-500/30 bg-azure-500/10 px-3 py-1 text-xs font-medium text-azure-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-azure-400 animate-pulse" />
+            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-3 py-1 text-xs font-medium text-zinc-300">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
               Verified &amp; Keyless
             </div>
             <h1 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl">
@@ -56,7 +56,7 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search scripts..."
-              className="w-full rounded-xl border border-line/80 bg-[#0c1533]/80 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-400 focus:border-azure-500 focus:outline-none"
+              className="w-full rounded-xl border border-line/80 bg-black/60 py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-slate-400 focus:border-zinc-500 focus:outline-none"
             />
           </div>
         </div>
@@ -76,14 +76,14 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
                 onClick={() => setSelectedCategory(cat)}
                 className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-medium transition-all ${
                   active
-                    ? 'border border-azure-500/50 bg-azure-500 text-white shadow-glow-sm'
-                    : 'border border-line/80 bg-[#0c1533]/60 text-slate-300 hover:border-azure-500/40 hover:bg-[#121c45] hover:text-white'
+                    ? 'border border-white/20 bg-white text-black font-semibold shadow-sm'
+                    : 'border border-line/80 bg-black/40 text-slate-300 hover:border-white/20 hover:bg-white/5 hover:text-white'
                 }`}
               >
                 <span>{cat}</span>
                 <span
                   className={`rounded-md px-1.5 py-0.5 text-[10px] ${
-                    active ? 'bg-white/20 text-white' : 'bg-surface/80 text-slate-400'
+                    active ? 'bg-black/10 text-black font-bold' : 'bg-surface/80 text-slate-400'
                   }`}
                 >
                   {count}
@@ -104,10 +104,10 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
             <Reveal key={script.slug} delay={(i % 3) * 70}>
               <Link
                 href={`/games/${script.slug}`}
-                className="group flex h-full flex-col rounded-2xl border border-line/80 bg-[#0e1738]/90 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-azure-500/50 hover:bg-[#121c45] hover:shadow-glow-sm"
+                className="group flex h-full flex-col rounded-2xl border border-line/80 bg-[#0c0c0f] p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[#121216] hover:shadow-glow-sm"
               >
                 <div className="mb-4 flex items-start justify-between">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line/80 bg-base/80 text-azure-300 transition-colors group-hover:border-azure-500/60">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-line/80 bg-base/80 text-white transition-colors group-hover:border-white/30">
                     <Icon name={script.icon} size={18} />
                   </span>
                   <ArrowUpRight
@@ -122,7 +122,7 @@ export function ScriptsGrid({ scripts }: { scripts: Script[] }) {
                   {script.description}
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-xs">
-                  <span className="rounded-full border border-azure-500/30 bg-azure-500/10 px-2.5 py-1 text-azure-200">
+                  <span className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-zinc-300">
                     {script.category}
                   </span>
                   <span className="text-slate-400">v{script.version}</span>

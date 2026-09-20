@@ -21,7 +21,7 @@ export function LoaderActions({ slug }: { slug: string }) {
     <div className="flex flex-wrap gap-3">
       <button
         onClick={onCopy}
-        className="flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow-sm transition-all hover:-translate-y-0.5 hover:bg-azure-400"
+        className="flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-semibold text-black shadow-sm transition-all hover:-translate-y-0.5 hover:bg-zinc-200 cursor-pointer"
       >
         {copied ? <Check size={15} /> : <Copy size={15} />}
         {copied ? 'Copied loader' : 'Copy loader'}
@@ -30,7 +30,7 @@ export function LoaderActions({ slug }: { slug: string }) {
         href={`/raw/${slug}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center gap-2 rounded-xl border border-line bg-surface/60 px-5 py-2.5 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-azure-700"
+        className="flex items-center gap-2 rounded-xl border border-line bg-surface/60 px-5 py-2.5 text-sm font-medium text-ink transition-all hover:-translate-y-0.5 hover:border-white/30 hover:text-white"
       >
         <ExternalLink size={15} />
         View raw

@@ -6,13 +6,13 @@ export interface UniversalLoaderConfig {
 }
 
 export const DEFAULT_LOADER_CODE = `--[[
-   _____                   _    _       _     
-  / ____|                 | |  | |     | |    
- | (___   ___  _   _ _ __ | |__| |_   _| |__  
-  \\___ \\ / _ \\| | | | '__||  __  | | | | '_ \\ 
-  ____) | (_) | |_| | |   | |  | | |_| | |_) |
- |_____/ \\___/ \\__,_|_|   |_|  |_|\\__,_|_.__/ 
-  Sour Hub Universal Loader — 100% Free & Keyless Forever
+  _   _                 _    _       _     
+ | \\ | |               | |  | |     | |    
+ |  \\| | _____   ____ _| |__| |_   _| |__  
+ | . \` |/ _ \\ \\ / / _\` |  __  | | | | '_ \\ 
+ | |\\  | (_) \\ V / (_| | |  | | |_| | |_) |
+ |_| \\_|\\___/ \\_/ \\__,_|_|  |_|\\__,_|_.__/ 
+  Nova Hub Universal Loader — 100% Free & Keyless Forever
 ]]
 
 local Players = game:GetService("Players")
@@ -26,14 +26,14 @@ local gamesMap = {
     [7265339759] = "redliner-kinetic",
 }
 
-print("[Sour Hub] Universal loader initializing...")
-print("[Sour Hub] Place ID: " .. tostring(placeId))
+print("[Nova Hub] Universal loader initializing...")
+print("[Nova Hub] Place ID: " .. tostring(placeId))
 
 local scriptSlug = gamesMap[placeId] or "orbit-farm"
-print("[Sour Hub] Launching keyless module: " .. scriptSlug)
+print("[Nova Hub] Launching keyless module: " .. scriptSlug)
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet("https://sourhub.vercel.app/raw/" .. scriptSlug))()
+    loadstring(game:HttpGet("https://novahub.vercel.app/raw/" .. scriptSlug))()
 end)
 
 if success then
@@ -43,7 +43,7 @@ if success then
         local req = (syn and syn.request) or (http and http.request) or http_request or request
         if req and HttpService then
             req({
-                Url = "https://sourhub.vercel.app/api/executions",
+                Url = "https://novahub.vercel.app/api/executions",
                 Method = "POST",
                 Headers = {
                     ["Content-Type"] = "application/json"
@@ -57,7 +57,7 @@ if success then
         end
     end)
 else
-    warn("[Sour Hub] Execution notice: " .. tostring(err))
+    warn("[Nova Hub] Execution notice: " .. tostring(err))
 end
 `;
 

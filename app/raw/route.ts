@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest) {
     const config = await getStoredLoaderConfig();
 
     if (!config.enabled) {
-      const disabledMessage = `-- [Sour Hub] Universal loader is currently disabled.\nwarn("[Sour Hub] The universal loader is currently disabled for maintenance.")\n`;
+      const disabledMessage = `-- [Nova Hub] Universal loader is currently disabled.\nwarn("[Nova Hub] The universal loader is currently disabled for maintenance.")\n`;
       return new NextResponse(disabledMessage, {
         status: 200,
         headers: {
@@ -54,7 +54,7 @@ export async function GET(_req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[Raw Endpoint] Error retrieving universal loader:', err?.message || err);
-    return new NextResponse('-- [Sour Hub] Service temporarily unavailable.\n', {
+    return new NextResponse('-- [Nova Hub] Service temporarily unavailable.\n', {
       status: 503,
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',

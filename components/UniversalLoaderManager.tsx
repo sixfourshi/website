@@ -40,7 +40,7 @@ export function UniversalLoaderManager({
   } | null>(null);
 
   const handleCopyLoader = async () => {
-    const snippet = `loadstring(game:HttpGet("https://sourhub.vercel.app/loader"))()`;
+    const snippet = `loadstring(game:HttpGet("https://novahub.vercel.app/loader"))()`;
     const success = await copyToClipboard(snippet, 'Loader copied to clipboard!');
     if (success) {
       setCopied(true);
@@ -103,12 +103,12 @@ export function UniversalLoaderManager({
   const lineCount = (code.match(/\n/g) || []).length + 1;
 
   return (
-    <div className="mb-8 overflow-hidden rounded-2xl border border-azure-500/30 bg-[#070e24]/90 shadow-xl backdrop-blur-md">
+    <div className="mb-8 overflow-hidden rounded-2xl border border-line/80 bg-[#0c0c0f] shadow-xl backdrop-blur-md">
       {/* Top Banner / Permanent Item Header */}
-      <div className="border-b border-azure-500/20 bg-gradient-to-r from-azure-950/40 via-surface/40 to-surface/20 px-5 py-4">
+      <div className="border-b border-line/60 bg-white/[0.02] px-5 py-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-azure-500/40 bg-azure-500/10 text-azure-300 shadow-glow-sm">
+            <span className="flex h-10 w-10 flex-none items-center justify-center rounded-xl border border-white/20 bg-white/10 text-white shadow-sm">
               <Zap size={20} />
             </span>
             <div>
@@ -116,7 +116,7 @@ export function UniversalLoaderManager({
                 <h3 className="font-display text-base font-bold text-white">
                   Universal Loader
                 </h3>
-                <span className="rounded-full border border-azure-500/40 bg-azure-950/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-azure-300">
+                <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-300">
                   Permanent Global Item
                 </span>
                 {enabled ? (
@@ -131,7 +131,7 @@ export function UniversalLoaderManager({
                 <span className="font-mono text-xs text-slate-400">v{version}</span>
               </div>
               <p className="mt-0.5 text-xs text-slate-400">
-                Public raw endpoint: <span className="font-mono text-azure-300">/loader</span> &bull; Last updated: <span className="text-slate-300 font-medium">{updatedAt}</span>
+                Public raw endpoint: <span className="font-mono text-zinc-300">/loader</span> &bull; Last updated: <span className="text-slate-300 font-medium">{updatedAt}</span>
               </p>
             </div>
           </div>
@@ -140,7 +140,7 @@ export function UniversalLoaderManager({
             <button
               type="button"
               onClick={handleCopyLoader}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-azure-500/30 bg-azure-500/20 px-3.5 py-2 text-xs font-medium text-azure-200 hover:bg-azure-500/30 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-3.5 py-2 text-xs font-medium text-white hover:bg-white/20 transition-colors cursor-pointer"
               title="Copy universal loader execution command"
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
@@ -151,7 +151,7 @@ export function UniversalLoaderManager({
               href="/loader"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/60 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:border-azure-700 transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface/60 px-3 py-2 text-xs font-medium text-slate-300 hover:text-white hover:border-white/30 transition-colors"
               title="View public plain-text Luau endpoint"
             >
               <ExternalLink size={13} />
@@ -185,7 +185,7 @@ export function UniversalLoaderManager({
                 value={version}
                 onChange={(e) => setVersion(e.target.value)}
                 placeholder="2.4.0"
-                className="w-full rounded-xl border border-line bg-[#060b1e] px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 focus:border-azure-500 focus:outline-none"
+                className="w-full rounded-xl border border-line bg-black/60 px-3.5 py-2 text-xs font-mono text-white placeholder-slate-500 focus:border-zinc-500 focus:outline-none"
               />
               <span className="text-[11px] text-slate-400 mt-1 block">
                 Shown in script stats and change trackers
@@ -229,9 +229,9 @@ export function UniversalLoaderManager({
               <label className="block text-xs font-semibold text-slate-300 mb-1.5">
                 Last Updated
               </label>
-              <div className="rounded-xl border border-line/60 bg-[#060b1e]/60 px-3.5 py-2 text-xs text-slate-300 flex items-center justify-between">
+              <div className="rounded-xl border border-line/60 bg-black/40 px-3.5 py-2 text-xs text-slate-300 flex items-center justify-between">
                 <span>{updatedAt}</span>
-                <span className="text-[10px] text-azure-400 bg-azure-950/60 px-2 py-0.5 rounded-full border border-azure-500/20">
+                <span className="text-[10px] text-zinc-400 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
                   Auto-updated on save
                 </span>
               </div>
@@ -245,11 +245,11 @@ export function UniversalLoaderManager({
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Code2 size={15} className="text-azure-400" />
+                <Code2 size={15} className="text-zinc-400" />
                 <span className="text-xs font-semibold text-white">
                   Luau Source Code Editor
                 </span>
-                <span className="rounded bg-[#060b1e] border border-line/60 px-2 py-0.5 font-mono text-[11px] text-slate-400">
+                <span className="rounded bg-black/60 border border-line/60 px-2 py-0.5 font-mono text-[11px] text-slate-400">
                   {lineCount} lines &bull; {code.length} chars
                 </span>
               </div>
@@ -265,13 +265,13 @@ export function UniversalLoaderManager({
               </button>
             </div>
 
-            <div className="relative rounded-xl border border-line bg-[#040817] p-1 focus-within:border-azure-500">
+            <div className="relative rounded-xl border border-line bg-black p-1 focus-within:border-zinc-500">
               <textarea
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 rows={12}
                 spellCheck={false}
-                className="w-full resize-y rounded-lg bg-transparent p-3 font-mono text-xs leading-relaxed text-emerald-300 placeholder-slate-600 focus:outline-none selection:bg-azure-600/40"
+                className="w-full resize-y rounded-lg bg-transparent p-3 font-mono text-xs leading-relaxed text-emerald-300 placeholder-slate-600 focus:outline-none selection:bg-white/20"
                 placeholder="-- Enter Luau code here..."
               />
             </div>
@@ -298,14 +298,14 @@ export function UniversalLoaderManager({
           {/* Action Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <p className="text-[11px] text-slate-400">
-              Stored persistently in the private Vercel Blob store. Changes take effect on <span className="font-mono text-azure-300">/loader</span> immediately.
+              Stored persistently in the private Vercel Blob store. Changes take effect on <span className="font-mono text-zinc-300">/loader</span> immediately.
             </p>
 
             <button
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="inline-flex items-center gap-2 rounded-xl bg-azure-500 px-5 py-2.5 text-xs font-semibold text-white shadow-glow-sm hover:bg-azure-400 disabled:opacity-60 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-semibold text-black shadow-glow-sm hover:bg-zinc-200 disabled:opacity-60 transition-all cursor-pointer"
             >
               <Save size={14} />
               <span>{saving ? 'Saving to Blob...' : 'Save Universal Loader'}</span>

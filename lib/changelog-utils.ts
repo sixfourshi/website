@@ -286,7 +286,7 @@ export const INITIAL_CHANGELOG_RELEASES: ChangelogRelease[] = [
     date: '2026-06-10',
     publishedDate: '2026-06-10',
     releaseDate: '2026-06-10',
-    summary: 'Sour Hub 2.0 release: permanent transition to 100% keyless architecture with zero linkvertise barriers and raw loadstring endpoints.',
+    summary: 'Nova Hub 2.0 release: permanent transition to 100% keyless architecture with zero linkvertise barriers and raw loadstring endpoints.',
     isLatest: false,
     sections: [
       {
