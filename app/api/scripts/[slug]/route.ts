@@ -10,15 +10,23 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { slug: string } }
 ) {
-  const script = await getScript(params.slug);
-  if (!script) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  try {
+    const script = await getScript(params.slug);
+    if (!script) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+    return NextResponse.json(script, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
+  } catch (err: any) {
+    console.error(`[API/scripts/${params.slug} GET] Error:`, err?.message || err);
+    return NextResponse.json(
+      { error: err?.message || 'Storage error retrieving script.' },
+      { status: 503 }
+    );
   }
-  return NextResponse.json(script, {
-    headers: {
-      'Cache-Control': 'no-store, max-age=0, must-revalidate',
-    },
-  });
 }
 
 export async function PUT(

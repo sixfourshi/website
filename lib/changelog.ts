@@ -10,15 +10,10 @@ import {
 } from './changelog-utils';
 
 export async function getChangelogReleases(options?: { forceFresh?: boolean }): Promise<ChangelogRelease[]> {
-  try {
-    const rawReleases = await getStoredChangelog(options);
-    if (!Array.isArray(rawReleases)) return [];
-    const normalized = rawReleases.map(normalizeChangelogRelease);
-    return sortReleasesByPublishedDate(normalized);
-  } catch (err) {
-    console.error('[Changelog] Error in getChangelogReleases:', err);
-    return [];
-  }
+  const rawReleases = await getStoredChangelog(options);
+  if (!Array.isArray(rawReleases)) return [];
+  const normalized = rawReleases.map(normalizeChangelogRelease);
+  return sortReleasesByPublishedDate(normalized);
 }
 
 export async function upsertChangelogRelease(

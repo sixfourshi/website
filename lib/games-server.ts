@@ -12,15 +12,11 @@ export class GameValidationError extends Error {
 }
 
 export async function getGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
-  try {
-    const stored = await getStoredGames(options);
-    if (Array.isArray(stored)) {
-      return stored.map((g) => normalizeGame(g));
-    }
-  } catch (err) {
-    console.warn('[Games] Failed to retrieve stored games, using fallback:', err);
+  const stored = await getStoredGames(options);
+  if (Array.isArray(stored)) {
+    return stored.map((g) => normalizeGame(g));
   }
-  return ROBLOX_GAMES.map((g) => normalizeGame(g));
+  return [];
 }
 
 export async function getGameBySlug(slug: string): Promise<RobloxGame | undefined> {

@@ -23,7 +23,10 @@ export async function GET() {
     });
   } catch (err: any) {
     console.error('[API/changelog] Error fetching releases:', err?.message || err);
-    return NextResponse.json([], { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || 'Storage error retrieving changelog releases.' },
+      { status: 503 }
+    );
   }
 }
 

@@ -7,12 +7,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  const games = await getGames();
-  return NextResponse.json(games, {
-    headers: {
-      'Cache-Control': 'no-store, max-age=0, must-revalidate',
-    },
-  });
+  try {
+    const games = await getGames();
+    return NextResponse.json(games, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
+  } catch (err: any) {
+    console.error('[API/games GET] Error retrieving games:', err?.message || err);
+    return NextResponse.json(
+      { error: err?.message || 'Storage error retrieving games.' },
+      { status: 503 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {

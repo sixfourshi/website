@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     template: 'Nova Hub - Keyless',
     absolute: 'Nova Hub - Keyless',
   },
-  description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+  description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
   alternates: {
     canonical: 'https://novahub.vercel.app',
   },
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Nova Hub - Best Keyless Script Hub',
-    description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+    description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
     url: 'https://novahub.vercel.app',
     siteName: 'Nova Hub',
     type: 'website',
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary',
     title: 'Nova Hub - Best Keyless Script Hub',
-    description: 'Free, keyless scripts for the games we build no ads, checkpoints.',
+    description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
     images: ['https://novahub.vercel.app/icon.png'],
   },
 };

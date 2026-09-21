@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 5. Save persistently to Vercel Blob storage (or local fallback in dev)
+    // 5. Save persistently to Supabase Storage
     const saved = await submitSuggestion(validation.sanitized);
 
     return NextResponse.json(

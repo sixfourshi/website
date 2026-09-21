@@ -23,13 +23,9 @@ export class ScriptValidationError extends Error {
 }
 
 export async function getScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
-  try {
-    const scripts = await getStoredScripts(options);
-    if (Array.isArray(scripts)) {
-      return scripts;
-    }
-  } catch (err) {
-    console.warn('[Scripts] Failed reading stored scripts:', err);
+  const scripts = await getStoredScripts(options);
+  if (Array.isArray(scripts)) {
+    return scripts;
   }
   return [];
 }

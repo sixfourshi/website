@@ -7,12 +7,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
-  const scripts = await getScripts();
-  return NextResponse.json(scripts, {
-    headers: {
-      'Cache-Control': 'no-store, max-age=0, must-revalidate',
-    },
-  });
+  try {
+    const scripts = await getScripts();
+    return NextResponse.json(scripts, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
+  } catch (err: any) {
+    console.error('[API/scripts GET] Error retrieving scripts:', err?.message || err);
+    return NextResponse.json(
+      { error: err?.message || 'Storage error retrieving scripts.' },
+      { status: 503 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {

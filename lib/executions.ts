@@ -1,8 +1,5 @@
-import fs from 'fs/promises';
-import path from 'path';
-import os from 'os';
-import { get, put, BlobNotFoundError } from '@vercel/blob';
-import { getStoredGames, isBlobStorageConfigured } from './storage';
+import { readJson, writeJson, isSupabaseStorageConfigured } from './supabase-storage';
+import { getStoredGames } from './storage';
 import {
   type ExecutionLog,
   type ExecutionAnalytics,
@@ -22,8 +19,7 @@ export interface ExecutionDataStore {
   lastUpdated: string;
 }
 
-const BLOB_EXECUTIONS_PATHNAME = 'sourhub/executions.json';
-const TMP_EXECUTIONS_PATH = path.join(os.tmpdir(), 'sourhub_executions.json');
+const STORAGE_EXECUTIONS_PATH = 'sourhub/executions.json';
 
 const DEFAULT_STORE: ExecutionDataStore = {
   totalExecutions: 0,
@@ -34,6 +30,8 @@ const DEFAULT_STORE: ExecutionDataStore = {
   clearedLogsCount: 0,
   lastUpdated: new Date().toISOString(),
 };
+
+let memoryExecutionStore: ExecutionDataStore | null = null;
 
 // In-memory IP rate limiter (never logs or persists IPs)
 const rateLimitMap = new Map<string, number[]>();
@@ -69,98 +67,62 @@ export function checkRateLimit(ip: string): boolean {
 }
 
 /**
- * Read executions data from private Vercel Blob store or local cache.
+ * Read executions data from private Supabase Storage bucket.
  */
 export async function getStoredExecutions(): Promise<ExecutionDataStore> {
-  if (isBlobStorageConfigured()) {
-    try {
-      const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-      const result = await get(BLOB_EXECUTIONS_PATHNAME, {
-        access: 'private',
-        token,
-        useCache: false,
-      });
+  const isProd = process.env.NODE_ENV === 'production';
 
-      if (result && result.statusCode === 200 && result.stream) {
-        const text = await new Response(result.stream).text();
-        if (text && text.trim().length > 0) {
-          const parsed = JSON.parse(text) as ExecutionDataStore;
-          // Ensure valid structure
-          const validated: ExecutionDataStore = {
-            totalExecutions: typeof parsed.totalExecutions === 'number' ? parsed.totalExecutions : 0,
-            executionsByGame: parsed.executionsByGame && typeof parsed.executionsByGame === 'object' ? parsed.executionsByGame : {},
-            dailyCounts: parsed.dailyCounts && typeof parsed.dailyCounts === 'object' ? parsed.dailyCounts : {},
-            recentLogs: Array.isArray(parsed.recentLogs) ? parsed.recentLogs : [],
-            recentSessionIds: Array.isArray(parsed.recentSessionIds) ? parsed.recentSessionIds : [],
-            clearedLogsCount: typeof parsed.clearedLogsCount === 'number' ? parsed.clearedLogsCount : 0,
-            lastUpdated: parsed.lastUpdated || new Date().toISOString(),
-          };
-          writeTmpJson(TMP_EXECUTIONS_PATH, validated).catch(() => {});
-          return validated;
-        }
-      }
-    } catch (err: any) {
-      if (
-        !(
-          err instanceof BlobNotFoundError ||
-          err?.name === 'BlobNotFoundError' ||
-          err?.message?.includes('not found') ||
-          err?.message?.includes('404')
-        )
-      ) {
-        console.warn('[Executions Storage] Blob read notice:', err?.message || err);
-      }
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Executions Storage] Supabase Storage is required in production but is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
+      );
     }
+    if (memoryExecutionStore) return memoryExecutionStore;
+    return { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
   }
 
-  // Fallback to /tmp cache
-  const tmp = await readTmpJson<ExecutionDataStore>(TMP_EXECUTIONS_PATH);
-  if (tmp && typeof tmp.totalExecutions === 'number') {
-    return tmp;
+  const parsed = await readJson<ExecutionDataStore>(STORAGE_EXECUTIONS_PATH);
+  if (parsed && typeof parsed.totalExecutions === 'number') {
+    const store: ExecutionDataStore = {
+      totalExecutions: typeof parsed.totalExecutions === 'number' ? parsed.totalExecutions : 0,
+      executionsByGame: parsed.executionsByGame && typeof parsed.executionsByGame === 'object' ? parsed.executionsByGame : {},
+      dailyCounts: parsed.dailyCounts && typeof parsed.dailyCounts === 'object' ? parsed.dailyCounts : {},
+      recentLogs: Array.isArray(parsed.recentLogs) ? parsed.recentLogs : [],
+      recentSessionIds: Array.isArray(parsed.recentSessionIds) ? parsed.recentSessionIds : [],
+      clearedLogsCount: typeof parsed.clearedLogsCount === 'number' ? parsed.clearedLogsCount : 0,
+      lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+    };
+    memoryExecutionStore = store;
+    return store;
   }
 
-  return { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
+  // If storage is configured but the file does not exist yet, seed initial empty store
+  const initialStore: ExecutionDataStore = { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
+  await writeJson(STORAGE_EXECUTIONS_PATH, initialStore);
+  memoryExecutionStore = initialStore;
+  return initialStore;
 }
 
 /**
- * Save executions data persistently to private Vercel Blob.
+ * Save executions data persistently to private Supabase Storage bucket.
+ * In production, fails if Supabase Storage is unconfigured or write fails.
  */
 export async function saveStoredExecutions(data: ExecutionDataStore): Promise<void> {
-  await writeTmpJson(TMP_EXECUTIONS_PATH, data);
+  const isProd = process.env.NODE_ENV === 'production';
 
-  if (isBlobStorageConfigured()) {
-    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-    if (!token) return;
-
-    try {
-      await put(BLOB_EXECUTIONS_PATHNAME, JSON.stringify(data, null, 2), {
-        access: 'private',
-        token,
-        addRandomSuffix: false,
-        allowOverwrite: true,
-        contentType: 'application/json',
-        cacheControlMaxAge: 0,
-      });
-    } catch (err: any) {
-      console.warn('[Executions Storage] Failed saving to Vercel Blob:', err?.message || err);
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Executions Storage] Cannot record execution in production: Supabase Storage is not configured.'
+      );
     }
+    memoryExecutionStore = data;
+    return;
   }
-}
 
-async function readTmpJson<T>(tmpPath: string): Promise<T | null> {
-  try {
-    const raw = await fs.readFile(tmpPath, 'utf-8');
-    if (raw && raw.trim().length > 0) {
-      return JSON.parse(raw) as T;
-    }
-  } catch {}
-  return null;
-}
-
-async function writeTmpJson<T>(tmpPath: string, data: T): Promise<void> {
-  try {
-    await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch {}
+  await writeJson(STORAGE_EXECUTIONS_PATH, data);
+  memoryExecutionStore = data;
 }
 
 /**
@@ -298,7 +260,7 @@ export async function recordExecution({
 
   store.lastUpdated = timestamp;
 
-  // Persist to private Vercel Blob storage
+  // Persist to private Supabase Storage
   await saveStoredExecutions(store);
 
   return {

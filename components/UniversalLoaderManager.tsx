@@ -87,7 +87,7 @@ export function UniversalLoaderManager({
       setUpdatedAt(updated.updatedAt);
       setStatusNotice({
         type: 'success',
-        text: 'Universal Loader saved persistently to private Vercel Blob!',
+        text: 'Universal Loader saved persistently to private Supabase Storage!',
       });
       setTimeout(() => setStatusNotice(null), 4000);
     } catch (err: any) {
@@ -236,7 +236,7 @@ export function UniversalLoaderManager({
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 mt-1 block">
-                Synchronized with private Vercel Blob
+                Synchronized with private Supabase Storage
               </span>
             </div>
           </div>
@@ -298,7 +298,7 @@ export function UniversalLoaderManager({
           {/* Action Row */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
             <p className="text-[11px] text-slate-400">
-              Stored persistently in the private Vercel Blob store. Changes take effect on <span className="font-mono text-zinc-300">/loader</span> immediately.
+              Stored persistently in the private Supabase Storage bucket. Changes take effect on <span className="font-mono text-zinc-300">/loader</span> immediately.
             </p>
 
             <button
@@ -308,7 +308,7 @@ export function UniversalLoaderManager({
               className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-semibold text-black shadow-glow-sm hover:bg-zinc-200 disabled:opacity-60 transition-all cursor-pointer"
             >
               <Save size={14} />
-              <span>{saving ? 'Saving to Blob...' : 'Save Universal Loader'}</span>
+              <span>{saving ? 'Saving to Storage...' : 'Save Universal Loader'}</span>
             </button>
           </div>
         </div>

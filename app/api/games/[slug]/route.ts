@@ -16,15 +16,23 @@ export async function GET(
   _req: NextRequest,
   { params }: { params: { slug: string } }
 ) {
-  const game = await getGameBySlug(params.slug);
-  if (!game) {
-    return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+  try {
+    const game = await getGameBySlug(params.slug);
+    if (!game) {
+      return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+    }
+    return NextResponse.json(game, {
+      headers: {
+        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+      },
+    });
+  } catch (err: any) {
+    console.error(`[API/games/${params.slug} GET] Error:`, err?.message || err);
+    return NextResponse.json(
+      { error: err?.message || 'Storage error retrieving game.' },
+      { status: 503 }
+    );
   }
-  return NextResponse.json(game, {
-    headers: {
-      'Cache-Control': 'no-store, max-age=0, must-revalidate',
-    },
-  });
 }
 
 export async function PUT(

@@ -1,36 +1,45 @@
 import fs from 'fs/promises';
 import path from 'path';
-import os from 'os';
-import { get, put, BlobNotFoundError } from '@vercel/blob';
 import { type RobloxGame, ROBLOX_GAMES } from './games';
 import type { Script } from './scripts';
-import { ChangelogRelease, INITIAL_CHANGELOG_RELEASES, normalizeChangelogRelease } from './changelog-utils';
+import {
+  ChangelogRelease,
+  INITIAL_CHANGELOG_RELEASES,
+  normalizeChangelogRelease,
+} from './changelog-utils';
+import {
+  readJson,
+  writeJson,
+  isSupabaseStorageConfigured,
+} from './supabase-storage';
+import {
+  DEFAULT_LOADER_CODE,
+  DEFAULT_LOADER_CONFIG,
+  type UniversalLoaderConfig,
+} from './loader-types';
 
-const BLOB_GAMES_PATHNAME = 'sourhub/games.json';
-const BLOB_SCRIPTS_PATHNAME = 'sourhub/scripts.json';
-const BLOB_LOADER_PATHNAME = 'sourhub/loader.json';
-const BLOB_GAMES_MARKER_PATHNAME = 'sourhub/games-marker.json';
-const BLOB_SCRIPTS_MARKER_PATHNAME = 'sourhub/scripts-marker.json';
-const BLOB_SUGGESTIONS_PATHNAME = 'sourhub/suggestions.json';
-const BLOB_CHANGELOG_PATHNAME = 'sourhub/changelog.json';
-const BLOB_CHANGELOG_MARKER_PATHNAME = 'sourhub/changelog-marker.json';
+export {
+  DEFAULT_LOADER_CODE,
+  DEFAULT_LOADER_CONFIG,
+  type UniversalLoaderConfig,
+  isSupabaseStorageConfigured,
+};
 
-// Local temporary writable path (fallback cache for serverless environment)
-const TMP_DIR = os.tmpdir();
-const TMP_GAMES_PATH = path.join(TMP_DIR, 'sourhub_games.json');
-const TMP_SCRIPTS_PATH = path.join(TMP_DIR, 'sourhub_scripts.json');
-const TMP_LOADER_PATH = path.join(TMP_DIR, 'sourhub_loader.json');
-const TMP_GAMES_MARKER_PATH = path.join(TMP_DIR, 'sourhub_games_marker.json');
-const TMP_SCRIPTS_MARKER_PATH = path.join(TMP_DIR, 'sourhub_scripts_marker.json');
-const TMP_SUGGESTIONS_PATH = path.join(TMP_DIR, 'sourhub_suggestions.json');
-const TMP_CHANGELOG_PATH = path.join(TMP_DIR, 'sourhub_changelog.json');
-const TMP_CHANGELOG_MARKER_PATH = path.join(TMP_DIR, 'sourhub_changelog_marker.json');
+// Object paths within the private Supabase Storage bucket ('nova-hub')
+const STORAGE_GAMES_PATH = 'sourhub/games.json';
+const STORAGE_SCRIPTS_PATH = 'sourhub/scripts.json';
+const STORAGE_LOADER_PATH = 'sourhub/loader.json';
+const STORAGE_GAMES_MARKER_PATH = 'sourhub/games-marker.json';
+const STORAGE_SCRIPTS_MARKER_PATH = 'sourhub/scripts-marker.json';
+const STORAGE_SUGGESTIONS_PATH = 'sourhub/suggestions.json';
+const STORAGE_CHANGELOG_PATH = 'sourhub/changelog.json';
+const STORAGE_CHANGELOG_MARKER_PATH = 'sourhub/changelog-marker.json';
 
-// High-performance in-memory cache to prevent redundant Blob/disk fetches on high-traffic public pages
+// In-memory cache for high-frequency public reads (5-second TTL)
 let memoryGamesCache: { data: RobloxGame[]; timestamp: number } | null = null;
 let memoryScriptsCache: { data: Script[]; timestamp: number } | null = null;
 let memoryChangelogCache: { data: ChangelogRelease[]; timestamp: number } | null = null;
-const CACHE_TTL_MS = 5_000; // 5-second cache ensures quick propagation while preventing thrashing
+const CACHE_TTL_MS = 5_000;
 
 export function invalidateStorageCache(): void {
   memoryGamesCache = null;
@@ -38,7 +47,7 @@ export function invalidateStorageCache(): void {
   memoryChangelogCache = null;
 }
 
-// Read-only project seed files (bundled at build, used ONLY for first-ever initialization)
+// Read-only project seed files (bundled at build, used ONLY for first-ever initialization of an empty bucket)
 const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
 const SEED_SCRIPTS_PATH = path.join(process.cwd(), 'data', 'scripts.json');
 
@@ -60,127 +69,7 @@ export interface Suggestion {
   updatedAt?: string;
 }
 
-import {
-  DEFAULT_LOADER_CODE,
-  DEFAULT_LOADER_CONFIG,
-  type UniversalLoaderConfig,
-} from './loader-types';
-
-export {
-  DEFAULT_LOADER_CODE,
-  DEFAULT_LOADER_CONFIG,
-  type UniversalLoaderConfig,
-};
-
-/**
- * Checks if Vercel Blob storage is configured via process.env.BLOB_READ_WRITE_TOKEN.
- * Runs strictly server-side.
- */
-export function isBlobStorageConfigured(): boolean {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!token) return false;
-  if (token === 'Configured securely in Vercel') return false;
-  return true;
-}
-
-/**
- * Sanitize error messages so credentials/tokens are never leaked in logs or client responses.
- */
-function sanitizeError(err: any): Error {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  let msg = err?.message || String(err || 'Unknown error');
-  if (token && token.length > 5) {
-    msg = msg.replaceAll(token, '[REDACTED_TOKEN]');
-  }
-  const error = new Error(msg);
-  error.name = err?.name || 'BlobStorageError';
-  return error;
-}
-
-// Read JSON from private Vercel Blob store
-async function readBlobJson<T>(pathname: string): Promise<T | null> {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!isBlobStorageConfigured() || !token) return null;
-
-  try {
-    const result = await get(pathname, {
-      access: 'private',
-      token,
-      useCache: false, // Guarantees freshest origin data directly from Vercel Blob
-    });
-
-    if (result && result.statusCode === 200 && result.stream) {
-      const text = await new Response(result.stream).text();
-      if (text && text.trim().length > 0) {
-        return JSON.parse(text) as T;
-      }
-    }
-    return null;
-  } catch (err: any) {
-    if (
-      err instanceof BlobNotFoundError ||
-      err?.name === 'BlobNotFoundError' ||
-      err?.message?.includes('not found') ||
-      err?.message?.includes('404')
-    ) {
-      return null;
-    }
-
-    const cleanErr = sanitizeError(err);
-    console.error(`[Storage] Failed reading private Vercel Blob at ${pathname}:`, cleanErr.message);
-    throw cleanErr;
-  }
-}
-
-// Write JSON to private Vercel Blob store and confirm persistence
-async function writeBlobJson<T>(pathname: string, data: T): Promise<void> {
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (!isBlobStorageConfigured() || !token) {
-    return;
-  }
-
-  const payload = JSON.stringify(data, null, 2);
-  try {
-    const putResult = await put(pathname, payload, {
-      access: 'private',
-      token,
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      contentType: 'application/json',
-      cacheControlMaxAge: 0,
-    });
-
-    if (!putResult || !putResult.url) {
-      throw new Error(`Blob write completed but no storage confirmation returned for ${pathname}`);
-    }
-  } catch (err: any) {
-    const cleanErr = sanitizeError(err);
-    console.error(`[Storage] Failed writing to private Vercel Blob at ${pathname}:`, cleanErr.message);
-    throw cleanErr;
-  }
-}
-
-// Read from /tmp fallback
-async function readTmpJson<T>(tmpPath: string): Promise<T | null> {
-  try {
-    const raw = await fs.readFile(tmpPath, 'utf-8');
-    if (raw && raw.trim().length > 0) {
-      return JSON.parse(raw) as T;
-    }
-  } catch {}
-  return null;
-}
-
-// Write to /tmp fallback (never writes to project directory or /var/task)
-async function writeTmpJson<T>(tmpPath: string, data: T): Promise<void> {
-  try {
-    await fs.writeFile(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (err) {
-    console.warn(`[Storage] Failed writing to temporary file ${tmpPath}:`, err);
-  }
-}
-
-// Read seed data from bundled data/*.json (Read-only initial seed, used ONCE on initial deployment)
+// Read seed data from bundled data/*.json (used ONCE on initial deployment if bucket is empty)
 async function readSeedGames(): Promise<RobloxGame[]> {
   try {
     const raw = await fs.readFile(SEED_GAMES_PATH, 'utf-8');
@@ -203,24 +92,13 @@ async function readSeedScripts(): Promise<Script[]> {
   return [];
 }
 
-/**
- * Marks storage as initialized with persistent markers so bundled JSON seed files
- * are NEVER automatically re-imported when scripts or games are intentionally deleted to empty.
- */
 async function markGamesStorageInitialized(): Promise<void> {
   const marker: StorageInitMarker = {
     initialized: true,
     initializedAt: new Date().toISOString(),
     version: 1,
   };
-  await writeTmpJson(TMP_GAMES_MARKER_PATH, marker);
-  if (isBlobStorageConfigured()) {
-    try {
-      await writeBlobJson(BLOB_GAMES_MARKER_PATHNAME, marker);
-    } catch (err) {
-      console.warn('[Storage] Failed to write games init marker to Blob:', sanitizeError(err).message);
-    }
-  }
+  await writeJson(STORAGE_GAMES_MARKER_PATH, marker);
 }
 
 async function markScriptsStorageInitialized(): Promise<void> {
@@ -229,383 +107,318 @@ async function markScriptsStorageInitialized(): Promise<void> {
     initializedAt: new Date().toISOString(),
     version: 1,
   };
-  await writeTmpJson(TMP_SCRIPTS_MARKER_PATH, marker);
-  if (isBlobStorageConfigured()) {
-    try {
-      await writeBlobJson(BLOB_SCRIPTS_MARKER_PATHNAME, marker);
-    } catch (err) {
-      console.warn('[Storage] Failed to write scripts init marker to Blob:', sanitizeError(err).message);
-    }
-  }
+  await writeJson(STORAGE_SCRIPTS_MARKER_PATH, marker);
 }
 
 /**
  * Get all stored games.
- * Reads from private Vercel Blob on every request without caching.
- * Uses bundled seed data strictly on the very first initialization.
+ * Authoritative source: Supabase Storage bucket.
+ * Uses bundled seed data strictly on the very first initialization of an empty bucket.
  */
 export async function getStoredGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
+      );
+    }
+    if (!options?.forceFresh && memoryGamesCache) {
+      return memoryGamesCache.data;
+    }
+    const seed = await readSeedGames();
+    memoryGamesCache = { data: seed, timestamp: Date.now() };
+    return seed;
+  }
+
   if (!options?.forceFresh && memoryGamesCache && Date.now() - memoryGamesCache.timestamp < CACHE_TTL_MS) {
     return memoryGamesCache.data;
   }
 
-  if (isBlobStorageConfigured()) {
-    try {
-      const fromBlob = await readBlobJson<RobloxGame[]>(BLOB_GAMES_PATHNAME);
-      // If fromBlob is an array (even if empty []), it is the authoritative store!
-      if (Array.isArray(fromBlob)) {
-        writeTmpJson(TMP_GAMES_PATH, fromBlob).catch(() => {});
-        memoryGamesCache = { data: fromBlob, timestamp: Date.now() };
-        return fromBlob;
-      }
+  const fromStorage = await readJson<RobloxGame[]>(STORAGE_GAMES_PATH);
 
-      // Check if persistent storage was already initialized
-      const marker = await readBlobJson<StorageInitMarker>(BLOB_GAMES_MARKER_PATHNAME);
-      if (marker?.initialized) {
-        // Storage is already initialized; intentionally empty list must remain empty
-        memoryGamesCache = { data: [], timestamp: Date.now() };
-        return [];
-      }
-
-      // Initial first-ever seed to Blob
-      const seed = await readSeedGames();
-      try {
-        await writeBlobJson(BLOB_GAMES_PATHNAME, seed);
-        await markGamesStorageInitialized();
-        console.info(`[Storage] First-time initialization: seeded ${seed.length} games to private Vercel Blob.`);
-      } catch (seedErr: any) {
-        console.warn('[Storage] Could not seed private Vercel Blob:', sanitizeError(seedErr).message);
-      }
-      writeTmpJson(TMP_GAMES_PATH, seed).catch(() => {});
-      memoryGamesCache = { data: seed, timestamp: Date.now() };
-      return seed;
-    } catch (err: any) {
-      console.warn('[Storage] Reading games from private Vercel Blob failed, falling back to cache:', sanitizeError(err).message);
-    }
+  // If fromStorage is an array (even if empty []), it is the authoritative persistent store
+  if (Array.isArray(fromStorage)) {
+    memoryGamesCache = { data: fromStorage, timestamp: Date.now() };
+    return fromStorage;
   }
 
-  // Fallback: local /tmp cache
-  const fromTmp = await readTmpJson<RobloxGame[]>(TMP_GAMES_PATH);
-  if (Array.isArray(fromTmp)) {
-    memoryGamesCache = { data: fromTmp, timestamp: Date.now() };
-    return fromTmp;
-  }
-
-  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_GAMES_MARKER_PATH);
-  if (tmpMarker?.initialized) {
+  // Check if persistent storage was already initialized previously
+  const marker = await readJson<StorageInitMarker>(STORAGE_GAMES_MARKER_PATH);
+  if (marker?.initialized) {
+    // Storage was initialized; an empty game list remains empty
     memoryGamesCache = { data: [], timestamp: Date.now() };
     return [];
   }
 
-  // First-ever initialization for local fallback
+  // Initial first-ever seed to Supabase Storage
   const seed = await readSeedGames();
-  await writeTmpJson(TMP_GAMES_PATH, seed).catch(() => {});
-  await markGamesStorageInitialized().catch(() => {});
+  await writeJson(STORAGE_GAMES_PATH, seed);
+  await markGamesStorageInitialized();
+  console.info(`[Storage] Initialized empty bucket with ${seed.length} games to Supabase Storage.`);
+
   memoryGamesCache = { data: seed, timestamp: Date.now() };
   return seed;
 }
 
 /**
- * Persistently save games to private Vercel Blob.
- * Throws if the write fails so caller does not report false success.
+ * Persistently save games to Supabase Storage.
+ * In production or development, fails with a clear server error if Supabase is unconfigured.
  */
 export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
-  memoryGamesCache = { data: games, timestamp: Date.now() };
-  await writeTmpJson(TMP_GAMES_PATH, games);
-
-  if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_GAMES_PATHNAME, games);
-    await markGamesStorageInitialized();
-    console.info(`[Storage] Confirmed write of ${games.length} games to private Vercel Blob.`);
-  } else {
-    await markGamesStorageInitialized();
+  if (!isSupabaseStorageConfigured()) {
+    throw new Error(
+      '[Storage Error] Cannot persist games: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
   }
+  await writeJson(STORAGE_GAMES_PATH, games);
+  await markGamesStorageInitialized();
+  memoryGamesCache = { data: games, timestamp: Date.now() };
+  console.info(`[Storage] Persisted ${games.length} games to Supabase Storage.`);
 }
 
 /**
  * Get all stored scripts.
- * Reads directly from private Vercel Blob on every relevant request.
+ * Authoritative source: Supabase Storage bucket.
  * Bundled scripts.json is used ONLY for the first-ever storage initialization.
- * An intentionally empty script library (length === 0) remains empty.
  */
 export async function getStoredScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
+      );
+    }
+    if (!options?.forceFresh && memoryScriptsCache) {
+      return memoryScriptsCache.data;
+    }
+    const seed = await readSeedScripts();
+    memoryScriptsCache = { data: seed, timestamp: Date.now() };
+    return seed;
+  }
+
   if (!options?.forceFresh && memoryScriptsCache && Date.now() - memoryScriptsCache.timestamp < CACHE_TTL_MS) {
     return memoryScriptsCache.data;
   }
 
-  if (isBlobStorageConfigured()) {
-    try {
-      const fromBlob = await readBlobJson<Script[]>(BLOB_SCRIPTS_PATHNAME);
-      // CRITICAL FIX: If fromBlob is an array (even if empty []), it is the authoritative store!
-      if (Array.isArray(fromBlob)) {
-        writeTmpJson(TMP_SCRIPTS_PATH, fromBlob).catch(() => {});
-        memoryScriptsCache = { data: fromBlob, timestamp: Date.now() };
-        return fromBlob;
-      }
+  const fromStorage = await readJson<Script[]>(STORAGE_SCRIPTS_PATH);
 
-      // Check if persistent storage was already initialized previously
-      const marker = await readBlobJson<StorageInitMarker>(BLOB_SCRIPTS_MARKER_PATHNAME);
-      if (marker?.initialized) {
-        // Storage is already initialized; intentionally empty list must remain empty
-        memoryScriptsCache = { data: [], timestamp: Date.now() };
-        return [];
-      }
-
-      // Initial first-ever seed to Blob
-      const seed = await readSeedScripts();
-      try {
-        await writeBlobJson(BLOB_SCRIPTS_PATHNAME, seed);
-        await markScriptsStorageInitialized();
-        console.info(`[Storage] First-time initialization: seeded ${seed.length} scripts to private Vercel Blob.`);
-      } catch (seedErr: any) {
-        console.warn('[Storage] Could not seed private Vercel Blob:', sanitizeError(seedErr).message);
-      }
-      writeTmpJson(TMP_SCRIPTS_PATH, seed).catch(() => {});
-      memoryScriptsCache = { data: seed, timestamp: Date.now() };
-      return seed;
-    } catch (err: any) {
-      console.warn('[Storage] Reading scripts from private Vercel Blob failed, falling back to cache:', sanitizeError(err).message);
-    }
+  // If fromStorage is an array (even if empty []), it is the authoritative store
+  if (Array.isArray(fromStorage)) {
+    memoryScriptsCache = { data: fromStorage, timestamp: Date.now() };
+    return fromStorage;
   }
 
-  // Fallback: local /tmp cache
-  const fromTmp = await readTmpJson<Script[]>(TMP_SCRIPTS_PATH);
-  if (Array.isArray(fromTmp)) {
-    memoryScriptsCache = { data: fromTmp, timestamp: Date.now() };
-    return fromTmp;
-  }
-
-  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_SCRIPTS_MARKER_PATH);
-  if (tmpMarker?.initialized) {
+  // Check if persistent storage was already initialized previously
+  const marker = await readJson<StorageInitMarker>(STORAGE_SCRIPTS_MARKER_PATH);
+  if (marker?.initialized) {
+    // Storage is already initialized; intentionally empty list must remain empty
     memoryScriptsCache = { data: [], timestamp: Date.now() };
     return [];
   }
 
-  // First-ever initialization for local fallback
+  // Initial first-ever seed to Supabase Storage
   const seed = await readSeedScripts();
-  await writeTmpJson(TMP_SCRIPTS_PATH, seed).catch(() => {});
-  await markScriptsStorageInitialized().catch(() => {});
+  await writeJson(STORAGE_SCRIPTS_PATH, seed);
+  await markScriptsStorageInitialized();
+  console.info(`[Storage] Initialized empty bucket with ${seed.length} scripts to Supabase Storage.`);
+
   memoryScriptsCache = { data: seed, timestamp: Date.now() };
   return seed;
 }
 
 /**
- * Persistently save scripts to private Vercel Blob.
- * Throws if the write fails so caller does not report false success.
+ * Persistently save scripts to Supabase Storage.
+ * In production or development, fails with a clear server error if Supabase is unconfigured.
  */
 export async function saveStoredScripts(scripts: Script[]): Promise<void> {
-  memoryScriptsCache = { data: scripts, timestamp: Date.now() };
-  await writeTmpJson(TMP_SCRIPTS_PATH, scripts);
-
-  if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_SCRIPTS_PATHNAME, scripts);
-    await markScriptsStorageInitialized();
-    console.info(`[Storage] Confirmed write of ${scripts.length} scripts to private Vercel Blob.`);
-  } else {
-    await markScriptsStorageInitialized();
+  if (!isSupabaseStorageConfigured()) {
+    throw new Error(
+      '[Storage Error] Cannot persist scripts: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
   }
+  await writeJson(STORAGE_SCRIPTS_PATH, scripts);
+  await markScriptsStorageInitialized();
+  memoryScriptsCache = { data: scripts, timestamp: Date.now() };
+  console.info(`[Storage] Persisted ${scripts.length} scripts to Supabase Storage.`);
 }
 
 /**
  * Get Universal Loader configuration.
- * Stored persistently in private Vercel Blob store ('sourhub/loader.json').
- * Returns safe default if no saved value exists.
+ * Stored persistently in private Supabase Storage ('sourhub/loader.json').
  */
 export async function getStoredLoaderConfig(): Promise<UniversalLoaderConfig> {
-  if (isBlobStorageConfigured()) {
-    try {
-      const fromBlob = await readBlobJson<UniversalLoaderConfig>(BLOB_LOADER_PATHNAME);
-      if (fromBlob && typeof fromBlob.code === 'string') {
-        let currentCode = fromBlob.code;
-        let currentVersion = fromBlob.version || DEFAULT_LOADER_CONFIG.version;
-        // Seamlessly ensure execution tracking is included
-        if (!currentCode.includes('/api/executions')) {
-          currentCode = DEFAULT_LOADER_CODE;
-          currentVersion = '2.5.0';
-          writeBlobJson(BLOB_LOADER_PATHNAME, {
-            ...fromBlob,
-            code: currentCode,
-            version: currentVersion,
-          }).catch(() => {});
-        }
+  const isProd = process.env.NODE_ENV === 'production';
 
-        const config: UniversalLoaderConfig = {
-          code: currentCode,
-          version: currentVersion,
-          enabled: fromBlob.enabled !== undefined ? Boolean(fromBlob.enabled) : true,
-          updatedAt: fromBlob.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
-        };
-        writeTmpJson(TMP_LOADER_PATH, config).catch(() => {});
-        return config;
-      }
-
-      // First-time seed of default loader configuration to Blob
-      try {
-        await writeBlobJson(BLOB_LOADER_PATHNAME, DEFAULT_LOADER_CONFIG);
-        console.info('[Storage] Seeded default Universal Loader to private Vercel Blob.');
-      } catch (seedErr: any) {
-        console.warn('[Storage] Could not seed default loader to Vercel Blob:', sanitizeError(seedErr).message);
-      }
-      writeTmpJson(TMP_LOADER_PATH, DEFAULT_LOADER_CONFIG).catch(() => {});
-      return DEFAULT_LOADER_CONFIG;
-    } catch (err: any) {
-      console.warn('[Storage] Reading Universal Loader from Vercel Blob failed:', sanitizeError(err).message);
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
+      );
     }
+    return DEFAULT_LOADER_CONFIG;
   }
 
-  const fromTmp = await readTmpJson<UniversalLoaderConfig>(TMP_LOADER_PATH);
-  if (fromTmp && typeof fromTmp.code === 'string') {
-    return fromTmp;
+  const fromStorage = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH);
+
+  if (fromStorage && typeof fromStorage.code === 'string') {
+    let currentCode = fromStorage.code;
+    let currentVersion = fromStorage.version || DEFAULT_LOADER_CONFIG.version;
+
+    // Ensure execution telemetry tracking endpoint is present
+    if (!currentCode.includes('/api/executions')) {
+      currentCode = DEFAULT_LOADER_CODE;
+      currentVersion = '2.5.0';
+      writeJson(STORAGE_LOADER_PATH, {
+        ...fromStorage,
+        code: currentCode,
+        version: currentVersion,
+      }).catch((err) => {
+        console.warn('[Storage] Could not update loader code with telemetry:', err);
+      });
+    }
+
+    return {
+      code: currentCode,
+      version: currentVersion,
+      enabled: fromStorage.enabled !== undefined ? Boolean(fromStorage.enabled) : true,
+      updatedAt: fromStorage.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
+    };
+  }
+
+  // Seed default loader configuration to Supabase Storage on first access
+  try {
+    await writeJson(STORAGE_LOADER_PATH, DEFAULT_LOADER_CONFIG);
+    console.info('[Storage] Seeded default Universal Loader to Supabase Storage.');
+  } catch (err) {
+    console.warn('[Storage] Failed seeding default Universal Loader:', err);
   }
 
   return DEFAULT_LOADER_CONFIG;
 }
 
 /**
- * Persistently save Universal Loader configuration to private Vercel Blob store.
- * Never stores or updates through local files.
+ * Persistently save Universal Loader configuration to Supabase Storage.
  */
 export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Promise<void> {
-  await writeTmpJson(TMP_LOADER_PATH, config);
-
-  if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_LOADER_PATHNAME, config);
-    console.info('[Storage] Confirmed write of Universal Loader to private Vercel Blob.');
+  if (!isSupabaseStorageConfigured()) {
+    throw new Error(
+      '[Storage Error] Cannot persist loader configuration: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
   }
+  await writeJson(STORAGE_LOADER_PATH, config);
+  console.info('[Storage] Persisted Universal Loader config to Supabase Storage.');
 }
 
 /**
- * Retrieve all user suggestions from private Vercel Blob store.
- * Returns empty array if none have been created.
+ * Retrieve all user suggestions from Supabase Storage.
+ * In production, fails if Supabase Storage is unavailable.
  */
 export async function getStoredSuggestions(): Promise<Suggestion[]> {
-  if (isBlobStorageConfigured()) {
-    try {
-      const fromBlob = await readBlobJson<Suggestion[]>(BLOB_SUGGESTIONS_PATHNAME);
-      if (Array.isArray(fromBlob)) {
-        writeTmpJson(TMP_SUGGESTIONS_PATH, fromBlob).catch(() => {});
-        return fromBlob;
-      }
-    } catch (err: any) {
-      console.warn('[Storage] Reading suggestions from Vercel Blob failed:', sanitizeError(err).message);
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
+      );
     }
+    return [];
   }
-
-  const fromTmp = await readTmpJson<Suggestion[]>(TMP_SUGGESTIONS_PATH);
-  if (Array.isArray(fromTmp)) {
-    return fromTmp;
+  const fromStorage = await readJson<Suggestion[]>(STORAGE_SUGGESTIONS_PATH);
+  if (Array.isArray(fromStorage)) {
+    return fromStorage;
   }
-
   return [];
 }
 
 /**
- * Persistently save all suggestions to private Vercel Blob store.
+ * Persistently save all suggestions to Supabase Storage.
+ * Fails with a clear server error if Supabase Storage is unconfigured.
  */
 export async function saveStoredSuggestions(suggestions: Suggestion[]): Promise<void> {
-  await writeTmpJson(TMP_SUGGESTIONS_PATH, suggestions);
-
-  if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_SUGGESTIONS_PATHNAME, suggestions);
-    console.info('[Storage] Confirmed write of suggestions to private Vercel Blob.');
+  if (!isSupabaseStorageConfigured()) {
+    throw new Error(
+      '[Storage Error] Cannot persist suggestions: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
   }
+  await writeJson(STORAGE_SUGGESTIONS_PATH, suggestions);
+  console.info(`[Storage] Persisted ${suggestions.length} suggestions to Supabase Storage.`);
 }
 
 /**
- * Retrieve all changelog releases from private Vercel Blob store.
- * Returns empty array if none have been created or if explicitly cleared.
+ * Retrieve all changelog releases from Supabase Storage.
  */
 export async function getStoredChangelog(options?: { forceFresh?: boolean }): Promise<ChangelogRelease[]> {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (!isSupabaseStorageConfigured()) {
+    if (isProd) {
+      throw new Error(
+        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
+      );
+    }
+    if (!options?.forceFresh && memoryChangelogCache) {
+      return memoryChangelogCache.data;
+    }
+    const seed = INITIAL_CHANGELOG_RELEASES.map(normalizeChangelogRelease);
+    memoryChangelogCache = { data: seed, timestamp: Date.now() };
+    return seed;
+  }
+
   if (!options?.forceFresh && memoryChangelogCache && Date.now() - memoryChangelogCache.timestamp < CACHE_TTL_MS) {
     return memoryChangelogCache.data;
   }
 
-  if (isBlobStorageConfigured()) {
-    try {
-      const fromBlob = await readBlobJson<ChangelogRelease[]>(BLOB_CHANGELOG_PATHNAME);
-      if (Array.isArray(fromBlob)) {
-        const normalized = fromBlob.map(normalizeChangelogRelease);
-        writeTmpJson(TMP_CHANGELOG_PATH, normalized).catch(() => {});
-        memoryChangelogCache = { data: normalized, timestamp: Date.now() };
-        return normalized;
-      }
+  const fromStorage = await readJson<ChangelogRelease[]>(STORAGE_CHANGELOG_PATH);
 
-      // Check if persistent storage was already initialized previously
-      const marker = await readBlobJson<StorageInitMarker>(BLOB_CHANGELOG_MARKER_PATHNAME);
-      if (marker?.initialized) {
-        memoryChangelogCache = { data: [], timestamp: Date.now() };
-        return [];
-      }
-
-      // Initial first-ever seed to Blob
-      const seed = INITIAL_CHANGELOG_RELEASES.map(normalizeChangelogRelease);
-      try {
-        await writeBlobJson(BLOB_CHANGELOG_PATHNAME, seed);
-        await writeBlobJson(BLOB_CHANGELOG_MARKER_PATHNAME, {
-          initialized: true,
-          initializedAt: new Date().toISOString(),
-          version: 1,
-        });
-        console.info(`[Storage] First-time initialization: seeded ${seed.length} releases to private Vercel Blob.`);
-      } catch (seedErr: any) {
-        console.warn('[Storage] Could not seed changelog to private Vercel Blob:', sanitizeError(seedErr).message);
-      }
-      writeTmpJson(TMP_CHANGELOG_PATH, seed).catch(() => {});
-      memoryChangelogCache = { data: seed, timestamp: Date.now() };
-      return seed;
-    } catch (err: any) {
-      console.warn('[Storage] Reading changelog from private Vercel Blob failed, falling back to cache:', sanitizeError(err).message);
-    }
-  }
-
-  // Fallback: local /tmp cache
-  const fromTmp = await readTmpJson<ChangelogRelease[]>(TMP_CHANGELOG_PATH);
-  if (Array.isArray(fromTmp)) {
-    const normalized = fromTmp.map(normalizeChangelogRelease);
+  if (Array.isArray(fromStorage)) {
+    const normalized = fromStorage.map(normalizeChangelogRelease);
     memoryChangelogCache = { data: normalized, timestamp: Date.now() };
     return normalized;
   }
 
-  const tmpMarker = await readTmpJson<StorageInitMarker>(TMP_CHANGELOG_MARKER_PATH);
-  if (tmpMarker?.initialized) {
+  // Check if persistent storage was already initialized previously
+  const marker = await readJson<StorageInitMarker>(STORAGE_CHANGELOG_MARKER_PATH);
+  if (marker?.initialized) {
     memoryChangelogCache = { data: [], timestamp: Date.now() };
     return [];
   }
 
-  // First-ever initialization for local fallback
+  // Initial first-ever seed to Supabase Storage
   const seed = INITIAL_CHANGELOG_RELEASES.map(normalizeChangelogRelease);
-  await writeTmpJson(TMP_CHANGELOG_PATH, seed).catch(() => {});
-  await writeTmpJson(TMP_CHANGELOG_MARKER_PATH, {
+  await writeJson(STORAGE_CHANGELOG_PATH, seed);
+  await writeJson(STORAGE_CHANGELOG_MARKER_PATH, {
     initialized: true,
     initializedAt: new Date().toISOString(),
     version: 1,
-  }).catch(() => {});
+  });
+  console.info(`[Storage] Seeded ${seed.length} changelog releases to Supabase Storage.`);
+
   memoryChangelogCache = { data: seed, timestamp: Date.now() };
   return seed;
 }
 
 /**
- * Persistently save changelog releases to private Vercel Blob store.
+ * Persistently save changelog releases to Supabase Storage.
+ * Fails with a clear server error if Supabase Storage is unconfigured.
  */
 export async function saveStoredChangelog(releases: ChangelogRelease[]): Promise<void> {
+  if (!isSupabaseStorageConfigured()) {
+    throw new Error(
+      '[Storage Error] Cannot persist changelog: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
+    );
+  }
   const normalized = releases.map(normalizeChangelogRelease);
-  memoryChangelogCache = { data: normalized, timestamp: Date.now() };
-  await writeTmpJson(TMP_CHANGELOG_PATH, normalized);
-  await writeTmpJson(TMP_CHANGELOG_MARKER_PATH, {
+  await writeJson(STORAGE_CHANGELOG_PATH, normalized);
+  await writeJson(STORAGE_CHANGELOG_MARKER_PATH, {
     initialized: true,
     initializedAt: new Date().toISOString(),
     version: 1,
-  }).catch(() => {});
-
-  if (isBlobStorageConfigured()) {
-    await writeBlobJson(BLOB_CHANGELOG_PATHNAME, normalized);
-    await writeBlobJson(BLOB_CHANGELOG_MARKER_PATHNAME, {
-      initialized: true,
-      initializedAt: new Date().toISOString(),
-      version: 1,
-    }).catch(() => {});
-    console.info(`[Storage] Confirmed write of ${normalized.length} releases to private Vercel Blob.`);
-  }
+  });
+  memoryChangelogCache = { data: normalized, timestamp: Date.now() };
+  console.info(`[Storage] Persisted ${normalized.length} changelog releases to Supabase Storage.`);
 }
-
-

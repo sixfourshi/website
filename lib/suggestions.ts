@@ -217,7 +217,7 @@ export function checkRateLimit(clientIp: string): {
 }
 
 /**
- * Persistently save a new suggestion to Vercel Blob storage.
+ * Persistently save a new suggestion to Supabase Storage.
  */
 export async function submitSuggestion(input: SuggestionInput): Promise<Suggestion> {
   const existing = await getStoredSuggestions();
