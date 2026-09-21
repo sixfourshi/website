@@ -1,7 +1,6 @@
 import { Navbar } from '@/components/Navbar';
 import { Hero } from '@/components/Hero';
 import { Stats } from '@/components/Stats';
-import { Demo } from '@/components/Demo';
 import { Faq } from '@/components/Faq';
 import { Footer } from '@/components/Footer';
 import { getGames } from '@/lib/games-server';
@@ -65,7 +64,6 @@ export default async function Home() {
         totalExecutions={executionsStore?.totalExecutions || 0}
         version={currentVersion}
       />
-      <Demo />
       <Faq />
       <Footer />
     </main>

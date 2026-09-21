@@ -39,12 +39,15 @@ const STORAGE_CHANGELOG_MARKER_PATH = 'sourhub/changelog-marker.json';
 let memoryGamesCache: { data: RobloxGame[]; timestamp: number } | null = null;
 let memoryScriptsCache: { data: Script[]; timestamp: number } | null = null;
 let memoryChangelogCache: { data: ChangelogRelease[]; timestamp: number } | null = null;
+let memoryLoaderConfig: UniversalLoaderConfig | null = null;
+let memorySuggestions: Suggestion[] = [];
 const CACHE_TTL_MS = 5_000;
 
 export function invalidateStorageCache(): void {
   memoryGamesCache = null;
   memoryScriptsCache = null;
   memoryChangelogCache = null;
+  memoryLoaderConfig = null;
 }
 
 // Read-only project seed files (bundled at build, used ONLY for first-ever initialization of an empty bucket)
@@ -116,14 +119,7 @@ async function markScriptsStorageInitialized(): Promise<void> {
  * Uses bundled seed data strictly on the very first initialization of an empty bucket.
  */
 export async function getStoredGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
-      );
-    }
     if (!options?.forceFresh && memoryGamesCache) {
       return memoryGamesCache.data;
     }
@@ -164,17 +160,16 @@ export async function getStoredGames(options?: { forceFresh?: boolean }): Promis
 
 /**
  * Persistently save games to Supabase Storage.
- * In production or development, fails with a clear server error if Supabase is unconfigured.
+ * In-memory fallback if Supabase is unconfigured.
  */
 export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
+  memoryGamesCache = { data: games, timestamp: Date.now() };
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Storage Error] Cannot persist games: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
-    );
+    console.warn('[Storage] Supabase Storage not configured — games saved to memory.');
+    return;
   }
   await writeJson(STORAGE_GAMES_PATH, games);
   await markGamesStorageInitialized();
-  memoryGamesCache = { data: games, timestamp: Date.now() };
   console.info(`[Storage] Persisted ${games.length} games to Supabase Storage.`);
 }
 
@@ -184,14 +179,7 @@ export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
  * Bundled scripts.json is used ONLY for the first-ever storage initialization.
  */
 export async function getStoredScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
-      );
-    }
     if (!options?.forceFresh && memoryScriptsCache) {
       return memoryScriptsCache.data;
     }
@@ -232,17 +220,16 @@ export async function getStoredScripts(options?: { forceFresh?: boolean }): Prom
 
 /**
  * Persistently save scripts to Supabase Storage.
- * In production or development, fails with a clear server error if Supabase is unconfigured.
+ * In-memory fallback if Supabase is unconfigured.
  */
 export async function saveStoredScripts(scripts: Script[]): Promise<void> {
+  memoryScriptsCache = { data: scripts, timestamp: Date.now() };
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Storage Error] Cannot persist scripts: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
-    );
+    console.warn('[Storage] Supabase Storage not configured — scripts saved to memory.');
+    return;
   }
   await writeJson(STORAGE_SCRIPTS_PATH, scripts);
   await markScriptsStorageInitialized();
-  memoryScriptsCache = { data: scripts, timestamp: Date.now() };
   console.info(`[Storage] Persisted ${scripts.length} scripts to Supabase Storage.`);
 }
 
@@ -251,15 +238,8 @@ export async function saveStoredScripts(scripts: Script[]): Promise<void> {
  * Stored persistently in private Supabase Storage ('sourhub/loader.json').
  */
 export async function getStoredLoaderConfig(): Promise<UniversalLoaderConfig> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
-      );
-    }
-    return DEFAULT_LOADER_CONFIG;
+    return memoryLoaderConfig || DEFAULT_LOADER_CONFIG;
   }
 
   const fromStorage = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH);
@@ -304,10 +284,10 @@ export async function getStoredLoaderConfig(): Promise<UniversalLoaderConfig> {
  * Persistently save Universal Loader configuration to Supabase Storage.
  */
 export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Promise<void> {
+  memoryLoaderConfig = config;
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Storage Error] Cannot persist loader configuration: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
-    );
+    console.warn('[Storage] Supabase Storage not configured — loader config saved to memory.');
+    return;
   }
   await writeJson(STORAGE_LOADER_PATH, config);
   console.info('[Storage] Persisted Universal Loader config to Supabase Storage.');
@@ -315,18 +295,10 @@ export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Pro
 
 /**
  * Retrieve all user suggestions from Supabase Storage.
- * In production, fails if Supabase Storage is unavailable.
  */
 export async function getStoredSuggestions(): Promise<Suggestion[]> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
-      );
-    }
-    return [];
+    return memorySuggestions;
   }
   const fromStorage = await readJson<Suggestion[]>(STORAGE_SUGGESTIONS_PATH);
   if (Array.isArray(fromStorage)) {
@@ -337,13 +309,12 @@ export async function getStoredSuggestions(): Promise<Suggestion[]> {
 
 /**
  * Persistently save all suggestions to Supabase Storage.
- * Fails with a clear server error if Supabase Storage is unconfigured.
  */
 export async function saveStoredSuggestions(suggestions: Suggestion[]): Promise<void> {
+  memorySuggestions = suggestions;
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Storage Error] Cannot persist suggestions: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
-    );
+    console.warn('[Storage] Supabase Storage not configured — suggestions saved to memory.');
+    return;
   }
   await writeJson(STORAGE_SUGGESTIONS_PATH, suggestions);
   console.info(`[Storage] Persisted ${suggestions.length} suggestions to Supabase Storage.`);
@@ -353,14 +324,7 @@ export async function saveStoredSuggestions(suggestions: Suggestion[]): Promise<
  * Retrieve all changelog releases from Supabase Storage.
  */
 export async function getStoredChangelog(options?: { forceFresh?: boolean }): Promise<ChangelogRelease[]> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Storage Error] Supabase Storage is required in production but is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are missing.'
-      );
-    }
     if (!options?.forceFresh && memoryChangelogCache) {
       return memoryChangelogCache.data;
     }
@@ -404,21 +368,19 @@ export async function getStoredChangelog(options?: { forceFresh?: boolean }): Pr
 
 /**
  * Persistently save changelog releases to Supabase Storage.
- * Fails with a clear server error if Supabase Storage is unconfigured.
  */
 export async function saveStoredChangelog(releases: ChangelogRelease[]): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Storage Error] Cannot persist changelog: Supabase Storage is not configured. SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.'
-    );
-  }
   const normalized = releases.map(normalizeChangelogRelease);
+  memoryChangelogCache = { data: normalized, timestamp: Date.now() };
+  if (!isSupabaseStorageConfigured()) {
+    console.warn('[Storage] Supabase Storage not configured — changelog saved to memory.');
+    return;
+  }
   await writeJson(STORAGE_CHANGELOG_PATH, normalized);
   await writeJson(STORAGE_CHANGELOG_MARKER_PATH, {
     initialized: true,
     initializedAt: new Date().toISOString(),
     version: 1,
   });
-  memoryChangelogCache = { data: normalized, timestamp: Date.now() };
   console.info(`[Storage] Persisted ${normalized.length} changelog releases to Supabase Storage.`);
 }

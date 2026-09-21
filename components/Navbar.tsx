@@ -9,7 +9,6 @@ const LINKS = [
   { href: '/games', label: 'Games' },
   { href: '/suggestion', label: 'Suggestions' },
   { href: '/changelog', label: 'Changelog' },
-  { href: '/#demo', label: 'Demo' },
   { href: '/#faq', label: 'FAQ' },
 ];
 
@@ -31,7 +30,7 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const discordInviteUrl =
-    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/ENgU3jvBbN';
+    process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/JbdzBnu8fP';
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);

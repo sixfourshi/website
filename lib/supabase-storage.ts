@@ -163,17 +163,10 @@ function sanitizeError(err: unknown): Error {
 
 /**
  * Download a raw object from the private Supabase Storage bucket.
- * Returns null if the object does not exist (404).
- * Throws in production if Supabase is unconfigured, or on unexpected storage errors.
+ * Returns null if the object does not exist (404) or if Supabase is unconfigured.
  */
 export async function downloadObject(path: string): Promise<Blob | null> {
-  const isProd = process.env.NODE_ENV === 'production';
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Supabase Storage] Cannot read from Supabase Storage in production: Storage variables are not configured.'
-      );
-    }
     return null;
   }
 
@@ -251,9 +244,10 @@ export async function uploadObject(
   }
 ): Promise<void> {
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Supabase Storage] Cannot perform persistent write: Supabase Storage is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
+    console.warn(
+      `[Supabase Storage] Supabase Storage is not configured. Skipped persistent upload for ${path}.`
     );
+    return;
   }
 
   const cleanPath = validateStoragePath(path);
@@ -280,9 +274,8 @@ export async function uploadObject(
  */
 export async function writeJson<T>(path: string, data: T): Promise<void> {
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Supabase Storage] Cannot perform persistent write: Supabase Storage is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
-    );
+    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped persistent writeJson for ${path}.`);
+    return;
   }
   const cleanPath = validateStoragePath(path);
   const payload = JSON.stringify(data, null, 2);
@@ -302,9 +295,8 @@ export async function writeText(
   contentType: string = 'text/plain; charset=utf-8'
 ): Promise<void> {
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Supabase Storage] Cannot perform persistent write: Supabase Storage is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
-    );
+    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped persistent writeText for ${path}.`);
+    return;
   }
   const cleanPath = validateStoragePath(path);
   await uploadObject(cleanPath, content, {
@@ -319,9 +311,8 @@ export async function writeText(
  */
 export async function deleteObject(path: string): Promise<void> {
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Supabase Storage] Cannot perform delete: Supabase Storage is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
-    );
+    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped deleteObject for ${path}.`);
+    return;
   }
   const cleanPath = validateStoragePath(path);
   const client = getSupabaseClient();
@@ -343,9 +334,8 @@ export async function deleteObject(path: string): Promise<void> {
  */
 export async function deleteObjects(paths: string[]): Promise<void> {
   if (!isSupabaseStorageConfigured()) {
-    throw new Error(
-      '[Supabase Storage] Cannot perform delete: Supabase Storage is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
-    );
+    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped deleteObjects.`);
+    return;
   }
   if (!paths || paths.length === 0) return;
   const cleanPaths = paths.map(validateStoragePath);
@@ -366,13 +356,7 @@ export async function deleteObjects(paths: string[]): Promise<void> {
  * List objects within a folder prefix in the private Supabase Storage bucket.
  */
 export async function listObjects(prefix: string = ''): Promise<string[]> {
-  const isProd = process.env.NODE_ENV === 'production';
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Supabase Storage] Cannot list storage objects in production: Supabase Storage is not configured.'
-      );
-    }
     return [];
   }
   const client = getSupabaseClient();
@@ -400,13 +384,7 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
  * Check whether an object exists in the private Supabase Storage bucket.
  */
 export async function objectExists(path: string): Promise<boolean> {
-  const isProd = process.env.NODE_ENV === 'production';
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Supabase Storage] Cannot check storage object in production: Supabase Storage is not configured.'
-      );
-    }
     return false;
   }
   const cleanPath = validateStoragePath(path);

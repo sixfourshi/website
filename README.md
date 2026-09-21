@@ -44,7 +44,7 @@ a production dashboard.
 
 ## Routes
 
-- `/` — landing page (hero, stats, executors, script library, demo,
+- `/` — landing page (hero, stats, executors, script library,
   changelog, how-to-use, FAQ, footer)
 - `/scripts/[slug]` — public page for a single script with a syntax
   highlighted viewer, copy button, and raw link

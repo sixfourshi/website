@@ -5,7 +5,6 @@ const NAV = [
   { href: '/games', label: 'Games' },
   { href: '/suggestion', label: 'Suggestions' },
   { href: '/changelog', label: 'Changelog' },
-  { href: '/#demo', label: 'Demo' },
   { href: '/#faq', label: 'FAQ' },
 ];
 
@@ -50,7 +49,7 @@ export function Footer() {
             </p>
             <div className="mt-3.5 flex items-center gap-3">
               <a
-                href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/ENgU3jvBbN'}
+                href={process.env.NEXT_PUBLIC_DISCORD_INVITE_URL?.trim() || 'https://discord.gg/JbdzBnu8fP'}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Discord Server"

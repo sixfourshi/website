@@ -70,14 +70,7 @@ export function checkRateLimit(ip: string): boolean {
  * Read executions data from private Supabase Storage bucket.
  */
 export async function getStoredExecutions(): Promise<ExecutionDataStore> {
-  const isProd = process.env.NODE_ENV === 'production';
-
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Executions Storage] Supabase Storage is required in production but is not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY.'
-      );
-    }
     if (memoryExecutionStore) return memoryExecutionStore;
     return { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
   }
@@ -106,23 +99,15 @@ export async function getStoredExecutions(): Promise<ExecutionDataStore> {
 
 /**
  * Save executions data persistently to private Supabase Storage bucket.
- * In production, fails if Supabase Storage is unconfigured or write fails.
+ * Falls back to in-memory store if Supabase Storage is unconfigured.
  */
 export async function saveStoredExecutions(data: ExecutionDataStore): Promise<void> {
-  const isProd = process.env.NODE_ENV === 'production';
-
+  memoryExecutionStore = data;
   if (!isSupabaseStorageConfigured()) {
-    if (isProd) {
-      throw new Error(
-        '[Executions Storage] Cannot record execution in production: Supabase Storage is not configured.'
-      );
-    }
-    memoryExecutionStore = data;
     return;
   }
 
   await writeJson(STORAGE_EXECUTIONS_PATH, data);
-  memoryExecutionStore = data;
 }
 
 /**
