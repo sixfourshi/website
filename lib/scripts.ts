@@ -68,6 +68,18 @@ export function slugify(name: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
+// In-memory Promise chain mutex to serialize all concurrent script mutations (prevents lost updates)
+let scriptMutationLock: Promise<any> = Promise.resolve();
+
+export async function runWithScriptsLock<T>(action: () => Promise<T>): Promise<T> {
+  const currentLock = scriptMutationLock.then(
+    () => action(),
+    () => action()
+  );
+  scriptMutationLock = currentLock.catch(() => {});
+  return currentLock;
+}
+
 export async function upsertScript(
   input: Partial<Script> & { name: string },
   existingSlug?: string
@@ -76,75 +88,85 @@ export async function upsertScript(
     throw new ScriptValidationError('Script name is required.');
   }
 
-  const scripts = await getScripts({ forceFresh: true });
+  return runWithScriptsLock(async () => {
+    // Always read latest fresh scripts directly from persistent storage
+    const scripts = await getScripts({ forceFresh: true });
 
-  // Generate the slug automatically from the script name if not already provided
-  let baseSlug = input.slug ? slugify(input.slug) : slugify(input.name);
-  if (!baseSlug) {
-    baseSlug = 'script';
-  }
+    let slug: string;
+    let idx = -1;
 
-  // If updating, preserve the existing slug unless explicitly overridden
-  let slug = existingSlug ? (input.slug ? baseSlug : existingSlug) : baseSlug;
-
-  // Ensure slugs are unique so no two scripts ever collide on the same raw endpoint
-  if (!existingSlug) {
-    let uniqueSlug = slug;
-    let counter = 2;
-    while (
-      scripts.some(
-        (s) => s.slug.toLowerCase() === uniqueSlug.toLowerCase()
-      )
-    ) {
-      uniqueSlug = `${slug}-${counter}`;
-      counter++;
-    }
-    slug = uniqueSlug;
-  } else {
-    // When updating, verify no OTHER script already holds this slug
-    const conflict = scripts.find(
-      (s) =>
-        s.slug.toLowerCase() === slug.toLowerCase() &&
-        s.slug.toLowerCase() !== existingSlug.toLowerCase()
-    );
-    if (conflict) {
-      throw new ScriptValidationError(
-        `A script with slug "${slug}" already exists ("${conflict.name}").`,
-        409
+    if (existingSlug) {
+      // PERMANENT SLUG PRESERVATION WHEN EDITING (Requirement 6)
+      slug = existingSlug;
+      idx = scripts.findIndex(
+        (s) => s.slug.toLowerCase() === existingSlug.toLowerCase()
       );
+      if (idx < 0) {
+        throw new ScriptValidationError(`Script "${existingSlug}" not found.`, 404);
+      }
+    } else {
+      // NEW SCRIPT CREATION: generate unique slug without modifying existing scripts (Requirement 6)
+      let baseSlug = input.slug ? slugify(input.slug) : slugify(input.name);
+      if (!baseSlug) {
+        baseSlug = 'script';
+      }
+      slug = baseSlug;
+      let counter = 2;
+      while (scripts.some((s) => s.slug.toLowerCase() === slug.toLowerCase())) {
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
     }
-  }
 
-  const idx = scripts.findIndex(
-    (s) => s.slug.toLowerCase() === (existingSlug ?? slug).toLowerCase()
-  );
+    const existingRecord = idx >= 0 ? scripts[idx] : null;
 
-  const record: Script = {
-    slug,
-    name: input.name.trim(),
-    description: input.description?.trim() ?? '',
-    category: input.category?.trim() ?? 'Utility',
-    game: (input.game?.trim() || 'universal').toLowerCase(),
-    version: input.version?.trim() || '1.0.0',
-    updatedAt: new Date().toISOString().slice(0, 10),
-    icon: input.icon || 'FileCode',
-    code: input.code ?? '',
-    features: input.features ?? [],
-  };
+    const record: Script = {
+      slug,
+      name: input.name.trim(),
+      description: input.description !== undefined ? input.description.trim() : (existingRecord?.description ?? ''),
+      category: input.category !== undefined ? input.category.trim() : (existingRecord?.category ?? 'Utility'),
+      game: (input.game !== undefined ? input.game.trim() : (existingRecord?.game ?? 'universal')).toLowerCase(),
+      version: input.version !== undefined ? input.version.trim() : (existingRecord?.version ?? '1.0.0'),
+      updatedAt: new Date().toISOString().slice(0, 10),
+      icon: input.icon || existingRecord?.icon || 'FileCode',
+      code: input.code !== undefined ? input.code : (existingRecord?.code ?? ''),
+      features: input.features ?? existingRecord?.features ?? [],
+    };
 
-  if (idx >= 0) {
-    scripts[idx] = record;
-  } else {
-    scripts.push(record);
-  }
+    if (idx >= 0) {
+      // Update ONLY the matching script, preserve every other script (Requirement 2)
+      scripts[idx] = record;
+    } else {
+      // Append the new script without removing existing scripts (Requirement 1)
+      scripts.push(record);
+    }
 
-  await saveScripts(scripts);
-  return record;
+    // Write the COMPLETE updated scripts collection back to persistent storage & verify (Requirement 1 & 2)
+    await saveScripts(scripts);
+    return record;
+  });
 }
 
 export async function deleteScript(slug: string): Promise<void> {
-  const scripts = await getScripts();
-  await saveScripts(scripts.filter((s) => s.slug.toLowerCase() !== slug.toLowerCase()));
+  if (!slug || !slug.trim()) {
+    throw new ScriptValidationError('Script slug is required.');
+  }
+  const cleanSlug = decodeURIComponent(slug).trim().toLowerCase();
+
+  return runWithScriptsLock(async () => {
+    // Read latest persistent data (Requirement 3)
+    const scripts = await getScripts({ forceFresh: true });
+    const idx = scripts.findIndex((s) => s.slug.toLowerCase() === cleanSlug);
+    if (idx < 0) {
+      throw new ScriptValidationError(`Script "${slug}" not found.`, 404);
+    }
+
+    // Remove only the requested script, preserving all other scripts (Requirement 3)
+    const remaining = scripts.filter((s) => s.slug.toLowerCase() !== cleanSlug);
+
+    // Persist the complete result back to persistent storage (Requirement 3)
+    await saveScripts(remaining);
+  });
 }
 
 export function formatRelativeTime(dateInput?: string | number | Date | null): string {

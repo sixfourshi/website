@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { ensureLocalStorageServer } from './supabase-emulator';
 
 // Server-only guard: prevent any client component from bundling this module
 if (typeof window !== 'undefined') {
@@ -9,6 +10,7 @@ interface StorageEnvConfig {
   url: string;
   serviceRoleKey: string;
   bucket: string;
+  isEmulator?: boolean;
 }
 
 let validationPerformed = false;
@@ -16,10 +18,24 @@ let validatedConfig: StorageEnvConfig | null = null;
 let validationErrorMessage: string | null = null;
 let cachedClient: SupabaseClient | null = null;
 
+function isRemoteSupabaseUrl(url?: string): boolean {
+  if (!url) return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('https://') && !trimmed.startsWith('http://')) return false;
+  if (
+    trimmed.includes('11111111') ||
+    trimmed.includes('localhost') ||
+    trimmed.includes('127.0.0.1')
+  ) {
+    return false;
+  }
+  return true;
+}
+
 /**
  * Validates SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_BUCKET once in the server-only storage client.
  * Caches the result so validation is executed exactly once per runtime instance.
- * Never leaks secret keys in error messages.
+ * Automatically provisions the local persistent emulator in development when no remote Supabase is configured.
  */
 function validateStorageEnvironmentOnce(): StorageEnvConfig {
   if (validationPerformed) {
@@ -29,46 +45,59 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
     return validatedConfig;
   }
 
-  validationPerformed = true;
-
   const rawUrl = process.env.SUPABASE_URL?.trim();
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   const rawBucket = process.env.SUPABASE_BUCKET?.trim() || 'nova-hub';
 
-  const missing: string[] = [];
-  if (!rawUrl) missing.push('SUPABASE_URL');
-  if (!rawKey) missing.push('SUPABASE_SERVICE_ROLE_KEY');
+  const isRemote = isRemoteSupabaseUrl(rawUrl);
 
-  if (missing.length > 0) {
-    validationErrorMessage = `[Supabase Storage] Missing required environment variable(s): ${missing.join(', ')}`;
+  // In production (e.g. Vercel), require valid remote Supabase credentials
+  if (process.env.VERCEL === '1' && !isRemote) {
+    validationPerformed = true;
+    validationErrorMessage =
+      '[Supabase Storage] Missing or invalid SUPABASE_URL in production environment. A valid Supabase project URL is required.';
     throw new Error(validationErrorMessage);
   }
 
-  // Validate URL format
-  try {
-    const parsed = new URL(rawUrl!);
-    if (!parsed.protocol.startsWith('http')) {
-      validationErrorMessage = '[Supabase Storage] SUPABASE_URL must be a valid HTTP or HTTPS URL.';
+  if (isRemote) {
+    if (!rawKey || rawKey.includes('11111111')) {
+      validationPerformed = true;
+      validationErrorMessage =
+        '[Supabase Storage] SUPABASE_SERVICE_ROLE_KEY is required when using a remote Supabase URL.';
       throw new Error(validationErrorMessage);
     }
-  } catch {
-    validationErrorMessage = '[Supabase Storage] SUPABASE_URL must be a valid HTTP or HTTPS URL.';
-    throw new Error(validationErrorMessage);
+
+    validatedConfig = {
+      url: rawUrl!,
+      serviceRoleKey: rawKey,
+      bucket: rawBucket,
+      isEmulator: false,
+    };
+  } else {
+    // Local / development / container fallback: start persistent emulator on 127.0.0.1:54321
+    try {
+      validatedConfig = {
+        url: 'http://127.0.0.1:54321',
+        serviceRoleKey: rawKey || 'emulator-service-role-key',
+        bucket: rawBucket,
+        isEmulator: true,
+      };
+    } catch (err: any) {
+      validationPerformed = true;
+      validationErrorMessage = `[Supabase Storage] Failed to initialize persistent storage: ${err?.message || err}`;
+      throw new Error(validationErrorMessage);
+    }
   }
 
-  // Validate bucket name safe format
-  if (!/^[a-zA-Z0-9_\-\.]+$/.test(rawBucket)) {
-    validationErrorMessage = '[Supabase Storage] SUPABASE_BUCKET contains invalid characters.';
-    throw new Error(validationErrorMessage);
-  }
-
-  validatedConfig = {
-    url: rawUrl!,
-    serviceRoleKey: rawKey!,
-    bucket: rawBucket,
-  };
-
+  validationPerformed = true;
   return validatedConfig;
+}
+
+export async function ensureStorageReady(): Promise<void> {
+  const config = validateStorageEnvironmentOnce();
+  if (config.isEmulator) {
+    await ensureLocalStorageServer();
+  }
 }
 
 /**
@@ -94,7 +123,7 @@ export function getSupabaseBucket(): string {
 
 /**
  * Returns a configured server-side Supabase client with the service role key.
- * Throws a clear error when required environment variables are missing.
+ * Throws a clear error when storage environment cannot be initialized.
  */
 export function getSupabaseClient(): SupabaseClient {
   if (typeof window !== 'undefined') {
@@ -163,13 +192,11 @@ function sanitizeError(err: unknown): Error {
 
 /**
  * Download a raw object from the private Supabase Storage bucket.
- * Returns null if the object does not exist (404) or if Supabase is unconfigured.
+ * Returns null if the object does not exist (404).
+ * Throws a clean error if Supabase Storage fails or cannot be reached.
  */
 export async function downloadObject(path: string): Promise<Blob | null> {
-  if (!isSupabaseStorageConfigured()) {
-    return null;
-  }
-
+  await ensureStorageReady();
   const cleanPath = validateStoragePath(path);
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
@@ -207,7 +234,7 @@ export async function downloadObject(path: string): Promise<Blob | null> {
 
 /**
  * Read an object as UTF-8 text from the private Supabase bucket.
- * Returns null if not found.
+ * Returns null if not found. Throws on storage error.
  */
 export async function readText(path: string): Promise<string | null> {
   const blob = await downloadObject(path);
@@ -218,7 +245,7 @@ export async function readText(path: string): Promise<string | null> {
 
 /**
  * Read and parse JSON from the private Supabase bucket.
- * Returns null if not found.
+ * Returns null if the file does not exist. Throws on network/storage/parse error.
  */
 export async function readJson<T>(path: string): Promise<T | null> {
   const text = await readText(path);
@@ -227,13 +254,13 @@ export async function readJson<T>(path: string): Promise<T | null> {
     return JSON.parse(text) as T;
   } catch (parseErr) {
     console.error(`[Supabase Storage] Failed parsing JSON at ${path}:`, parseErr);
-    return null;
+    throw new Error(`[Supabase Storage] Corrupted JSON at ${path}`);
   }
 }
 
 /**
  * Upload or overwrite an object in the private Supabase Storage bucket.
- * Never silently no-ops: throws if Supabase is unconfigured or if upload fails.
+ * Throws an error if upload fails.
  */
 export async function uploadObject(
   path: string,
@@ -243,13 +270,7 @@ export async function uploadObject(
     upsert?: boolean;
   }
 ): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    console.warn(
-      `[Supabase Storage] Supabase Storage is not configured. Skipped persistent upload for ${path}.`
-    );
-    return;
-  }
-
+  await ensureStorageReady();
   const cleanPath = validateStoragePath(path);
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
@@ -270,13 +291,9 @@ export async function uploadObject(
 
 /**
  * Write a JSON payload to the private Supabase Storage bucket with upsert enabled.
- * Throws a clear error if Supabase Storage is unconfigured or upload fails.
+ * Throws a clear error if upload fails.
  */
 export async function writeJson<T>(path: string, data: T): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped persistent writeJson for ${path}.`);
-    return;
-  }
   const cleanPath = validateStoragePath(path);
   const payload = JSON.stringify(data, null, 2);
   await uploadObject(cleanPath, payload, {
@@ -287,17 +304,13 @@ export async function writeJson<T>(path: string, data: T): Promise<void> {
 
 /**
  * Write text or Lua script source to the private Supabase Storage bucket with upsert enabled.
- * Throws a clear error if Supabase Storage is unconfigured or upload fails.
+ * Throws a clear error if upload fails.
  */
 export async function writeText(
   path: string,
   content: string,
   contentType: string = 'text/plain; charset=utf-8'
 ): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped persistent writeText for ${path}.`);
-    return;
-  }
   const cleanPath = validateStoragePath(path);
   await uploadObject(cleanPath, content, {
     contentType,
@@ -307,13 +320,10 @@ export async function writeText(
 
 /**
  * Delete a single object from the private Supabase Storage bucket.
- * Throws a clear error if Supabase Storage is unconfigured or delete fails.
+ * Throws a clear error if delete fails.
  */
 export async function deleteObject(path: string): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped deleteObject for ${path}.`);
-    return;
-  }
+  await ensureStorageReady();
   const cleanPath = validateStoragePath(path);
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
@@ -330,14 +340,11 @@ export async function deleteObject(path: string): Promise<void> {
 
 /**
  * Delete multiple objects from the private Supabase Storage bucket.
- * Throws a clear error if Supabase Storage is unconfigured or delete fails.
+ * Throws a clear error if delete fails.
  */
 export async function deleteObjects(paths: string[]): Promise<void> {
-  if (!isSupabaseStorageConfigured()) {
-    console.warn(`[Supabase Storage] Supabase Storage not configured. Skipped deleteObjects.`);
-    return;
-  }
   if (!paths || paths.length === 0) return;
+  await ensureStorageReady();
   const cleanPaths = paths.map(validateStoragePath);
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
@@ -356,9 +363,7 @@ export async function deleteObjects(paths: string[]): Promise<void> {
  * List objects within a folder prefix in the private Supabase Storage bucket.
  */
 export async function listObjects(prefix: string = ''): Promise<string[]> {
-  if (!isSupabaseStorageConfigured()) {
-    return [];
-  }
+  await ensureStorageReady();
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
   const cleanPrefix = prefix ? validateStoragePath(prefix) : '';
@@ -384,9 +389,7 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
  * Check whether an object exists in the private Supabase Storage bucket.
  */
 export async function objectExists(path: string): Promise<boolean> {
-  if (!isSupabaseStorageConfigured()) {
-    return false;
-  }
+  await ensureStorageReady();
   const cleanPath = validateStoragePath(path);
   const client = getSupabaseClient();
   const bucket = getSupabaseBucket();

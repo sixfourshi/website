@@ -15,12 +15,12 @@ export default async function DashboardPage() {
   if (!authed) redirect('/login');
 
   const [scripts, games, loaderConfig, suggestions, executionsStore, changelog] = await Promise.all([
-    getScripts(),
-    getGames(),
+    getScripts({ forceFresh: true }),
+    getGames({ forceFresh: true }),
     getStoredLoaderConfig(),
     getStoredSuggestions(),
     getStoredExecutions(),
-    getChangelogReleases(),
+    getChangelogReleases({ forceFresh: true }),
   ]);
 
   const initialAnalytics = computeAnalytics(executionsStore);

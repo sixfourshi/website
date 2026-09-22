@@ -11,13 +11,15 @@ export async function GET(
   { params }: { params: { slug: string } }
 ) {
   try {
-    const script = await getScript(params.slug);
+    const script = await getScript(params.slug, { forceFresh: true });
     if (!script) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     return NextResponse.json(script, {
       headers: {
-        'Cache-Control': 'no-store, max-age=0, must-revalidate',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (err: any) {
@@ -89,6 +91,17 @@ export async function DELETE(
       }
     );
   } catch (err: any) {
+    if (err instanceof ScriptValidationError) {
+      return NextResponse.json(
+        { error: err.message },
+        {
+          status: err.statusCode,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          },
+        }
+      );
+    }
     console.error(`[API/scripts/${params.slug}] Error deleting script:`, err?.message || err);
     return NextResponse.json(
       { error: err.message || 'Failed to delete script.' },

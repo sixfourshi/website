@@ -160,34 +160,25 @@ export async function getStoredGames(options?: { forceFresh?: boolean }): Promis
 
 /**
  * Persistently save games to Supabase Storage.
- * In-memory fallback if Supabase is unconfigured.
+ * Throws an error if Supabase Storage write fails or cannot be verified.
  */
 export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
-  memoryGamesCache = { data: games, timestamp: Date.now() };
-  if (!isSupabaseStorageConfigured()) {
-    console.warn('[Storage] Supabase Storage not configured — games saved to memory.');
-    return;
-  }
   await writeJson(STORAGE_GAMES_PATH, games);
   await markGamesStorageInitialized();
-  console.info(`[Storage] Persisted ${games.length} games to Supabase Storage.`);
+  const verified = await readJson<RobloxGame[]>(STORAGE_GAMES_PATH);
+  if (!Array.isArray(verified)) {
+    throw new Error('[Storage] Failed to verify persistent games storage.');
+  }
+  memoryGamesCache = { data: verified, timestamp: Date.now() };
+  console.info(`[Storage] Persisted and verified ${verified.length} games in Supabase Storage.`);
 }
 
 /**
  * Get all stored scripts.
  * Authoritative source: Supabase Storage bucket.
- * Bundled scripts.json is used ONLY for the first-ever storage initialization.
+ * Bundled scripts.json is used ONLY for the first-ever storage initialization on a brand new empty bucket.
  */
 export async function getStoredScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
-  if (!isSupabaseStorageConfigured()) {
-    if (!options?.forceFresh && memoryScriptsCache) {
-      return memoryScriptsCache.data;
-    }
-    const seed = await readSeedScripts();
-    memoryScriptsCache = { data: seed, timestamp: Date.now() };
-    return seed;
-  }
-
   if (!options?.forceFresh && memoryScriptsCache && Date.now() - memoryScriptsCache.timestamp < CACHE_TTL_MS) {
     return memoryScriptsCache.data;
   }
@@ -220,17 +211,24 @@ export async function getStoredScripts(options?: { forceFresh?: boolean }): Prom
 
 /**
  * Persistently save scripts to Supabase Storage.
- * In-memory fallback if Supabase is unconfigured.
+ * Writes complete updated scripts, verifies the write succeeded, and throws if persistence fails.
  */
 export async function saveStoredScripts(scripts: Script[]): Promise<void> {
-  memoryScriptsCache = { data: scripts, timestamp: Date.now() };
-  if (!isSupabaseStorageConfigured()) {
-    console.warn('[Storage] Supabase Storage not configured — scripts saved to memory.');
-    return;
-  }
+  // Invalidate any stale in-memory read cache before saving
+  memoryScriptsCache = null;
+
+  // Write complete collection to persistent Supabase Storage
   await writeJson(STORAGE_SCRIPTS_PATH, scripts);
   await markScriptsStorageInitialized();
-  console.info(`[Storage] Persisted ${scripts.length} scripts to Supabase Storage.`);
+
+  // Verify write succeeded by reading back from storage
+  const verified = await readJson<Script[]>(STORAGE_SCRIPTS_PATH);
+  if (!Array.isArray(verified)) {
+    throw new Error('[Storage] Persistence verification failed: scripts were not stored correctly in Supabase Storage.');
+  }
+
+  memoryScriptsCache = { data: verified, timestamp: Date.now() };
+  console.info(`[Storage] Persisted and verified ${verified.length} scripts in Supabase Storage.`);
 }
 
 /**
