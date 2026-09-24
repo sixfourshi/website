@@ -37,9 +37,17 @@ function isRemoteSupabaseUrl(url?: string): boolean {
  * Caches the result so validation is executed exactly once per runtime instance.
  * Automatically provisions the local persistent emulator in development when no remote Supabase is configured.
  */
+/**
+ * Strips all invalid characters, hidden whitespace, newlines, tabs, quotes,
+ * full URLs, and path segments to ensure an exact bucket name (defaulting to 'nova-hub').
+ */
 export function sanitizeBucketName(raw?: string): string {
   if (!raw || typeof raw !== 'string') return 'nova-hub';
-  let clean = raw.trim().replace(/^["']|["']$/g, '');
+  // Strip all CR, LF, tabs, null bytes, and surrounding whitespace
+  let clean = raw.replace(/[\r\n\t\0]/g, '').trim();
+  // Strip surrounding quotes (double, single, backticks)
+  clean = clean.replace(/^["'`]+|["'`]+$/g, '').trim();
+
   // If a full URL was accidentally passed in SUPABASE_BUCKET
   if (clean.startsWith('http://') || clean.startsWith('https://')) {
     try {
@@ -50,13 +58,39 @@ export function sanitizeBucketName(raw?: string): string {
       clean = clean.split('/').pop() || 'nova-hub';
     }
   }
-  // Strip leading and trailing slashes
-  clean = clean.replace(/^\/+|\/+$/g, '');
-  // Extract bucket name only, never paths
+
+  // Strip leading and trailing slashes (forward and backslashes)
+  clean = clean.replace(/^[\/\\]+|[\/\\]+$/g, '');
+
+  // Extract bucket name only, never subpaths (e.g. "nova-hub/games.json" -> "nova-hub")
   if (clean.includes('/')) {
-    clean = clean.split('/')[0];
+    clean = clean.split('/')[0].trim();
   }
+  if (clean.includes('\\')) {
+    clean = clean.split('\\')[0].trim();
+  }
+
+  // Final trim and unquote
+  clean = clean.replace(/^["'`]+|["'`]+$/g, '').trim();
+
   return clean || 'nova-hub';
+}
+
+/**
+ * Sanitizes SUPABASE_URL to guarantee a clean origin (e.g. https://<project>.supabase.co)
+ * without trailing slashes, whitespace, quotes, or accidental API paths like /rest/v1 or /storage/v1.
+ */
+export function sanitizeSupabaseUrl(raw?: string): string {
+  if (!raw || typeof raw !== 'string') return '';
+  let clean = raw.replace(/[\r\n\t\0]/g, '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
+  try {
+    const parsed = new URL(clean);
+    // Origin strips subpaths, trailing slashes, and query params (prevents accidental PostgREST /rest/v1 routing)
+    clean = parsed.origin;
+  } catch {
+    clean = clean.replace(/\/+$/, '');
+  }
+  return clean;
 }
 
 function validateStorageEnvironmentOnce(): StorageEnvConfig {
@@ -67,8 +101,10 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
     return validatedConfig;
   }
 
-  const rawUrl = process.env.SUPABASE_URL?.trim();
-  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+  const rawUrl = sanitizeSupabaseUrl(process.env.SUPABASE_URL);
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? process.env.SUPABASE_SERVICE_ROLE_KEY.replace(/[\r\n\t\0]/g, '').trim().replace(/^["'`]+|["'`]+$/g, '').trim()
+    : '';
   const cleanBucket = sanitizeBucketName(process.env.SUPABASE_BUCKET);
 
   const isRemote = isRemoteSupabaseUrl(rawUrl);
@@ -90,7 +126,7 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
     }
 
     validatedConfig = {
-      url: rawUrl!,
+      url: rawUrl,
       serviceRoleKey: rawKey,
       bucket: cleanBucket,
       isEmulator: false,
@@ -178,8 +214,10 @@ export function validateStoragePath(path: string, bucketName?: string): string {
     throw new Error('[Supabase Storage] Path must be a non-empty string.');
   }
 
+  // Strip invisible characters, carriage returns, newlines, tabs, and outer quotes
+  let normalized = path.replace(/[\r\n\t\0]/g, '').trim().replace(/^["'`]+|["'`]+$/g, '').trim();
+
   // If a full URL was provided, extract the pathname
-  let normalized = path.trim().replace(/^["']|["']$/g, '');
   if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
     try {
       const url = new URL(normalized);
@@ -190,20 +228,23 @@ export function validateStoragePath(path: string, bucketName?: string): string {
   // Strip leading storage API prefixes if accidentally present in path
   normalized = normalized.replace(/^\/?storage\/v1\/object\/(public\/|authenticated\/)?/, '');
 
-  // Strip leading and trailing slashes, replace backslashes, eliminate consecutive slashes
-  normalized = normalized.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
-  normalized = normalized.replace(/\/{2,}/g, '/');
+  // Normalize slashes: replace backslashes with forward slashes
+  normalized = normalized.replace(/\\/g, '/');
+
+  // Eliminate consecutive slashes and strip leading/trailing slashes
+  normalized = normalized.replace(/\/{2,}/g, '/').replace(/^\/+|\/+$/g, '');
 
   if (!normalized) {
     throw new Error('[Supabase Storage] Path cannot be empty or root.');
   }
 
   // Prevent directory traversal attacks
-  if (normalized.includes('..')) {
+  if (normalized.split('/').includes('..') || normalized.includes('../') || normalized.includes('/..')) {
     throw new Error(`[Supabase Storage] Directory traversal detected in path: "${path}"`);
   }
 
-  // Strip redundant duplicate bucket prefix if path starts with "${bucket}/${bucket}/"
+  // Only remove genuinely malformed DUPLICATED paths:
+  // e.g., "${cleanBucket}/${cleanBucket}/" -> "${cleanBucket}/"
   const cleanBucket = bucketName ? sanitizeBucketName(bucketName) : '';
   if (cleanBucket) {
     while (normalized.startsWith(`${cleanBucket}/${cleanBucket}/`)) {
@@ -219,7 +260,7 @@ export function validateStoragePath(path: string, bucketName?: string): string {
     normalized = normalized.slice('sourhub/'.length);
   }
 
-  // Final check to guarantee strictly relative object path without leading slash
+  // Strictly relative object path without leading slash
   normalized = normalized.replace(/^\/+/, '');
 
   // Verify safe segment characters (alphanumeric, hyphens, underscores, dots)
@@ -266,8 +307,9 @@ export function isNotFoundError(err: any): boolean {
 
 /**
  * Sanitizes errors so secrets like SUPABASE_SERVICE_ROLE_KEY are never leaked in logs or responses.
+ * Retains statusCode and error properties on the returned Error instance.
  */
-export function sanitizeError(err: unknown): Error {
+export function sanitizeError(err: unknown): Error & { statusCode?: number | string; error?: string } {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   let message = err instanceof Error ? err.message : String(err || 'Unknown error');
   if (serviceKey && serviceKey.length > 5) {
@@ -276,8 +318,10 @@ export function sanitizeError(err: unknown): Error {
   message = message.replace(/Bearer\s+[A-Za-z0-9\-_.]+/g, 'Bearer [REDACTED_TOKEN]');
   message = message.replace(/apikey=([^&\s]+)/gi, 'apikey=[REDACTED_KEY]');
   message = message.replace(/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+/g, '[REDACTED_JWT]');
-  const cleanError = new Error(message);
-  cleanError.name = err instanceof Error ? err.name : 'SupabaseStorageError';
+  const cleanError = new Error(message) as Error & { statusCode?: number | string; error?: string };
+  cleanError.name = (err as any)?.name || (err as any)?.error || 'SupabaseStorageError';
+  cleanError.statusCode = (err as any)?.statusCode || (err as any)?.status;
+  cleanError.error = (err as any)?.error || (err as any)?.name;
   return cleanError;
 }
 
@@ -292,8 +336,15 @@ export async function downloadObject(path: string): Promise<Blob | null> {
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  // Safely log bucket and relative path immediately before Supabase request
-  console.info(`bucket="${bucket}" path="${cleanPath}"`);
+  // Production-safe diagnostics immediately before .download()
+  console.info('[Supabase download target]', {
+    bucket,
+    path: cleanPath,
+    pathLength: cleanPath.length,
+    bucketLength: bucket.length,
+    bucketJson: JSON.stringify(bucket),
+    pathJson: JSON.stringify(cleanPath),
+  });
 
   try {
     const { data, error } = await client.storage.from(bucket).download(cleanPath);
@@ -303,10 +354,15 @@ export async function downloadObject(path: string): Promise<Blob | null> {
         return null;
       }
       const sanitized = sanitizeError(error);
-      console.error(
-        `[Supabase Storage:downloadObject] Download failed for bucket "${bucket}", path "${cleanPath}":`,
-        sanitized.message
-      );
+      const status = (error as any).statusCode || (error as any).status;
+      const errorName = (error as any).error || (error as any).name;
+      console.error('[Supabase download failure]', {
+        statusCode: status,
+        error: errorName,
+        message: sanitized.message,
+        bucket,
+        path: cleanPath,
+      });
       throw sanitized;
     }
 
@@ -316,10 +372,15 @@ export async function downloadObject(path: string): Promise<Blob | null> {
       return null;
     }
     const sanitized = sanitizeError(err);
-    console.error(
-      `[Supabase Storage:downloadObject] Unexpected error for bucket "${bucket}", path "${cleanPath}":`,
-      sanitized.message
-    );
+    const status = err?.statusCode || err?.status;
+    const errorName = err?.error || err?.name;
+    console.error('[Supabase download failure]', {
+      statusCode: status,
+      error: errorName,
+      message: sanitized.message,
+      bucket,
+      path: cleanPath,
+    });
     throw sanitized;
   }
 }
@@ -357,7 +418,7 @@ export async function readJson<T>(path: string): Promise<T | null> {
 /**
  * Upload or overwrite an object in the private Supabase Storage bucket.
  * Logs the final sanitized values of bucket and path immediately before the Supabase call.
- * Throws if upload fails, with clear logging identifying the path and bucket.
+ * Throws if upload fails, with clear logging identifying the path, bucket, status code, and error.
  */
 export async function uploadObject(
   path: string,
@@ -372,8 +433,15 @@ export async function uploadObject(
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  // Safely log bucket and relative path immediately before Supabase request
-  console.info(`bucket="${bucket}" path="${cleanPath}"`);
+  // Production-safe diagnostics immediately before .upload()
+  console.info('[Supabase upload target]', {
+    bucket,
+    path: cleanPath,
+    pathLength: cleanPath.length,
+    bucketLength: bucket.length,
+    bucketJson: JSON.stringify(bucket),
+    pathJson: JSON.stringify(cleanPath),
+  });
 
   try {
     const { error } = await client.storage.from(bucket).upload(cleanPath, body, {
@@ -383,31 +451,39 @@ export async function uploadObject(
 
     if (error) {
       const sanitized = sanitizeError(error);
-      console.error(
-        `[Supabase Storage:uploadObject] Upload failed for bucket "${bucket}", path "${cleanPath}":`,
-        sanitized.message
-      );
+      const status = (error as any).statusCode || (error as any).status;
+      const errorName = (error as any).error || (error as any).name;
+      console.error('[Supabase upload failure]', {
+        statusCode: status,
+        error: errorName,
+        message: sanitized.message,
+        bucket,
+        path: cleanPath,
+      });
       throw sanitized;
     }
   } catch (err: any) {
     const sanitized = sanitizeError(err);
-    console.error(
-      `[Supabase Storage:uploadObject] Upload exception for bucket "${bucket}", path "${cleanPath}":`,
-      sanitized.message
-    );
+    const status = err?.statusCode || err?.status;
+    const errorName = err?.error || err?.name;
+    console.error('[Supabase upload failure]', {
+      statusCode: status,
+      error: errorName,
+      message: sanitized.message,
+      bucket,
+      path: cleanPath,
+    });
     throw sanitized;
   }
 }
 
 /**
  * Write a JSON payload to the private Supabase Storage bucket with upsert enabled.
- * Throws a clear error if upload fails.
+ * Single boundary: prepares the serialized payload and delegates directly to uploadObject.
  */
 export async function writeJson<T>(path: string, data: T): Promise<void> {
-  const bucket = getSupabaseBucket();
-  const cleanPath = validateStoragePath(path, bucket);
   const payload = JSON.stringify(data, null, 2);
-  await uploadObject(cleanPath, payload, {
+  await uploadObject(path, payload, {
     contentType: 'application/json; charset=utf-8',
     upsert: true,
   });
@@ -415,16 +491,14 @@ export async function writeJson<T>(path: string, data: T): Promise<void> {
 
 /**
  * Write text or Lua script source to the private Supabase Storage bucket with upsert enabled.
- * Throws a clear error if upload fails.
+ * Single boundary: delegates directly to uploadObject.
  */
 export async function writeText(
   path: string,
   content: string,
   contentType: string = 'text/plain; charset=utf-8'
 ): Promise<void> {
-  const bucket = getSupabaseBucket();
-  const cleanPath = validateStoragePath(path, bucket);
-  await uploadObject(cleanPath, content, {
+  await uploadObject(path, content, {
     contentType,
     upsert: true,
   });
@@ -441,25 +515,42 @@ export async function deleteObject(path: string): Promise<void> {
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  // Safely log bucket and relative path immediately before Supabase request
-  console.info(`bucket="${bucket}" path="${cleanPath}"`);
+  // Production-safe diagnostics immediately before .remove()
+  console.info('[Supabase delete target]', {
+    bucket,
+    path: cleanPath,
+    pathLength: cleanPath.length,
+    bucketLength: bucket.length,
+    bucketJson: JSON.stringify(bucket),
+    pathJson: JSON.stringify(cleanPath),
+  });
 
   try {
     const { error } = await client.storage.from(bucket).remove([cleanPath]);
     if (error) {
       const sanitized = sanitizeError(error);
-      console.error(
-        `[Supabase Storage:deleteObject] Delete failed for bucket "${bucket}", path "${cleanPath}":`,
-        sanitized.message
-      );
+      const status = (error as any).statusCode || (error as any).status;
+      const errorName = (error as any).error || (error as any).name;
+      console.error('[Supabase delete failure]', {
+        statusCode: status,
+        error: errorName,
+        message: sanitized.message,
+        bucket,
+        path: cleanPath,
+      });
       throw sanitized;
     }
   } catch (err: any) {
     const sanitized = sanitizeError(err);
-    console.error(
-      `[Supabase Storage:deleteObject] Delete exception for bucket "${bucket}", path "${cleanPath}":`,
-      sanitized.message
-    );
+    const status = err?.statusCode || err?.status;
+    const errorName = err?.error || err?.name;
+    console.error('[Supabase delete failure]', {
+      statusCode: status,
+      error: errorName,
+      message: sanitized.message,
+      bucket,
+      path: cleanPath,
+    });
     throw sanitized;
   }
 }
@@ -475,27 +566,39 @@ export async function deleteObjects(paths: string[]): Promise<void> {
   const cleanPaths = paths.map((p) => validateStoragePath(p, bucket));
   const client = getSupabaseClient();
 
-  // Safely log bucket and relative paths immediately before Supabase request
-  for (const p of cleanPaths) {
-    console.info(`bucket="${bucket}" path="${p}"`);
-  }
+  console.info('[Supabase bulk delete target]', {
+    bucket,
+    count: cleanPaths.length,
+    paths: cleanPaths,
+    bucketJson: JSON.stringify(bucket),
+  });
 
   try {
     const { error } = await client.storage.from(bucket).remove(cleanPaths);
     if (error) {
       const sanitized = sanitizeError(error);
-      console.error(
-        `[Supabase Storage:deleteObjects] Delete failed in bucket "${bucket}":`,
-        sanitized.message
-      );
+      const status = (error as any).statusCode || (error as any).status;
+      const errorName = (error as any).error || (error as any).name;
+      console.error('[Supabase bulk delete failure]', {
+        statusCode: status,
+        error: errorName,
+        message: sanitized.message,
+        bucket,
+        paths: cleanPaths,
+      });
       throw sanitized;
     }
   } catch (err: any) {
     const sanitized = sanitizeError(err);
-    console.error(
-      `[Supabase Storage:deleteObjects] Delete exception in bucket "${bucket}":`,
-      sanitized.message
-    );
+    const status = err?.statusCode || err?.status;
+    const errorName = err?.error || err?.name;
+    console.error('[Supabase bulk delete failure]', {
+      statusCode: status,
+      error: errorName,
+      message: sanitized.message,
+      bucket,
+      paths: cleanPaths,
+    });
     throw sanitized;
   }
 }
@@ -572,4 +675,150 @@ export async function objectExists(path: string): Promise<boolean> {
     );
     return false;
   }
+}
+
+export interface StorageStepDiagnostic {
+  path: string;
+  bucket: string;
+  bucketJson: string;
+  pathJson: string;
+  writeSuccess: boolean;
+  readSuccess: boolean;
+  deleteSuccess: boolean;
+  readMatches: boolean;
+  error?: {
+    statusCode?: number | string;
+    name?: string;
+    message?: string;
+  };
+}
+
+export interface StorageDiagnosticsReport {
+  timestamp: string;
+  environment: 'production-vercel' | 'development-or-emulator';
+  bucket: string;
+  bucketJson: string;
+  step1RootTest: StorageStepDiagnostic;
+  step2NestedTest?: StorageStepDiagnostic;
+  overallSuccess: boolean;
+  summary: string;
+}
+
+/**
+ * Runs a minimal, non-destructive isolated test on Supabase Storage:
+ * 1. Writes {"ok":true} to "diagnostics/write-test.json", reads back, deletes.
+ * 2. If step 1 succeeds, writes {"ok":true} to "nova-hub/diagnostics/write-test.json", reads back, deletes.
+ * Cleans up temporary objects in finally blocks. Never touches existing games/changelog/scripts data.
+ */
+export async function runStorageDiagnostics(): Promise<StorageDiagnosticsReport> {
+  const bucket = getSupabaseBucket();
+  const isVercel = process.env.VERCEL === '1';
+  const environment = isVercel ? 'production-vercel' : 'development-or-emulator';
+
+  // Step 1: Root write test "diagnostics/write-test.json"
+  const step1Path = 'diagnostics/write-test.json';
+  const step1: StorageStepDiagnostic = {
+    path: step1Path,
+    bucket,
+    bucketJson: JSON.stringify(bucket),
+    pathJson: JSON.stringify(step1Path),
+    writeSuccess: false,
+    readSuccess: false,
+    deleteSuccess: false,
+    readMatches: false,
+  };
+
+  const payload = { ok: true, timestamp: Date.now() };
+
+  try {
+    await writeJson(step1Path, payload);
+    step1.writeSuccess = true;
+
+    const readBack = await readJson<{ ok: boolean; timestamp: number }>(step1Path);
+    step1.readSuccess = readBack !== null;
+    step1.readMatches = Boolean(readBack && readBack.ok === true);
+  } catch (err: any) {
+    step1.error = {
+      statusCode: err?.statusCode || err?.status,
+      name: err?.name || err?.error,
+      message: err?.message || String(err),
+    };
+  } finally {
+    try {
+      if (step1.writeSuccess) {
+        await deleteObject(step1Path);
+        step1.deleteSuccess = true;
+      }
+    } catch (delErr: any) {
+      console.warn('[Storage Diagnostics] Step 1 cleanup delete warning:', delErr?.message || delErr);
+    }
+  }
+
+  // Step 2: Nested write test "nova-hub/diagnostics/write-test.json" (only if Step 1 succeeded)
+  let step2: StorageStepDiagnostic | undefined;
+  if (step1.writeSuccess && step1.readMatches) {
+    const step2Path = 'nova-hub/diagnostics/write-test.json';
+    step2 = {
+      path: step2Path,
+      bucket,
+      bucketJson: JSON.stringify(bucket),
+      pathJson: JSON.stringify(step2Path),
+      writeSuccess: false,
+      readSuccess: false,
+      deleteSuccess: false,
+      readMatches: false,
+    };
+
+    try {
+      await writeJson(step2Path, payload);
+      step2.writeSuccess = true;
+
+      const readBack2 = await readJson<{ ok: boolean; timestamp: number }>(step2Path);
+      step2.readSuccess = readBack2 !== null;
+      step2.readMatches = Boolean(readBack2 && readBack2.ok === true);
+    } catch (err: any) {
+      step2.error = {
+        statusCode: err?.statusCode || err?.status,
+        name: err?.name || err?.error,
+        message: err?.message || String(err),
+      };
+    } finally {
+      try {
+        if (step2.writeSuccess) {
+          await deleteObject(step2Path);
+          step2.deleteSuccess = true;
+        }
+      } catch (delErr: any) {
+        console.warn('[Storage Diagnostics] Step 2 cleanup delete warning:', delErr?.message || delErr);
+      }
+    }
+  }
+
+  let overallSuccess = false;
+  let summary = '';
+
+  if (!step1.writeSuccess) {
+    overallSuccess = false;
+    summary = `Root write test to "${step1Path}" failed in bucket "${bucket}" (${step1.error?.message || 'unknown error'}). The issue is in the base Storage write layer or Supabase configuration, below Games/Changelog code.`;
+  } else if (!step2) {
+    overallSuccess = false;
+    summary = `Root write test to "${step1Path}" succeeded, but readback validation failed.`;
+  } else if (!step2.writeSuccess) {
+    overallSuccess = false;
+    summary = `Root write test succeeded, but nested prefix test to "${step2.path}" failed (${step2.error?.message || 'unknown error'}). This proves the nested "nova-hub/" prefix inside bucket "${bucket}" is rejected by Supabase Storage.`;
+  } else {
+    overallSuccess = true;
+    summary = `Both root ("${step1Path}") and nested ("${step2.path}") isolated tests succeeded completely and were cleaned up cleanly. Supabase Storage writes and nested prefixes are fully functional.`;
+  }
+
+  return {
+    timestamp: new Date().toISOString(),
+    environment,
+    bucket,
+    bucketJson: JSON.stringify(bucket),
+    step1RootTest: step1,
+    step2NestedTest: step2,
+    overallSuccess,
+    summary,
+  };
 }

@@ -21,6 +21,8 @@ import {
   History,
   Copy,
   Check,
+  Database,
+  X,
 } from 'lucide-react';
 import { Icon } from './Icon';
 import { copyToClipboard, showToast } from './Toast';
@@ -94,6 +96,30 @@ export function DashboardClient({
   // Game modals
   const [editingGame, setEditingGame] = useState<RobloxGame | null | undefined>(undefined);
   const [deletingGame, setDeletingGame] = useState<RobloxGame | null>(null);
+
+  // Storage diagnostics
+  const [isRunningDiag, setIsRunningDiag] = useState(false);
+  const [diagReport, setDiagReport] = useState<any | null>(null);
+  const [diagModalOpen, setDiagModalOpen] = useState(false);
+
+  const handleRunStorageDiagnostics = async () => {
+    setIsRunningDiag(true);
+    try {
+      const res = await fetch('/api/admin/storage-diagnostics');
+      const data = await res.json();
+      setDiagReport(data);
+      setDiagModalOpen(true);
+      if (data.overallSuccess) {
+        showToast('Storage write test passed', 'success', 3000, data.summary);
+      } else {
+        showToast('Storage write test failed', 'error', 5000, data.summary || data.error);
+      }
+    } catch (err: any) {
+      showToast('Storage test failed to run', 'error', 4000, err?.message);
+    } finally {
+      setIsRunningDiag(false);
+    }
+  };
 
   // Filtered games
   const filteredGames = useMemo(() => {
@@ -453,6 +479,15 @@ export function DashboardClient({
               <span>View Public Hub</span>
               <ExternalLink size={12} />
             </Link>
+            <button
+              onClick={handleRunStorageDiagnostics}
+              disabled={isRunningDiag}
+              className="flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-xs text-ink-muted transition-colors hover:border-white/30 hover:text-white disabled:opacity-50"
+              title="Test isolated server-side write to Supabase Storage"
+            >
+              <Database size={13} className={isRunningDiag ? 'animate-spin' : ''} />
+              {isRunningDiag ? 'Testing Storage...' : 'Test Storage'}
+            </button>
             <button
               onClick={onLogout}
               className="flex items-center gap-1.5 rounded-lg border border-line px-3.5 py-1.5 text-xs text-ink-muted transition-colors hover:border-white/30 hover:text-white"
@@ -1151,6 +1186,112 @@ export function DashboardClient({
           onClose={() => setIsBulkDeletingScripts(false)}
           onConfirm={handleBulkDeleteScriptsConfirm}
         />
+      )}
+
+      {/* Storage Diagnostics Modal */}
+      {diagModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-xl rounded-2xl border border-line bg-surface p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-line pb-3">
+              <div className="flex items-center gap-2">
+                <Database size={18} className="text-white" />
+                <h3 className="font-semibold text-white">Supabase Storage Diagnostics</h3>
+              </div>
+              <button
+                onClick={() => setDiagModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {diagReport && (
+              <div className="space-y-3 text-xs">
+                <div className="rounded-xl border border-line bg-surface-raised p-3 space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Environment:</span>
+                    <span className="font-mono text-white">{diagReport.environment}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Target Bucket:</span>
+                    <span className="font-mono text-white">{diagReport.bucketJson || JSON.stringify(diagReport.bucket)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Overall Status:</span>
+                    <span className={`font-semibold ${diagReport.overallSuccess ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {diagReport.overallSuccess ? 'PASSED' : 'FAILED'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Step 1: Root write test */}
+                <div className="rounded-xl border border-line bg-surface-raised p-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-white">Step 1: Root Path Test</span>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                      diagReport.step1RootTest?.writeSuccess ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                    }`}>
+                      {diagReport.step1RootTest?.writeSuccess ? 'WRITE OK' : 'FAILED'}
+                    </span>
+                  </div>
+                  <div className="font-mono text-[11px] text-slate-400">
+                    Path: {diagReport.step1RootTest?.path}
+                  </div>
+                  {diagReport.step1RootTest?.error && (
+                    <div className="mt-1 text-rose-400 font-mono text-[11px] break-all">
+                      Error [{diagReport.step1RootTest.error.statusCode || 'N/A'}]: {diagReport.step1RootTest.error.message}
+                    </div>
+                  )}
+                  {diagReport.step1RootTest?.writeSuccess && (
+                    <div className="text-[11px] text-slate-300">
+                      Write: OK | Readback: {diagReport.step1RootTest.readMatches ? 'OK' : 'MISMATCH'} | Delete: {diagReport.step1RootTest.deleteSuccess ? 'CLEANED' : 'PENDING'}
+                    </div>
+                  )}
+                </div>
+
+                {/* Step 2: Nested path test */}
+                {diagReport.step2NestedTest && (
+                  <div className="rounded-xl border border-line bg-surface-raised p-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-white">Step 2: Nested nova-hub/ Prefix Test</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                        diagReport.step2NestedTest.writeSuccess ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
+                      }`}>
+                        {diagReport.step2NestedTest.writeSuccess ? 'WRITE OK' : 'FAILED'}
+                      </span>
+                    </div>
+                    <div className="font-mono text-[11px] text-slate-400">
+                      Path: {diagReport.step2NestedTest.path}
+                    </div>
+                    {diagReport.step2NestedTest.error && (
+                      <div className="mt-1 text-rose-400 font-mono text-[11px] break-all">
+                        Error [{diagReport.step2NestedTest.error.statusCode || 'N/A'}]: {diagReport.step2NestedTest.error.message}
+                      </div>
+                    )}
+                    {diagReport.step2NestedTest.writeSuccess && (
+                      <div className="text-[11px] text-slate-300">
+                        Write: OK | Readback: {diagReport.step2NestedTest.readMatches ? 'OK' : 'MISMATCH'} | Delete: {diagReport.step2NestedTest.deleteSuccess ? 'CLEANED' : 'PENDING'}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="p-3 rounded-xl bg-white/5 text-slate-300 text-[11px] leading-relaxed">
+                  {diagReport.summary}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setDiagModalOpen(false)}
+                className="rounded-xl bg-white px-4 py-2 text-xs font-semibold text-black hover:bg-slate-200 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );
