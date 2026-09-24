@@ -62,7 +62,6 @@ export function invalidateStorageCache(): void {
 
 // Read-only project seed files (bundled at build, used ONLY for first-ever initialization of an empty bucket)
 const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
-const SEED_SCRIPTS_PATH = path.join(process.cwd(), 'data', 'scripts.json');
 
 export interface StorageInitMarker {
   initialized: boolean;
@@ -92,17 +91,6 @@ async function readSeedGames(): Promise<RobloxGame[]> {
     }
   } catch {}
   return ROBLOX_GAMES;
-}
-
-async function readSeedScripts(): Promise<Script[]> {
-  try {
-    const raw = await fs.readFile(SEED_SCRIPTS_PATH, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed as Script[];
-    }
-  } catch {}
-  return [];
 }
 
 async function markGamesStorageInitialized(): Promise<void> {
@@ -206,7 +194,9 @@ export async function saveStoredGames(games: RobloxGame[]): Promise<void> {
 /**
  * Get all stored scripts.
  * Authoritative source: Supabase Storage bucket ('nova-hub/scripts.json').
- * Automatically migrates existing scripts from legacy 'sourhub/scripts.json' if present.
+ * Scripts must NEVER be restored from data/scripts.json.
+ * If script storage has been initialized and its value is [], return []. Never repopulate it.
+ * Once nova-hub/scripts-marker.json exists with initialized: true, NEVER read legacy scripts as fallback.
  */
 export async function getStoredScripts(options?: { forceFresh?: boolean }): Promise<Script[]> {
   if (!options?.forceFresh && memoryScriptsCache && Date.now() - memoryScriptsCache.timestamp < CACHE_TTL_MS) {
@@ -214,47 +204,47 @@ export async function getStoredScripts(options?: { forceFresh?: boolean }): Prom
   }
 
   try {
-    // 1. Check authoritative nova-hub path
-    let fromStorage = await readJson<Script[]>(STORAGE_SCRIPTS_PATH);
-
-    // 2. If not found at nova-hub, check legacy sourhub path for migration
-    if (!Array.isArray(fromStorage)) {
-      const legacyScripts = await readJson<Script[]>(LEGACY_STORAGE_SCRIPTS_PATH);
-      if (Array.isArray(legacyScripts) && legacyScripts.length > 0) {
-        console.info(`[Storage Migration] Migrating ${legacyScripts.length} scripts from ${LEGACY_STORAGE_SCRIPTS_PATH} to ${STORAGE_SCRIPTS_PATH}...`);
-        fromStorage = legacyScripts;
-        await writeJson(STORAGE_SCRIPTS_PATH, legacyScripts);
-        await markScriptsStorageInitialized();
-      }
-    }
-
-    // If fromStorage is an array (even if empty []), it is the authoritative store
-    if (Array.isArray(fromStorage)) {
-      memoryScriptsCache = { data: fromStorage, timestamp: Date.now() };
-      return fromStorage;
-    }
-
-    // Check if persistent storage was already initialized previously
+    // 1. Check if authoritative nova-hub script storage has already been initialized
     const marker = await readJson<StorageInitMarker>(STORAGE_SCRIPTS_MARKER_PATH);
-    const legacyMarker = !marker?.initialized ? await readJson<StorageInitMarker>(LEGACY_STORAGE_SCRIPTS_MARKER_PATH) : null;
-    if (marker?.initialized || legacyMarker?.initialized) {
+    if (marker?.initialized) {
+      // Once initialized: nova-hub/scripts.json is the sole authoritative collection.
+      // If initialized and value is [], return []. Never repopulate or fallback to legacy scripts.
+      const fromStorage = await readJson<Script[]>(STORAGE_SCRIPTS_PATH);
+      if (Array.isArray(fromStorage)) {
+        memoryScriptsCache = { data: fromStorage, timestamp: Date.now() };
+        return fromStorage;
+      }
+      // If marker is set but object was empty or missing, empty array [] is authoritative
       memoryScriptsCache = { data: [], timestamp: Date.now() };
       return [];
     }
 
-    // Initial first-ever seed to Supabase Storage
-    const seed = await readSeedScripts();
-    await writeJson(STORAGE_SCRIPTS_PATH, seed);
-    await markScriptsStorageInitialized();
-    console.info(`[Storage] Initialized empty bucket with ${seed.length} scripts to Supabase Storage.`);
+    // 2. Script storage has genuinely never been initialized under nova-hub.
+    // Legacy migration may happen ONLY if script storage has genuinely never been initialized.
+    const legacyMarker = await readJson<StorageInitMarker>(LEGACY_STORAGE_SCRIPTS_MARKER_PATH);
+    if (!legacyMarker?.initialized) {
+      const legacyScripts = await readJson<Script[]>(LEGACY_STORAGE_SCRIPTS_PATH);
+      if (Array.isArray(legacyScripts) && legacyScripts.length > 0) {
+        console.info(`[Storage Migration] Migrating ${legacyScripts.length} scripts from ${LEGACY_STORAGE_SCRIPTS_PATH} to ${STORAGE_SCRIPTS_PATH}...`);
+        await writeJson(STORAGE_SCRIPTS_PATH, legacyScripts);
+        await markScriptsStorageInitialized();
+        memoryScriptsCache = { data: legacyScripts, timestamp: Date.now() };
+        return legacyScripts;
+      }
+    }
 
-    memoryScriptsCache = { data: seed, timestamp: Date.now() };
-    return seed;
+    // 3. Initial first-ever setup of empty scripts store to Supabase Storage
+    const emptyScripts: Script[] = [];
+    await writeJson(STORAGE_SCRIPTS_PATH, emptyScripts);
+    await markScriptsStorageInitialized();
+    console.info('[Storage] Initialized empty script storage in Supabase Storage.');
+
+    memoryScriptsCache = { data: emptyScripts, timestamp: Date.now() };
+    return emptyScripts;
   } catch (err: any) {
     console.error(`[Storage] Error retrieving scripts from ${STORAGE_SCRIPTS_PATH}:`, err?.message || err);
     if (memoryScriptsCache?.data) return memoryScriptsCache.data;
-    const seed = await readSeedScripts();
-    return seed;
+    return [];
   }
 }
 

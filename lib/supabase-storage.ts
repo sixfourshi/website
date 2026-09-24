@@ -37,6 +37,28 @@ function isRemoteSupabaseUrl(url?: string): boolean {
  * Caches the result so validation is executed exactly once per runtime instance.
  * Automatically provisions the local persistent emulator in development when no remote Supabase is configured.
  */
+export function sanitizeBucketName(raw?: string): string {
+  if (!raw || typeof raw !== 'string') return 'nova-hub';
+  let clean = raw.trim().replace(/^["']|["']$/g, '');
+  // If a full URL was accidentally passed in SUPABASE_BUCKET
+  if (clean.startsWith('http://') || clean.startsWith('https://')) {
+    try {
+      const url = new URL(clean);
+      const segments = url.pathname.split('/').filter(Boolean);
+      clean = segments[segments.length - 1] || 'nova-hub';
+    } catch {
+      clean = clean.split('/').pop() || 'nova-hub';
+    }
+  }
+  // Strip leading and trailing slashes
+  clean = clean.replace(/^\/+|\/+$/g, '');
+  // Extract bucket name only, never paths
+  if (clean.includes('/')) {
+    clean = clean.split('/')[0];
+  }
+  return clean || 'nova-hub';
+}
+
 function validateStorageEnvironmentOnce(): StorageEnvConfig {
   if (validationPerformed) {
     if (validationErrorMessage || !validatedConfig) {
@@ -47,8 +69,7 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
 
   const rawUrl = process.env.SUPABASE_URL?.trim();
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const rawBucket = process.env.SUPABASE_BUCKET?.trim().replace(/^["']|["']$/g, '') || 'nova-hub';
-  const cleanBucket = rawBucket.replace(/^\/+|\/+$/g, '').split('/')[0] || 'nova-hub';
+  const cleanBucket = sanitizeBucketName(process.env.SUPABASE_BUCKET);
 
   const isRemote = isRemoteSupabaseUrl(rawUrl);
 
@@ -157,8 +178,20 @@ export function validateStoragePath(path: string, bucketName?: string): string {
     throw new Error('[Supabase Storage] Path must be a non-empty string.');
   }
 
+  // If a full URL was provided, extract the pathname
+  let normalized = path.trim().replace(/^["']|["']$/g, '');
+  if (normalized.startsWith('http://') || normalized.startsWith('https://')) {
+    try {
+      const url = new URL(normalized);
+      normalized = url.pathname;
+    } catch {}
+  }
+
+  // Strip leading storage API prefixes if accidentally present in path
+  normalized = normalized.replace(/^\/?storage\/v1\/object\/(public\/|authenticated\/)?/, '');
+
   // Strip leading and trailing slashes, replace backslashes, eliminate consecutive slashes
-  let normalized = path.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  normalized = normalized.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
   normalized = normalized.replace(/\/{2,}/g, '/');
 
   if (!normalized) {
@@ -171,12 +204,23 @@ export function validateStoragePath(path: string, bucketName?: string): string {
   }
 
   // Strip redundant duplicate bucket prefix if path starts with "${bucket}/${bucket}/"
-  if (bucketName) {
-    const cleanBucket = bucketName.trim().replace(/^["']|["']$/g, '').replace(/^\/+|\/+$/g, '');
-    if (cleanBucket && normalized.startsWith(`${cleanBucket}/${cleanBucket}/`)) {
+  const cleanBucket = bucketName ? sanitizeBucketName(bucketName) : '';
+  if (cleanBucket) {
+    while (normalized.startsWith(`${cleanBucket}/${cleanBucket}/`)) {
       normalized = normalized.slice(cleanBucket.length + 1);
     }
   }
+
+  // Strip redundant duplicate namespace prefixes like nova-hub/nova-hub/ or sourhub/sourhub/
+  while (normalized.startsWith('nova-hub/nova-hub/')) {
+    normalized = normalized.slice('nova-hub/'.length);
+  }
+  while (normalized.startsWith('sourhub/sourhub/')) {
+    normalized = normalized.slice('sourhub/'.length);
+  }
+
+  // Final check to guarantee strictly relative object path without leading slash
+  normalized = normalized.replace(/^\/+/, '');
 
   // Verify safe segment characters (alphanumeric, hyphens, underscores, dots)
   const segments = normalized.split('/');
@@ -190,8 +234,8 @@ export function validateStoragePath(path: string, bucketName?: string): string {
 }
 
 /**
- * Determines whether a Supabase Storage error indicates a missing object/resource
- * (404, NoSuchKey, or 400 with "Invalid path specified in request URL" from storage-api).
+ * Determines whether a Supabase Storage error indicates a missing object/resource (strictly 404).
+ * Does NOT classify 400 Bad Request or "Invalid path specified in request URL" as not found.
  */
 export function isNotFoundError(err: any): boolean {
   if (!err) return false;
@@ -200,23 +244,21 @@ export function isNotFoundError(err: any): boolean {
   const msg = (err.message || '').toLowerCase();
   const errorProp = (err.error || '').toLowerCase();
 
-  // Status code 404
+  // Status code 404 is strictly Not Found
   if (statusNum === 404 || status === '404') return true;
 
-  // Supabase Storage API returns 400 Bad Request with "Invalid path specified in request URL"
-  // or "Invalid path" / "Invalid key" / "NoSuchKey" when an object does not exist
+  // Standard object not found messages
   if (
     msg.includes('not found') ||
     msg.includes('does not exist') ||
-    msg.includes('404') ||
     msg.includes('nosuchkey') ||
-    msg.includes('invalid path specified in request url') ||
-    msg.includes('invalid path') ||
-    msg.includes('invalid key') ||
     errorProp.includes('not_found') ||
     errorProp.includes('nosuchkey')
   ) {
-    return true;
+    // Explicitly exclude malformed path / bad request messages
+    if (!msg.includes('invalid path') && !msg.includes('invalid key')) {
+      return true;
+    }
   }
 
   return false;
@@ -241,14 +283,16 @@ export function sanitizeError(err: unknown): Error {
 
 /**
  * Download a raw object from the private Supabase Storage bucket.
- * Returns null if the object does not exist (404 or missing object path).
- * Throws a clean error if Supabase Storage encounters real auth/bucket/network issues.
+ * Returns null if the object does not exist (404).
+ * Throws a clean error if Supabase Storage encounters real auth/bucket/network/path issues.
  */
 export async function downloadObject(path: string): Promise<Blob | null> {
   await ensureStorageReady();
   const bucket = getSupabaseBucket();
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
+
+  console.info(`[Supabase Storage:downloadObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
 
   try {
     const { data, error } = await client.storage.from(bucket).download(cleanPath);
@@ -259,7 +303,7 @@ export async function downloadObject(path: string): Promise<Blob | null> {
       }
       const sanitized = sanitizeError(error);
       console.error(
-        `[Supabase Storage:downloadObject] Download error for path "${cleanPath}" in bucket "${bucket}":`,
+        `[Supabase Storage:downloadObject] Download failed for bucket "${bucket}", path "${cleanPath}":`,
         sanitized.message
       );
       throw sanitized;
@@ -272,7 +316,7 @@ export async function downloadObject(path: string): Promise<Blob | null> {
     }
     const sanitized = sanitizeError(err);
     console.error(
-      `[Supabase Storage:downloadObject] Unexpected error for path "${cleanPath}" in bucket "${bucket}":`,
+      `[Supabase Storage:downloadObject] Unexpected error for bucket "${bucket}", path "${cleanPath}":`,
       sanitized.message
     );
     throw sanitized;
@@ -311,7 +355,8 @@ export async function readJson<T>(path: string): Promise<T | null> {
 
 /**
  * Upload or overwrite an object in the private Supabase Storage bucket.
- * Throws an error if upload fails, with clear logging identifying the path and bucket.
+ * Logs the final sanitized values of bucket and path immediately before the Supabase call.
+ * Throws if upload fails, with clear logging identifying the path and bucket.
  */
 export async function uploadObject(
   path: string,
@@ -326,6 +371,9 @@ export async function uploadObject(
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
+  // Log the final sanitized values of bucket and path immediately before the Supabase call
+  console.info(`[Supabase Storage:uploadObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
+
   try {
     const { error } = await client.storage.from(bucket).upload(cleanPath, body, {
       contentType: options?.contentType || 'application/octet-stream',
@@ -335,7 +383,7 @@ export async function uploadObject(
     if (error) {
       const sanitized = sanitizeError(error);
       console.error(
-        `[Supabase Storage:uploadObject] Upload failed for path "${cleanPath}" in bucket "${bucket}":`,
+        `[Supabase Storage:uploadObject] Upload failed for bucket "${bucket}", path "${cleanPath}":`,
         sanitized.message
       );
       throw sanitized;
@@ -343,7 +391,7 @@ export async function uploadObject(
   } catch (err: any) {
     const sanitized = sanitizeError(err);
     console.error(
-      `[Supabase Storage:uploadObject] Upload exception for path "${cleanPath}" in bucket "${bucket}":`,
+      `[Supabase Storage:uploadObject] Upload exception for bucket "${bucket}", path "${cleanPath}":`,
       sanitized.message
     );
     throw sanitized;
@@ -383,6 +431,7 @@ export async function writeText(
 
 /**
  * Delete a single object from the private Supabase Storage bucket.
+ * Logs the final sanitized values of bucket and path immediately before the Supabase call.
  * Throws a clear error if delete fails.
  */
 export async function deleteObject(path: string): Promise<void> {
@@ -391,12 +440,14 @@ export async function deleteObject(path: string): Promise<void> {
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
+  console.info(`[Supabase Storage:deleteObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
+
   try {
     const { error } = await client.storage.from(bucket).remove([cleanPath]);
     if (error) {
       const sanitized = sanitizeError(error);
       console.error(
-        `[Supabase Storage:deleteObject] Delete failed for path "${cleanPath}" in bucket "${bucket}":`,
+        `[Supabase Storage:deleteObject] Delete failed for bucket "${bucket}", path "${cleanPath}":`,
         sanitized.message
       );
       throw sanitized;
@@ -404,7 +455,7 @@ export async function deleteObject(path: string): Promise<void> {
   } catch (err: any) {
     const sanitized = sanitizeError(err);
     console.error(
-      `[Supabase Storage:deleteObject] Delete exception for path "${cleanPath}" in bucket "${bucket}":`,
+      `[Supabase Storage:deleteObject] Delete exception for bucket "${bucket}", path "${cleanPath}":`,
       sanitized.message
     );
     throw sanitized;
@@ -421,6 +472,8 @@ export async function deleteObjects(paths: string[]): Promise<void> {
   const bucket = getSupabaseBucket();
   const cleanPaths = paths.map((p) => validateStoragePath(p, bucket));
   const client = getSupabaseClient();
+
+  console.info(`[Supabase Storage:deleteObjects] Target bucket: "${bucket}", relative paths:`, cleanPaths);
 
   try {
     const { error } = await client.storage.from(bucket).remove(cleanPaths);
@@ -451,6 +504,8 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
   const client = getSupabaseClient();
   const cleanPrefix = prefix ? validateStoragePath(prefix, bucket) : '';
 
+  console.info(`[Supabase Storage:listObjects] Target bucket: "${bucket}", prefix: "${cleanPrefix}"`);
+
   try {
     const { data, error } = await client.storage.from(bucket).list(cleanPrefix, {
       limit: 1000,
@@ -461,7 +516,7 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
     if (error) {
       const sanitized = sanitizeError(error);
       console.error(
-        `[Supabase Storage:listObjects] List failed for prefix "${cleanPrefix}" in bucket "${bucket}":`,
+        `[Supabase Storage:listObjects] List failed for bucket "${bucket}", prefix "${cleanPrefix}":`,
         sanitized.message
       );
       throw sanitized;
@@ -471,7 +526,7 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
   } catch (err: any) {
     const sanitized = sanitizeError(err);
     console.error(
-      `[Supabase Storage:listObjects] List exception for prefix "${cleanPrefix}" in bucket "${bucket}":`,
+      `[Supabase Storage:listObjects] List exception for bucket "${bucket}", prefix "${cleanPrefix}":`,
       sanitized.message
     );
     throw sanitized;
