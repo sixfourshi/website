@@ -47,7 +47,8 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
 
   const rawUrl = process.env.SUPABASE_URL?.trim();
   const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  const rawBucket = process.env.SUPABASE_BUCKET?.trim() || 'nova-hub';
+  const rawBucket = process.env.SUPABASE_BUCKET?.trim().replace(/^["']|["']$/g, '') || 'nova-hub';
+  const cleanBucket = rawBucket.replace(/^\/+|\/+$/g, '').split('/')[0] || 'nova-hub';
 
   const isRemote = isRemoteSupabaseUrl(rawUrl);
 
@@ -70,7 +71,7 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
     validatedConfig = {
       url: rawUrl!,
       serviceRoleKey: rawKey,
-      bucket: rawBucket,
+      bucket: cleanBucket,
       isEmulator: false,
     };
   } else {
@@ -79,7 +80,7 @@ function validateStorageEnvironmentOnce(): StorageEnvConfig {
       validatedConfig = {
         url: 'http://127.0.0.1:54321',
         serviceRoleKey: rawKey || 'emulator-service-role-key',
-        bucket: rawBucket,
+        bucket: cleanBucket,
         isEmulator: true,
       };
     } catch (err: any) {
@@ -147,12 +148,18 @@ export function getSupabaseClient(): SupabaseClient {
 /**
  * Sanitize and validate object paths to prevent path traversal or malformed keys.
  */
-export function validateStoragePath(path: string): string {
+/**
+ * Sanitize and validate object paths to prevent path traversal or malformed keys.
+ * Ensures path is relative to the selected bucket and eliminates redundant bucket prefixes.
+ */
+export function validateStoragePath(path: string, bucketName?: string): string {
   if (!path || typeof path !== 'string') {
     throw new Error('[Supabase Storage] Path must be a non-empty string.');
   }
 
-  const normalized = path.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+  // Strip leading and trailing slashes, replace backslashes, eliminate consecutive slashes
+  let normalized = path.trim().replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+  normalized = normalized.replace(/\/{2,}/g, '/');
 
   if (!normalized) {
     throw new Error('[Supabase Storage] Path cannot be empty or root.');
@@ -161,6 +168,14 @@ export function validateStoragePath(path: string): string {
   // Prevent directory traversal attacks
   if (normalized.includes('..')) {
     throw new Error(`[Supabase Storage] Directory traversal detected in path: "${path}"`);
+  }
+
+  // Strip redundant duplicate bucket prefix if path starts with "${bucket}/${bucket}/"
+  if (bucketName) {
+    const cleanBucket = bucketName.trim().replace(/^["']|["']$/g, '').replace(/^\/+|\/+$/g, '');
+    if (cleanBucket && normalized.startsWith(`${cleanBucket}/${cleanBucket}/`)) {
+      normalized = normalized.slice(cleanBucket.length + 1);
+    }
   }
 
   // Verify safe segment characters (alphanumeric, hyphens, underscores, dots)
@@ -175,9 +190,42 @@ export function validateStoragePath(path: string): string {
 }
 
 /**
+ * Determines whether a Supabase Storage error indicates a missing object/resource
+ * (404, NoSuchKey, or 400 with "Invalid path specified in request URL" from storage-api).
+ */
+export function isNotFoundError(err: any): boolean {
+  if (!err) return false;
+  const status = err.status ?? err.statusCode;
+  const statusNum = typeof status === 'number' ? status : parseInt(status, 10);
+  const msg = (err.message || '').toLowerCase();
+  const errorProp = (err.error || '').toLowerCase();
+
+  // Status code 404
+  if (statusNum === 404 || status === '404') return true;
+
+  // Supabase Storage API returns 400 Bad Request with "Invalid path specified in request URL"
+  // or "Invalid path" / "Invalid key" / "NoSuchKey" when an object does not exist
+  if (
+    msg.includes('not found') ||
+    msg.includes('does not exist') ||
+    msg.includes('404') ||
+    msg.includes('nosuchkey') ||
+    msg.includes('invalid path specified in request url') ||
+    msg.includes('invalid path') ||
+    msg.includes('invalid key') ||
+    errorProp.includes('not_found') ||
+    errorProp.includes('nosuchkey')
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
  * Sanitizes errors so secrets like SUPABASE_SERVICE_ROLE_KEY are never leaked in logs or responses.
  */
-function sanitizeError(err: unknown): Error {
+export function sanitizeError(err: unknown): Error {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   let message = err instanceof Error ? err.message : String(err || 'Unknown error');
   if (serviceKey && serviceKey.length > 5) {
@@ -185,6 +233,7 @@ function sanitizeError(err: unknown): Error {
   }
   message = message.replace(/Bearer\s+[A-Za-z0-9\-_.]+/g, 'Bearer [REDACTED_TOKEN]');
   message = message.replace(/apikey=([^&\s]+)/gi, 'apikey=[REDACTED_KEY]');
+  message = message.replace(/eyJ[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]{10,}\.[a-zA-Z0-9_-]+/g, '[REDACTED_JWT]');
   const cleanError = new Error(message);
   cleanError.name = err instanceof Error ? err.name : 'SupabaseStorageError';
   return cleanError;
@@ -192,42 +241,40 @@ function sanitizeError(err: unknown): Error {
 
 /**
  * Download a raw object from the private Supabase Storage bucket.
- * Returns null if the object does not exist (404).
- * Throws a clean error if Supabase Storage fails or cannot be reached.
+ * Returns null if the object does not exist (404 or missing object path).
+ * Throws a clean error if Supabase Storage encounters real auth/bucket/network issues.
  */
 export async function downloadObject(path: string): Promise<Blob | null> {
   await ensureStorageReady();
-  const cleanPath = validateStoragePath(path);
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
+  const client = getSupabaseClient();
 
   try {
     const { data, error } = await client.storage.from(bucket).download(cleanPath);
 
     if (error) {
-      const msg = error.message?.toLowerCase() || '';
-      const status = (error as any)?.status || (error as any)?.statusCode;
-      if (
-        msg.includes('not found') ||
-        msg.includes('does not exist') ||
-        msg.includes('404') ||
-        status === 404 ||
-        status === '404'
-      ) {
+      if (isNotFoundError(error)) {
         return null;
       }
-      throw sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      console.error(
+        `[Supabase Storage:downloadObject] Download error for path "${cleanPath}" in bucket "${bucket}":`,
+        sanitized.message
+      );
+      throw sanitized;
     }
 
     return data;
-  } catch (err) {
-    const sanitized = sanitizeError(err);
-    if (
-      sanitized.message.toLowerCase().includes('not found') ||
-      sanitized.message.includes('404')
-    ) {
+  } catch (err: any) {
+    if (isNotFoundError(err)) {
       return null;
     }
+    const sanitized = sanitizeError(err);
+    console.error(
+      `[Supabase Storage:downloadObject] Unexpected error for path "${cleanPath}" in bucket "${bucket}":`,
+      sanitized.message
+    );
     throw sanitized;
   }
 }
@@ -245,22 +292,26 @@ export async function readText(path: string): Promise<string | null> {
 
 /**
  * Read and parse JSON from the private Supabase bucket.
- * Returns null if the file does not exist. Throws on network/storage/parse error.
+ * Returns null if the file does not exist or has invalid/uninitialized content.
+ * Throws on real storage/network errors.
  */
 export async function readJson<T>(path: string): Promise<T | null> {
   const text = await readText(path);
   if (!text || text.trim().length === 0) return null;
   try {
     return JSON.parse(text) as T;
-  } catch (parseErr) {
-    console.error(`[Supabase Storage] Failed parsing JSON at ${path}:`, parseErr);
-    throw new Error(`[Supabase Storage] Corrupted JSON at ${path}`);
+  } catch (parseErr: any) {
+    console.warn(
+      `[Supabase Storage:readJson] Invalid or corrupted JSON at "${path}", treating as missing/uninitialized:`,
+      parseErr?.message || parseErr
+    );
+    return null;
   }
 }
 
 /**
  * Upload or overwrite an object in the private Supabase Storage bucket.
- * Throws an error if upload fails.
+ * Throws an error if upload fails, with clear logging identifying the path and bucket.
  */
 export async function uploadObject(
   path: string,
@@ -271,9 +322,9 @@ export async function uploadObject(
   }
 ): Promise<void> {
   await ensureStorageReady();
-  const cleanPath = validateStoragePath(path);
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
+  const client = getSupabaseClient();
 
   try {
     const { error } = await client.storage.from(bucket).upload(cleanPath, body, {
@@ -282,10 +333,20 @@ export async function uploadObject(
     });
 
     if (error) {
-      throw sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      console.error(
+        `[Supabase Storage:uploadObject] Upload failed for path "${cleanPath}" in bucket "${bucket}":`,
+        sanitized.message
+      );
+      throw sanitized;
     }
-  } catch (err) {
-    throw sanitizeError(err);
+  } catch (err: any) {
+    const sanitized = sanitizeError(err);
+    console.error(
+      `[Supabase Storage:uploadObject] Upload exception for path "${cleanPath}" in bucket "${bucket}":`,
+      sanitized.message
+    );
+    throw sanitized;
   }
 }
 
@@ -294,7 +355,8 @@ export async function uploadObject(
  * Throws a clear error if upload fails.
  */
 export async function writeJson<T>(path: string, data: T): Promise<void> {
-  const cleanPath = validateStoragePath(path);
+  const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
   const payload = JSON.stringify(data, null, 2);
   await uploadObject(cleanPath, payload, {
     contentType: 'application/json; charset=utf-8',
@@ -311,7 +373,8 @@ export async function writeText(
   content: string,
   contentType: string = 'text/plain; charset=utf-8'
 ): Promise<void> {
-  const cleanPath = validateStoragePath(path);
+  const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
   await uploadObject(cleanPath, content, {
     contentType,
     upsert: true,
@@ -324,17 +387,27 @@ export async function writeText(
  */
 export async function deleteObject(path: string): Promise<void> {
   await ensureStorageReady();
-  const cleanPath = validateStoragePath(path);
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
+  const client = getSupabaseClient();
 
   try {
     const { error } = await client.storage.from(bucket).remove([cleanPath]);
     if (error) {
-      throw sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      console.error(
+        `[Supabase Storage:deleteObject] Delete failed for path "${cleanPath}" in bucket "${bucket}":`,
+        sanitized.message
+      );
+      throw sanitized;
     }
-  } catch (err) {
-    throw sanitizeError(err);
+  } catch (err: any) {
+    const sanitized = sanitizeError(err);
+    console.error(
+      `[Supabase Storage:deleteObject] Delete exception for path "${cleanPath}" in bucket "${bucket}":`,
+      sanitized.message
+    );
+    throw sanitized;
   }
 }
 
@@ -345,17 +418,27 @@ export async function deleteObject(path: string): Promise<void> {
 export async function deleteObjects(paths: string[]): Promise<void> {
   if (!paths || paths.length === 0) return;
   await ensureStorageReady();
-  const cleanPaths = paths.map(validateStoragePath);
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
+  const cleanPaths = paths.map((p) => validateStoragePath(p, bucket));
+  const client = getSupabaseClient();
 
   try {
     const { error } = await client.storage.from(bucket).remove(cleanPaths);
     if (error) {
-      throw sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      console.error(
+        `[Supabase Storage:deleteObjects] Delete failed in bucket "${bucket}":`,
+        sanitized.message
+      );
+      throw sanitized;
     }
-  } catch (err) {
-    throw sanitizeError(err);
+  } catch (err: any) {
+    const sanitized = sanitizeError(err);
+    console.error(
+      `[Supabase Storage:deleteObjects] Delete exception in bucket "${bucket}":`,
+      sanitized.message
+    );
+    throw sanitized;
   }
 }
 
@@ -364,9 +447,9 @@ export async function deleteObjects(paths: string[]): Promise<void> {
  */
 export async function listObjects(prefix: string = ''): Promise<string[]> {
   await ensureStorageReady();
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
-  const cleanPrefix = prefix ? validateStoragePath(prefix) : '';
+  const client = getSupabaseClient();
+  const cleanPrefix = prefix ? validateStoragePath(prefix, bucket) : '';
 
   try {
     const { data, error } = await client.storage.from(bucket).list(cleanPrefix, {
@@ -376,12 +459,22 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
     });
 
     if (error) {
-      throw sanitizeError(error);
+      const sanitized = sanitizeError(error);
+      console.error(
+        `[Supabase Storage:listObjects] List failed for prefix "${cleanPrefix}" in bucket "${bucket}":`,
+        sanitized.message
+      );
+      throw sanitized;
     }
 
     return (data || []).map((item) => (cleanPrefix ? `${cleanPrefix}/${item.name}` : item.name));
-  } catch (err) {
-    throw sanitizeError(err);
+  } catch (err: any) {
+    const sanitized = sanitizeError(err);
+    console.error(
+      `[Supabase Storage:listObjects] List exception for prefix "${cleanPrefix}" in bucket "${bucket}":`,
+      sanitized.message
+    );
+    throw sanitized;
   }
 }
 
@@ -390,28 +483,33 @@ export async function listObjects(prefix: string = ''): Promise<string[]> {
  */
 export async function objectExists(path: string): Promise<boolean> {
   await ensureStorageReady();
-  const cleanPath = validateStoragePath(path);
-  const client = getSupabaseClient();
   const bucket = getSupabaseBucket();
+  const cleanPath = validateStoragePath(path, bucket);
+  const client = getSupabaseClient();
 
   try {
     const { data, error } = await client.storage.from(bucket).exists(cleanPath);
     if (error) {
-      const msg = error.message?.toLowerCase() || '';
-      if (msg.includes('not found') || msg.includes('404')) {
+      if (isNotFoundError(error)) {
         return false;
       }
-      throw sanitizeError(error);
-    }
-    return Boolean(data);
-  } catch (err) {
-    const sanitized = sanitizeError(err);
-    if (
-      sanitized.message.toLowerCase().includes('not found') ||
-      sanitized.message.includes('404')
-    ) {
+      const sanitized = sanitizeError(error);
+      console.warn(
+        `[Supabase Storage:objectExists] Check failed for path "${cleanPath}" in bucket "${bucket}":`,
+        sanitized.message
+      );
       return false;
     }
-    throw sanitized;
+    return Boolean(data);
+  } catch (err: any) {
+    if (isNotFoundError(err)) {
+      return false;
+    }
+    const sanitized = sanitizeError(err);
+    console.warn(
+      `[Supabase Storage:objectExists] Check exception for path "${cleanPath}" in bucket "${bucket}":`,
+      sanitized.message
+    );
+    return false;
   }
 }

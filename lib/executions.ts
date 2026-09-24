@@ -19,7 +19,8 @@ export interface ExecutionDataStore {
   lastUpdated: string;
 }
 
-const STORAGE_EXECUTIONS_PATH = 'sourhub/executions.json';
+export const STORAGE_EXECUTIONS_PATH = 'nova-hub/executions.json';
+export const LEGACY_STORAGE_EXECUTIONS_PATH = 'sourhub/executions.json';
 
 const DEFAULT_STORE: ExecutionDataStore = {
   totalExecutions: 0,
@@ -67,7 +68,9 @@ export function checkRateLimit(ip: string): boolean {
 }
 
 /**
- * Read executions data from private Supabase Storage bucket.
+ * Read executions data from private Supabase Storage bucket ('nova-hub/executions.json').
+ * Automatically migrates existing telemetry from legacy 'sourhub/executions.json'.
+ * Safely creates/returns DEFAULT_STORE if missing or invalid without crashing.
  */
 export async function getStoredExecutions(): Promise<ExecutionDataStore> {
   if (!isSupabaseStorageConfigured()) {
@@ -75,26 +78,51 @@ export async function getStoredExecutions(): Promise<ExecutionDataStore> {
     return { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
   }
 
-  const parsed = await readJson<ExecutionDataStore>(STORAGE_EXECUTIONS_PATH);
-  if (parsed && typeof parsed.totalExecutions === 'number') {
-    const store: ExecutionDataStore = {
-      totalExecutions: typeof parsed.totalExecutions === 'number' ? parsed.totalExecutions : 0,
-      executionsByGame: parsed.executionsByGame && typeof parsed.executionsByGame === 'object' ? parsed.executionsByGame : {},
-      dailyCounts: parsed.dailyCounts && typeof parsed.dailyCounts === 'object' ? parsed.dailyCounts : {},
-      recentLogs: Array.isArray(parsed.recentLogs) ? parsed.recentLogs : [],
-      recentSessionIds: Array.isArray(parsed.recentSessionIds) ? parsed.recentSessionIds : [],
-      clearedLogsCount: typeof parsed.clearedLogsCount === 'number' ? parsed.clearedLogsCount : 0,
-      lastUpdated: parsed.lastUpdated || new Date().toISOString(),
-    };
-    memoryExecutionStore = store;
-    return store;
-  }
+  try {
+    let parsed = await readJson<ExecutionDataStore>(STORAGE_EXECUTIONS_PATH);
 
-  // If storage is configured but the file does not exist yet, seed initial empty store
-  const initialStore: ExecutionDataStore = { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
-  await writeJson(STORAGE_EXECUTIONS_PATH, initialStore);
-  memoryExecutionStore = initialStore;
-  return initialStore;
+    // If missing from nova-hub, check legacy sourhub path for migration
+    if (!parsed || typeof parsed.totalExecutions !== 'number') {
+      const legacyParsed = await readJson<ExecutionDataStore>(LEGACY_STORAGE_EXECUTIONS_PATH);
+      if (legacyParsed && typeof legacyParsed.totalExecutions === 'number') {
+        console.info(`[Executions Migration] Migrating executions data from ${LEGACY_STORAGE_EXECUTIONS_PATH} to ${STORAGE_EXECUTIONS_PATH}...`);
+        parsed = legacyParsed;
+        // Persist to new path so future reads hit nova-hub/executions.json
+        await writeJson(STORAGE_EXECUTIONS_PATH, legacyParsed).catch((err) => {
+          console.warn(`[Executions Migration] Could not persist to ${STORAGE_EXECUTIONS_PATH}:`, err?.message || err);
+        });
+      }
+    }
+
+    if (parsed && typeof parsed.totalExecutions === 'number') {
+      const store: ExecutionDataStore = {
+        totalExecutions: typeof parsed.totalExecutions === 'number' ? parsed.totalExecutions : 0,
+        executionsByGame: parsed.executionsByGame && typeof parsed.executionsByGame === 'object' ? parsed.executionsByGame : {},
+        dailyCounts: parsed.dailyCounts && typeof parsed.dailyCounts === 'object' ? parsed.dailyCounts : {},
+        recentLogs: Array.isArray(parsed.recentLogs) ? parsed.recentLogs : [],
+        recentSessionIds: Array.isArray(parsed.recentSessionIds) ? parsed.recentSessionIds : [],
+        clearedLogsCount: typeof parsed.clearedLogsCount === 'number' ? parsed.clearedLogsCount : 0,
+        lastUpdated: parsed.lastUpdated || new Date().toISOString(),
+      };
+      memoryExecutionStore = store;
+      return store;
+    }
+
+    // If file does not exist or was empty/invalid, safely initialize DEFAULT_STORE
+    const initialStore: ExecutionDataStore = { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
+    try {
+      await writeJson(STORAGE_EXECUTIONS_PATH, initialStore);
+      console.info(`[Executions] Initialized empty executions store at ${STORAGE_EXECUTIONS_PATH}`);
+    } catch (writeErr: any) {
+      console.warn(`[Executions] Could not write initial executions store to ${STORAGE_EXECUTIONS_PATH}:`, writeErr?.message || writeErr);
+    }
+    memoryExecutionStore = initialStore;
+    return initialStore;
+  } catch (err: any) {
+    console.error(`[Executions] Failed to load executions from ${STORAGE_EXECUTIONS_PATH}:`, err?.message || err);
+    // Never crash /dashboard or callers; return sensible default store
+    return memoryExecutionStore || { ...DEFAULT_STORE, lastUpdated: new Date().toISOString() };
+  }
 }
 
 /**
@@ -107,7 +135,12 @@ export async function saveStoredExecutions(data: ExecutionDataStore): Promise<vo
     return;
   }
 
-  await writeJson(STORAGE_EXECUTIONS_PATH, data);
+  try {
+    await writeJson(STORAGE_EXECUTIONS_PATH, data);
+  } catch (err: any) {
+    console.error(`[Executions] Failed to save executions to ${STORAGE_EXECUTIONS_PATH}:`, err?.message || err);
+    throw err;
+  }
 }
 
 /**

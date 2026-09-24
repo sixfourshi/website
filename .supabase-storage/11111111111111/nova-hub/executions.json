@@ -1,0 +1,25 @@
+{
+  "totalExecutions": 1,
+  "executionsByGame": {
+    "Blox Fruits": 1
+  },
+  "dailyCounts": {
+    "2026-09-24": 1
+  },
+  "recentLogs": [
+    {
+      "id": "exec_1790233122426_h0xy0s",
+      "sessionId": "test-sess-12345",
+      "placeId": 2753915549,
+      "universeId": 994732206,
+      "gameName": "Blox Fruits",
+      "status": "unknown",
+      "timestamp": "2026-09-24T06:58:42.426Z"
+    }
+  ],
+  "recentSessionIds": [
+    "test-sess-12345"
+  ],
+  "clearedLogsCount": 0,
+  "lastUpdated": "2026-09-24T06:58:42.426Z"
+}
