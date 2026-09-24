@@ -8,8 +8,9 @@ export const revalidate = 0;
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { slug: string } }
+  props: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
+  const params = await props.params;
   try {
     const script = await getScript(params.slug, { forceFresh: true });
     if (!script) {
@@ -33,12 +34,13 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { slug: string } }
+  props: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const params = await props.params;
   try {
     const body = await req.json();
     const record = await upsertScript(body, params.slug);
@@ -67,12 +69,13 @@ export async function PUT(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { slug: string } }
+  props: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   if (!(await isAuthenticated())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const params = await props.params;
   try {
     await deleteScript(params.slug);
 

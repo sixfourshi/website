@@ -30,10 +30,11 @@ export async function OPTIONS() {
  */
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { slug: string } }
+  props: { params: Promise<{ slug: string }> | { slug: string } }
 ) {
   try {
-    const rawSlug = params?.slug ? String(params.slug).trim() : '';
+    const resolvedParams = await props.params;
+    const rawSlug = resolvedParams?.slug ? String(resolvedParams.slug).trim() : '';
 
     if (!rawSlug) {
       return new NextResponse('-- Script not found\n', {
@@ -92,7 +93,7 @@ export async function GET(
       },
     });
   } catch (err: any) {
-    console.error(`[Raw Endpoint /raw/${params?.slug}] Error serving script:`, err?.message || err);
+    console.error(`[Raw Endpoint /raw] Error serving script:`, err?.message || err);
     return new NextResponse('-- [Nova Hub] Error retrieving script.\n', {
       status: 500,
       headers: {
