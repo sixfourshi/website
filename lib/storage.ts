@@ -1,6 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { type RobloxGame, ROBLOX_GAMES } from './games';
+import { type RobloxGame, normalizeGame } from './games';
 import type { Script } from './scripts';
 import {
   ChangelogRelease,
@@ -60,9 +60,6 @@ export function invalidateStorageCache(): void {
   memoryLoaderConfig = null;
 }
 
-// Read-only project seed files (bundled at build, used ONLY for first-ever initialization of an empty bucket)
-const SEED_GAMES_PATH = path.join(process.cwd(), 'data', 'games.json');
-
 export interface StorageInitMarker {
   initialized: boolean;
   initializedAt: string;
@@ -79,18 +76,6 @@ export interface Suggestion {
   status: SuggestionStatus;
   createdAt: string;
   updatedAt?: string;
-}
-
-// Read seed data from bundled data/*.json (used ONCE on initial deployment if bucket is empty)
-async function readSeedGames(): Promise<RobloxGame[]> {
-  try {
-    const raw = await fs.readFile(SEED_GAMES_PATH, 'utf-8');
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed as RobloxGame[];
-    }
-  } catch {}
-  return ROBLOX_GAMES;
 }
 
 async function markGamesStorageInitialized(): Promise<void> {
@@ -114,64 +99,59 @@ async function markScriptsStorageInitialized(): Promise<void> {
 /**
  * Get all stored games.
  * Authoritative source: Supabase Storage bucket ('nova-hub/games.json').
- * Automatically migrates existing data from legacy 'sourhub/games.json' if present.
+ * Games must NEVER be restored from demo or seed data.
+ * If game storage has been initialized and its value is [], return []. Never repopulate it.
+ * Once nova-hub/games-marker.json exists with initialized: true, NEVER read legacy games as fallback.
  */
 export async function getStoredGames(options?: { forceFresh?: boolean }): Promise<RobloxGame[]> {
-  if (!isSupabaseStorageConfigured()) {
-    if (!options?.forceFresh && memoryGamesCache) {
-      return memoryGamesCache.data;
-    }
-    const seed = await readSeedGames();
-    memoryGamesCache = { data: seed, timestamp: Date.now() };
-    return seed;
-  }
-
   if (!options?.forceFresh && memoryGamesCache && Date.now() - memoryGamesCache.timestamp < CACHE_TTL_MS) {
     return memoryGamesCache.data;
   }
 
   try {
-    // 1. Check authoritative nova-hub path
-    let fromStorage = await readJson<RobloxGame[]>(STORAGE_GAMES_PATH);
-
-    // 2. If not found at nova-hub, check legacy sourhub path for migration
-    if (!Array.isArray(fromStorage)) {
-      const legacyGames = await readJson<RobloxGame[]>(LEGACY_STORAGE_GAMES_PATH);
-      if (Array.isArray(legacyGames) && legacyGames.length > 0) {
-        console.info(`[Storage Migration] Migrating ${legacyGames.length} games from ${LEGACY_STORAGE_GAMES_PATH} to ${STORAGE_GAMES_PATH}...`);
-        fromStorage = legacyGames;
-        await writeJson(STORAGE_GAMES_PATH, legacyGames);
-        await markGamesStorageInitialized();
-      }
-    }
-
-    // If fromStorage is an array (even if empty []), it is the authoritative persistent store
-    if (Array.isArray(fromStorage)) {
-      memoryGamesCache = { data: fromStorage, timestamp: Date.now() };
-      return fromStorage;
-    }
-
-    // Check if persistent storage was already initialized previously (at new or legacy path)
+    // 1. Check if authoritative nova-hub game storage has already been initialized
     const marker = await readJson<StorageInitMarker>(STORAGE_GAMES_MARKER_PATH);
-    const legacyMarker = !marker?.initialized ? await readJson<StorageInitMarker>(LEGACY_STORAGE_GAMES_MARKER_PATH) : null;
-    if (marker?.initialized || legacyMarker?.initialized) {
+    if (marker?.initialized) {
+      // Once initialized: nova-hub/games.json is the sole authoritative collection.
+      // If initialized and value is [], return []. Never repopulate or fallback to legacy games.
+      const fromStorage = await readJson<RobloxGame[]>(STORAGE_GAMES_PATH);
+      if (Array.isArray(fromStorage)) {
+        const normalized = fromStorage.map((g) => normalizeGame(g));
+        memoryGamesCache = { data: normalized, timestamp: Date.now() };
+        return normalized;
+      }
+      // If marker is set but object was empty or missing, empty array [] is authoritative
       memoryGamesCache = { data: [], timestamp: Date.now() };
       return [];
     }
 
-    // Initial first-ever seed to Supabase Storage
-    const seed = await readSeedGames();
-    await writeJson(STORAGE_GAMES_PATH, seed);
-    await markGamesStorageInitialized();
-    console.info(`[Storage] Initialized empty bucket with ${seed.length} games to Supabase Storage.`);
+    // 2. Game storage has genuinely never been initialized under nova-hub.
+    // Legacy migration may happen ONLY if game storage has genuinely never been initialized.
+    const legacyMarker = await readJson<StorageInitMarker>(LEGACY_STORAGE_GAMES_MARKER_PATH);
+    if (!legacyMarker?.initialized) {
+      const legacyGames = await readJson<RobloxGame[]>(LEGACY_STORAGE_GAMES_PATH);
+      if (Array.isArray(legacyGames) && legacyGames.length > 0) {
+        console.info(`[Storage Migration] Migrating ${legacyGames.length} games from ${LEGACY_STORAGE_GAMES_PATH} to ${STORAGE_GAMES_PATH}...`);
+        const normalized = legacyGames.map((g) => normalizeGame(g));
+        await writeJson(STORAGE_GAMES_PATH, normalized);
+        await markGamesStorageInitialized();
+        memoryGamesCache = { data: normalized, timestamp: Date.now() };
+        return normalized;
+      }
+    }
 
-    memoryGamesCache = { data: seed, timestamp: Date.now() };
-    return seed;
+    // 3. Initial first-ever setup of empty games store to Supabase Storage
+    const emptyGames: RobloxGame[] = [];
+    await writeJson(STORAGE_GAMES_PATH, emptyGames);
+    await markGamesStorageInitialized();
+    console.info('[Storage] Initialized empty game storage in Supabase Storage.');
+
+    memoryGamesCache = { data: emptyGames, timestamp: Date.now() };
+    return emptyGames;
   } catch (err: any) {
     console.error(`[Storage] Error retrieving games from ${STORAGE_GAMES_PATH}:`, err?.message || err);
     if (memoryGamesCache?.data) return memoryGamesCache.data;
-    const seed = await readSeedGames();
-    return seed;
+    return [];
   }
 }
 

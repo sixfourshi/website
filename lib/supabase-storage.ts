@@ -292,7 +292,8 @@ export async function downloadObject(path: string): Promise<Blob | null> {
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  console.info(`[Supabase Storage:downloadObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
+  // Safely log bucket and relative path immediately before Supabase request
+  console.info(`bucket="${bucket}" path="${cleanPath}"`);
 
   try {
     const { data, error } = await client.storage.from(bucket).download(cleanPath);
@@ -371,8 +372,8 @@ export async function uploadObject(
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  // Log the final sanitized values of bucket and path immediately before the Supabase call
-  console.info(`[Supabase Storage:uploadObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
+  // Safely log bucket and relative path immediately before Supabase request
+  console.info(`bucket="${bucket}" path="${cleanPath}"`);
 
   try {
     const { error } = await client.storage.from(bucket).upload(cleanPath, body, {
@@ -440,7 +441,8 @@ export async function deleteObject(path: string): Promise<void> {
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
-  console.info(`[Supabase Storage:deleteObject] Target bucket: "${bucket}", relative path: "${cleanPath}"`);
+  // Safely log bucket and relative path immediately before Supabase request
+  console.info(`bucket="${bucket}" path="${cleanPath}"`);
 
   try {
     const { error } = await client.storage.from(bucket).remove([cleanPath]);
@@ -473,7 +475,10 @@ export async function deleteObjects(paths: string[]): Promise<void> {
   const cleanPaths = paths.map((p) => validateStoragePath(p, bucket));
   const client = getSupabaseClient();
 
-  console.info(`[Supabase Storage:deleteObjects] Target bucket: "${bucket}", relative paths:`, cleanPaths);
+  // Safely log bucket and relative paths immediately before Supabase request
+  for (const p of cleanPaths) {
+    console.info(`bucket="${bucket}" path="${p}"`);
+  }
 
   try {
     const { error } = await client.storage.from(bucket).remove(cleanPaths);

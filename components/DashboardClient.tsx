@@ -28,6 +28,7 @@ import { ScriptFormModal } from './ScriptFormModal';
 import { GameFormModal } from './GameFormModal';
 import { DeleteGameModal } from './DeleteGameModal';
 import { DeleteScriptModal } from './DeleteScriptModal';
+import { BulkDeleteModal } from './BulkDeleteModal';
 import { UniversalLoaderManager } from './UniversalLoaderManager';
 import { SuggestionsTab } from './SuggestionsTab';
 import { ExecutionLogsTab } from './ExecutionLogsTab';
@@ -128,6 +129,130 @@ export function DashboardClient({
     }
     return map;
   }, [scripts]);
+
+  // Multi-select for Games
+  const [selectedGameSlugs, setSelectedGameSlugs] = useState<string[]>([]);
+  const [isBulkDeletingGames, setIsBulkDeletingGames] = useState(false);
+
+  const isAllGamesSelected =
+    filteredGames.length > 0 && filteredGames.every((g) => selectedGameSlugs.includes(g.slug));
+
+  const toggleSelectAllGames = () => {
+    if (isAllGamesSelected) {
+      setSelectedGameSlugs([]);
+    } else {
+      setSelectedGameSlugs(filteredGames.map((g) => g.slug));
+    }
+  };
+
+  const toggleSelectGame = (slug: string) => {
+    setSelectedGameSlugs((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
+
+  const clearSelectedGames = () => {
+    setSelectedGameSlugs([]);
+  };
+
+  const selectAllGames = () => {
+    setSelectedGameSlugs(filteredGames.map((g) => g.slug));
+  };
+
+  const handleBulkDeleteGamesConfirm = async () => {
+    if (selectedGameSlugs.length === 0) return;
+    const slugsToDelete = [...selectedGameSlugs];
+    const res = await fetch('/api/games', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slugs: slugsToDelete }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to delete selected games.');
+    }
+
+    // Refresh games list from server
+    const freshRes = await fetch('/api/games', { cache: 'no-store' });
+    if (freshRes.ok) {
+      const freshGames = await freshRes.json();
+      setGames(freshGames);
+    } else {
+      setGames((prev) => prev.filter((g) => !slugsToDelete.includes(g.slug)));
+    }
+
+    setSelectedGameSlugs([]);
+    showToast(
+      `Deleted ${slugsToDelete.length} games`,
+      'success',
+      3000,
+      'Permanently removed from storage'
+    );
+    router.refresh();
+  };
+
+  // Multi-select for Scripts
+  const [selectedScriptSlugs, setSelectedScriptSlugs] = useState<string[]>([]);
+  const [isBulkDeletingScripts, setIsBulkDeletingScripts] = useState(false);
+
+  const isAllScriptsSelected =
+    filteredScripts.length > 0 && filteredScripts.every((s) => selectedScriptSlugs.includes(s.slug));
+
+  const toggleSelectAllScripts = () => {
+    if (isAllScriptsSelected) {
+      setSelectedScriptSlugs([]);
+    } else {
+      setSelectedScriptSlugs(filteredScripts.map((s) => s.slug));
+    }
+  };
+
+  const toggleSelectScript = (slug: string) => {
+    setSelectedScriptSlugs((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
+  };
+
+  const clearSelectedScripts = () => {
+    setSelectedScriptSlugs([]);
+  };
+
+  const selectAllScripts = () => {
+    setSelectedScriptSlugs(filteredScripts.map((s) => s.slug));
+  };
+
+  const handleBulkDeleteScriptsConfirm = async () => {
+    if (selectedScriptSlugs.length === 0) return;
+    const slugsToDelete = [...selectedScriptSlugs];
+    const res = await fetch('/api/scripts', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slugs: slugsToDelete }),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Failed to delete selected scripts.');
+    }
+
+    // Refresh scripts from server
+    const freshRes = await fetch('/api/scripts', { cache: 'no-store' });
+    if (freshRes.ok) {
+      const freshScripts = await freshRes.json();
+      setScripts(freshScripts);
+    } else {
+      setScripts((prev) => prev.filter((s) => !slugsToDelete.includes(s.slug)));
+    }
+
+    setSelectedScriptSlugs([]);
+    showToast(
+      `Deleted ${slugsToDelete.length} scripts`,
+      'success',
+      3000,
+      'Permanently removed from storage'
+    );
+    router.refresh();
+  };
 
   // Handle Game Save (create or update)
   const onGameSaved = async (savedGame: RobloxGame) => {
@@ -548,27 +673,90 @@ export function DashboardClient({
                 )}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-line bg-surface/40 text-slate-400 uppercase tracking-wider text-[11px]">
-                        <th className="px-5 py-3.5 font-medium">Game Experience</th>
-                        <th className="px-5 py-3.5 font-medium">Structured Features</th>
-                        <th className="px-5 py-3.5 font-medium">Roblox IDs</th>
-                        <th className="px-5 py-3.5 font-medium">URL Route</th>
-                        <th className="px-5 py-3.5 font-medium text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line/40">
-                      {filteredGames.map((game) => {
-                        const totalFeats = countGameFeatures(game);
-                        return (
-                          <tr
-                            key={game.slug}
-                            className="hover:bg-surface/30 transition-colors"
-                          >
-                            {/* Game name & icon */}
+              <div className="space-y-3">
+                {/* Bulk actions bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface/30 px-4 py-2.5">
+                  <div className="flex items-center gap-3 text-xs">
+                    <label className="flex items-center gap-2 font-medium text-slate-300 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isAllGamesSelected}
+                        onChange={toggleSelectAllGames}
+                        className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                        aria-label="Select all games"
+                      />
+                      <span>Select All</span>
+                    </label>
+                    <span className="text-slate-600">|</span>
+                    <button
+                      type="button"
+                      onClick={clearSelectedGames}
+                      disabled={selectedGameSlugs.length === 0}
+                      className="text-slate-400 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Clear Selection
+                    </button>
+                    {selectedGameSlugs.length > 0 && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                        {selectedGameSlugs.length} selected
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedGameSlugs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkDeletingGames(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Selected ({selectedGameSlugs.length})</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-line bg-surface/40 text-slate-400 uppercase tracking-wider text-[11px]">
+                          <th className="w-10 px-4 py-3.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isAllGamesSelected}
+                              onChange={toggleSelectAllGames}
+                              className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                              aria-label="Select all games"
+                            />
+                          </th>
+                          <th className="px-5 py-3.5 font-medium">Game Experience</th>
+                          <th className="px-5 py-3.5 font-medium">Structured Features</th>
+                          <th className="px-5 py-3.5 font-medium">Roblox IDs</th>
+                          <th className="px-5 py-3.5 font-medium">URL Route</th>
+                          <th className="px-5 py-3.5 font-medium text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line/40">
+                        {filteredGames.map((game) => {
+                          const totalFeats = countGameFeatures(game);
+                          const isSelected = selectedGameSlugs.includes(game.slug);
+                          return (
+                            <tr
+                              key={game.slug}
+                              className={`transition-colors ${isSelected ? 'bg-white/5' : 'hover:bg-surface/30'}`}
+                            >
+                              {/* Checkbox */}
+                              <td className="w-10 px-4 py-4 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelectGame(game.slug)}
+                                  className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                                  aria-label={`Select ${game.name}`}
+                                />
+                              </td>
+
+                              {/* Game name & icon */}
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
                                 {game.iconUrl ? (
@@ -686,9 +874,10 @@ export function DashboardClient({
                   </table>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
         {/* TAB 2: SCRIPTS MANAGEMENT */}
         {activeTab === 'scripts' && (
@@ -716,30 +905,93 @@ export function DashboardClient({
                 )}
               </div>
             ) : (
-              <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="border-b border-line bg-surface/40 text-slate-400 uppercase tracking-wider text-[11px]">
-                        <th className="px-5 py-3.5 font-medium">Script</th>
-                        <th className="px-5 py-3.5 font-medium">Assigned Game</th>
-                        <th className="px-5 py-3.5 font-medium">Category</th>
-                        <th className="px-5 py-3.5 font-medium">Version</th>
-                        <th className="px-5 py-3.5 font-medium">Updated</th>
-                        <th className="px-5 py-3.5 font-medium text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-line/40">
-                      {filteredScripts.map((script) => {
-                        const matchedGame = games.find(
-                          (g) => g.slug.toLowerCase() === script.game.toLowerCase()
-                        );
-                        return (
-                          <tr
-                            key={script.slug}
-                            className="hover:bg-surface/30 transition-colors"
-                          >
-                            <td className="px-5 py-4">
+              <div className="space-y-3">
+                {/* Bulk actions bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface/30 px-4 py-2.5">
+                  <div className="flex items-center gap-3 text-xs">
+                    <label className="flex items-center gap-2 font-medium text-slate-300 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={isAllScriptsSelected}
+                        onChange={toggleSelectAllScripts}
+                        className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                        aria-label="Select all scripts"
+                      />
+                      <span>Select All</span>
+                    </label>
+                    <span className="text-slate-600">|</span>
+                    <button
+                      type="button"
+                      onClick={clearSelectedScripts}
+                      disabled={selectedScriptSlugs.length === 0}
+                      className="text-slate-400 hover:text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Clear Selection
+                    </button>
+                    {selectedScriptSlugs.length > 0 && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-semibold text-white">
+                        {selectedScriptSlugs.length} selected
+                      </span>
+                    )}
+                  </div>
+
+                  {selectedScriptSlugs.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIsBulkDeletingScripts(true)}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 hover:bg-red-500 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors cursor-pointer"
+                    >
+                      <Trash2 size={13} />
+                      <span>Delete Selected ({selectedScriptSlugs.length})</span>
+                    </button>
+                  )}
+                </div>
+
+                <div className="overflow-hidden rounded-2xl border border-line bg-[#0c0c0f]">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-line bg-surface/40 text-slate-400 uppercase tracking-wider text-[11px]">
+                          <th className="w-10 px-4 py-3.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isAllScriptsSelected}
+                              onChange={toggleSelectAllScripts}
+                              className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                              aria-label="Select all scripts"
+                            />
+                          </th>
+                          <th className="px-5 py-3.5 font-medium">Script</th>
+                          <th className="px-5 py-3.5 font-medium">Assigned Game</th>
+                          <th className="px-5 py-3.5 font-medium">Category</th>
+                          <th className="px-5 py-3.5 font-medium">Version</th>
+                          <th className="px-5 py-3.5 font-medium">Updated</th>
+                          <th className="px-5 py-3.5 font-medium text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-line/40">
+                        {filteredScripts.map((script) => {
+                          const matchedGame = games.find(
+                            (g) => g.slug.toLowerCase() === script.game.toLowerCase()
+                          );
+                          const isSelected = selectedScriptSlugs.includes(script.slug);
+                          return (
+                            <tr
+                              key={script.slug}
+                              className={`transition-colors ${isSelected ? 'bg-white/5' : 'hover:bg-surface/30'}`}
+                            >
+                              {/* Checkbox */}
+                              <td className="w-10 px-4 py-4 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => toggleSelectScript(script.slug)}
+                                  className="h-4 w-4 rounded border-line bg-black/60 text-white accent-white focus:ring-0 cursor-pointer"
+                                  aria-label={`Select ${script.name}`}
+                                />
+                              </td>
+
+                              <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
                                 <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg border border-line bg-surface/60 text-zinc-300">
                                   <Icon name={script.icon} size={15} />
@@ -816,9 +1068,10 @@ export function DashboardClient({
                   </table>
                 </div>
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
+      )}
 
         {/* TAB 3: SUGGESTIONS MANAGEMENT */}
         {activeTab === 'suggestions' && (
@@ -877,6 +1130,26 @@ export function DashboardClient({
           associatedScriptCount={scriptsCountByGame[deletingGame.slug.toLowerCase()] || 0}
           onClose={() => setDeletingGame(null)}
           onConfirmed={onGameDeleteConfirmed}
+        />
+      )}
+
+      {/* Bulk Delete Games Confirmation Modal */}
+      {isBulkDeletingGames && (
+        <BulkDeleteModal
+          type="games"
+          count={selectedGameSlugs.length}
+          onClose={() => setIsBulkDeletingGames(false)}
+          onConfirm={handleBulkDeleteGamesConfirm}
+        />
+      )}
+
+      {/* Bulk Delete Scripts Confirmation Modal */}
+      {isBulkDeletingScripts && (
+        <BulkDeleteModal
+          type="scripts"
+          count={selectedScriptSlugs.length}
+          onClose={() => setIsBulkDeletingScripts(false)}
+          onConfirm={handleBulkDeleteScriptsConfirm}
         />
       )}
     </main>

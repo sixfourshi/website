@@ -1,4 +1,4 @@
-import { RobloxGame, ROBLOX_GAMES, normalizeGame } from './games';
+import { RobloxGame, normalizeGame } from './games';
 import { slugify } from './scripts';
 import { getStoredGames, saveStoredGames } from './storage';
 
@@ -135,4 +135,19 @@ export async function deleteGame(
   const nextGames = games.filter((g) => g.slug.toLowerCase() !== slug.toLowerCase());
   await saveGames(nextGames);
   return { deletedGame: slug };
+}
+
+export async function deleteGames(slugs: string[]): Promise<string[]> {
+  if (!Array.isArray(slugs) || slugs.length === 0) {
+    return [];
+  }
+  const cleanSlugs = new Set(
+    slugs.map((s) => decodeURIComponent(s).trim().toLowerCase()).filter(Boolean)
+  );
+  if (cleanSlugs.size === 0) return [];
+
+  const games = await getGames();
+  const nextGames = games.filter((g) => !cleanSlugs.has(g.slug.toLowerCase()));
+  await saveGames(nextGames);
+  return Array.from(cleanSlugs);
 }

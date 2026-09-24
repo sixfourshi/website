@@ -169,6 +169,23 @@ export async function deleteScript(slug: string): Promise<void> {
   });
 }
 
+export async function deleteScripts(slugs: string[]): Promise<string[]> {
+  if (!Array.isArray(slugs) || slugs.length === 0) {
+    return [];
+  }
+  const cleanSlugs = new Set(
+    slugs.map((s) => decodeURIComponent(s).trim().toLowerCase()).filter(Boolean)
+  );
+  if (cleanSlugs.size === 0) return [];
+
+  return runWithScriptsLock(async () => {
+    const scripts = await getScripts({ forceFresh: true });
+    const remaining = scripts.filter((s) => !cleanSlugs.has(s.slug.toLowerCase()));
+    await saveScripts(remaining);
+    return Array.from(cleanSlugs);
+  });
+}
+
 export function formatRelativeTime(dateInput?: string | number | Date | null): string {
   if (!dateInput) return '1 day ago';
 
