@@ -5,6 +5,7 @@ import { getStoredLoaderConfig, saveStoredLoaderConfig } from '@/lib/storage';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 60;
 
 export async function GET() {
   try {
@@ -31,9 +32,14 @@ export async function PUT(req: NextRequest) {
   }
 
   try {
-    const body = await req.json();
+    const rawText = await req.text();
+    if (!rawText || rawText.length === 0) {
+      return NextResponse.json({ error: 'Payload body is required.' }, { status: 400 });
+    }
 
-    if (typeof body.code !== 'string' || body.code.trim().length === 0) {
+    const body = JSON.parse(rawText);
+
+    if (typeof body.code !== 'string' || body.code.length === 0) {
       return NextResponse.json({ error: 'Loader code is required.' }, { status: 400 });
     }
 

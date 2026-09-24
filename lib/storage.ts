@@ -11,6 +11,9 @@ import {
 import {
   readJson,
   writeJson,
+  readText,
+  uploadObject,
+  downloadObject,
   isSupabaseStorageConfigured,
 } from './supabase-storage';
 import {
@@ -30,6 +33,7 @@ export {
 export const STORAGE_GAMES_PATH = 'nova-hub/games.json';
 export const STORAGE_SCRIPTS_PATH = 'nova-hub/scripts.json';
 export const STORAGE_LOADER_PATH = 'nova-hub/loader.json';
+export const STORAGE_LOADER_LUA_PATH = 'nova-hub/loader.lua';
 export const STORAGE_LOADER_MARKER_PATH = 'nova-hub/loader-marker.json';
 export const STORAGE_GAMES_MARKER_PATH = 'nova-hub/games-marker.json';
 export const STORAGE_SCRIPTS_MARKER_PATH = 'nova-hub/scripts-marker.json';
@@ -41,6 +45,7 @@ export const STORAGE_CHANGELOG_MARKER_PATH = 'nova-hub/changelog-marker.json';
 export const LEGACY_STORAGE_GAMES_PATH = 'sourhub/games.json';
 export const LEGACY_STORAGE_SCRIPTS_PATH = 'sourhub/scripts.json';
 export const LEGACY_STORAGE_LOADER_PATH = 'sourhub/loader.json';
+export const LEGACY_STORAGE_LOADER_LUA_PATH = 'sourhub/loader.lua';
 export const LEGACY_STORAGE_LOADER_MARKER_PATH = 'sourhub/loader-marker.json';
 export const LEGACY_STORAGE_GAMES_MARKER_PATH = 'sourhub/games-marker.json';
 export const LEGACY_STORAGE_SCRIPTS_MARKER_PATH = 'sourhub/scripts-marker.json';
@@ -48,8 +53,8 @@ export const LEGACY_STORAGE_SUGGESTIONS_PATH = 'sourhub/suggestions.json';
 export const LEGACY_STORAGE_CHANGELOG_PATH = 'sourhub/changelog.json';
 export const LEGACY_STORAGE_CHANGELOG_MARKER_PATH = 'sourhub/changelog-marker.json';
 
-export function sha256(str: string): string {
-  return createHash('sha256').update(str).digest('hex');
+export function sha256(data: string | Buffer | Uint8Array): string {
+  return createHash('sha256').update(data).digest('hex');
 }
 
 // In-memory cache for high-frequency public reads (5-second TTL)
@@ -270,11 +275,11 @@ let loaderMutationLock: Promise<void> = Promise.resolve();
 
 /**
  * Get Universal Loader configuration.
- * Authoritative source: Supabase Storage bucket ('nova-hub/loader.json').
+ * Authoritative source: Supabase Storage bucket ('nova-hub/loader.lua' and 'nova-hub/loader.json').
  * Persistently stored and verified.
  * 
  * Rules:
- * - If nova-hub/loader-marker.json has initialized: true, nova-hub/loader.json is authoritative.
+ * - If nova-hub/loader-marker.json has initialized: true, nova-hub/loader.lua and nova-hub/loader.json are authoritative.
  * - Never fallback to legacy sourhub/loader.json once initialized.
  * - Never restore DEFAULT_LOADER_CODE once initialized.
  * - Never write anything during GET/read operations.
@@ -291,18 +296,26 @@ export async function getStoredLoaderConfig(options?: { forceFresh?: boolean }):
 
   try {
     // 1. Check if authoritative nova-hub loader storage has already been initialized
-    const marker = await readJson<StorageInitMarker>(STORAGE_LOADER_MARKER_PATH);
+    const marker = await readJson<StorageInitMarker>(STORAGE_LOADER_MARKER_PATH, options);
     if (marker?.initialized) {
       // Strictly a read operation: never rewrite or reset an initialized loader
-      const fromStorage = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH);
-      if (fromStorage && typeof fromStorage.code === 'string') {
+      // First, read exact raw Lua source without JSON reserialization
+      let rawLua = await readText(STORAGE_LOADER_LUA_PATH, options);
+      const fromJson = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH, options);
+
+      // Backward-compatible fallback: if loader.lua does not exist yet, use code from loader.json
+      if ((!rawLua || rawLua.length === 0) && fromJson && typeof fromJson.code === 'string') {
+        rawLua = fromJson.code;
+      }
+
+      if (rawLua && typeof rawLua === 'string') {
         const resolved: UniversalLoaderConfig = {
-          code: fromStorage.code,
-          version: typeof fromStorage.version === 'string' && fromStorage.version.trim().length > 0
-            ? fromStorage.version.trim()
+          code: rawLua,
+          version: typeof fromJson?.version === 'string' && fromJson.version.trim().length > 0
+            ? fromJson.version.trim()
             : DEFAULT_LOADER_CONFIG.version,
-          enabled: fromStorage.enabled !== undefined ? Boolean(fromStorage.enabled) : true,
-          updatedAt: fromStorage.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
+          enabled: fromJson?.enabled !== undefined ? Boolean(fromJson.enabled) : true,
+          updatedAt: fromJson?.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
         };
         memoryLoaderCache = { data: resolved, timestamp: Date.now() };
         return resolved;
@@ -314,27 +327,42 @@ export async function getStoredLoaderConfig(options?: { forceFresh?: boolean }):
     }
 
     // 2. Loader storage has genuinely never been initialized under nova-hub.
-    // Check legacy marker and path for initial migration
-    const legacyMarker = await readJson<StorageInitMarker>(LEGACY_STORAGE_LOADER_MARKER_PATH);
-    const legacyConfig = await readJson<UniversalLoaderConfig>(LEGACY_STORAGE_LOADER_PATH);
-    if ((legacyMarker?.initialized || legacyConfig) && typeof legacyConfig?.code === 'string') {
-      console.info(`[Storage Migration] Migrating initial Universal Loader config from ${LEGACY_STORAGE_LOADER_PATH} to ${STORAGE_LOADER_PATH}`);
-      await writeJson(STORAGE_LOADER_PATH, legacyConfig);
-      await markLoaderStorageInitialized();
-      const resolved: UniversalLoaderConfig = {
-        code: legacyConfig.code,
-        version: typeof legacyConfig.version === 'string' && legacyConfig.version.trim().length > 0
+    // Check legacy marker and paths for initial migration
+    const legacyMarker = await readJson<StorageInitMarker>(LEGACY_STORAGE_LOADER_MARKER_PATH, options);
+    const legacyLua = await readText(LEGACY_STORAGE_LOADER_LUA_PATH, options);
+    const legacyConfig = await readJson<UniversalLoaderConfig>(LEGACY_STORAGE_LOADER_PATH, options);
+    const initialCode = legacyLua || legacyConfig?.code;
+
+    if ((legacyMarker?.initialized || initialCode) && typeof initialCode === 'string') {
+      console.info(`[Storage Migration] Migrating initial Universal Loader config from legacy paths to ${STORAGE_LOADER_PATH}`);
+      const codeBuffer = Buffer.from(initialCode, 'utf-8');
+      const migratedConfig: UniversalLoaderConfig = {
+        code: initialCode,
+        version: typeof legacyConfig?.version === 'string' && legacyConfig.version.trim().length > 0
           ? legacyConfig.version.trim()
           : DEFAULT_LOADER_CONFIG.version,
-        enabled: legacyConfig.enabled !== undefined ? Boolean(legacyConfig.enabled) : true,
-        updatedAt: legacyConfig.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
+        enabled: legacyConfig?.enabled !== undefined ? Boolean(legacyConfig.enabled) : true,
+        updatedAt: legacyConfig?.updatedAt || DEFAULT_LOADER_CONFIG.updatedAt,
       };
-      memoryLoaderCache = { data: resolved, timestamp: Date.now() };
-      return resolved;
+
+      await uploadObject(STORAGE_LOADER_LUA_PATH, codeBuffer, {
+        contentType: 'text/plain; charset=utf-8',
+        upsert: true,
+      });
+      await writeJson(STORAGE_LOADER_PATH, migratedConfig);
+      await markLoaderStorageInitialized();
+
+      memoryLoaderCache = { data: migratedConfig, timestamp: Date.now() };
+      return migratedConfig;
     }
 
     // 3. First-ever clean initialization to Supabase Storage
     try {
+      const defaultBuffer = Buffer.from(DEFAULT_LOADER_CONFIG.code, 'utf-8');
+      await uploadObject(STORAGE_LOADER_LUA_PATH, defaultBuffer, {
+        contentType: 'text/plain; charset=utf-8',
+        upsert: true,
+      });
       await writeJson(STORAGE_LOADER_PATH, DEFAULT_LOADER_CONFIG);
       await markLoaderStorageInitialized();
       console.info('[Storage] Seeded initial default Universal Loader and marker to Supabase Storage.');
@@ -352,9 +380,10 @@ export async function getStoredLoaderConfig(options?: { forceFresh?: boolean }):
 }
 
 /**
- * Persistently save Universal Loader configuration to Supabase Storage ('nova-hub/loader.json').
+ * Persistently save Universal Loader configuration to Supabase Storage.
+ * Writes exact UTF-8 raw Lua to 'nova-hub/loader.lua' and metadata to 'nova-hub/loader.json'.
  * Protected by a server-side mutation lock to prevent concurrent save races.
- * Immediately verifies persistence by reading back from Supabase Storage and checking SHA-256 hashes.
+ * Immediately verifies persistence by reading back directly from Supabase Storage and checking SHA-256 byte hashes.
  */
 export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Promise<UniversalLoaderConfig> {
   // Serial mutex lock: ensures two loader mutations do not run concurrently in the same runtime
@@ -369,6 +398,10 @@ export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Pro
 
     // Treat submitted loader code as an exact opaque string: no trim, no replacing text, no injecting telemetry
     const submittedCode = typeof config.code === 'string' ? config.code : String(config.code ?? '');
+    const codeBuffer = Buffer.from(submittedCode, 'utf-8');
+    const submittedByteLength = codeBuffer.byteLength;
+    const submittedHash = sha256(codeBuffer);
+
     const normalizedConfig: UniversalLoaderConfig = {
       code: submittedCode,
       version: typeof config.version === 'string' && config.version.trim().length > 0
@@ -387,63 +420,109 @@ export async function saveStoredLoaderConfig(config: UniversalLoaderConfig): Pro
       return normalizedConfig;
     }
 
-    const submittedHash = sha256(normalizedConfig.code);
+    // 1. Raw Lua payload: exact UTF-8 bytes without JSON reserialization
+    const luaUploadBuffer = codeBuffer;
+    const luaUploadByteLength = luaUploadBuffer.byteLength;
+    const luaUploadHash = sha256(luaUploadBuffer);
 
-    // Production-safe metadata logged immediately before write
+    // 2. JSON config payload: metadata and backward-compatible code
+    const jsonString = JSON.stringify(normalizedConfig, null, 2);
+    const jsonBuffer = Buffer.from(jsonString, 'utf-8');
+
+    // Safe debugging logged immediately before Supabase upload:
+    // * submitted byte length + SHA-256
+    // * bytes immediately before Supabase upload + SHA-256
     console.info('[Loader Save Debug]', {
-      submittedLength: normalizedConfig.code.length,
+      submittedLength: submittedCode.length,
+      submittedByteLength,
       submittedHash,
+      bytesBeforeUpload: luaUploadByteLength,
+      hashBeforeUpload: luaUploadHash,
+      jsonByteLength: jsonBuffer.byteLength,
       submittedVersion: normalizedConfig.version,
     });
 
-    // Authoritative write: upload object and ensure initialization marker is set
-    await writeJson(STORAGE_LOADER_PATH, normalizedConfig);
-    await markLoaderStorageInitialized();
-
-    // Read back to verify authoritative persistence
-    const verified = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH);
-
-    const storedHash = sha256(verified?.code ?? '');
-
-    // Production-safe metadata logged immediately after readback
-    console.info('[Loader Readback Debug]', {
-      storedLength: verified?.code?.length,
-      storedHash,
-      storedVersion: verified?.version,
+    // Authoritative upload:
+    // First, upload raw Lua source as exact UTF-8 text (no JSON reserialization)
+    await uploadObject(STORAGE_LOADER_LUA_PATH, luaUploadBuffer, {
+      contentType: 'text/plain; charset=utf-8',
+      upsert: true,
     });
 
-    if (!verified || typeof verified.code !== 'string') {
-      throw new Error('[Storage] Persistence verification failed: Universal Loader was not stored correctly in Supabase Storage.');
-    }
+    // Second, upload JSON config
+    await uploadObject(STORAGE_LOADER_PATH, jsonBuffer, {
+      contentType: 'application/json; charset=utf-8',
+      upsert: true,
+    });
 
-    if (verified.code !== normalizedConfig.code) {
+    // Third, mark loader storage initialized
+    await markLoaderStorageInitialized();
+
+    // 6. Verification readback:
+    // Must read the object that was just written directly from Supabase Storage with forceFresh and cacheNonce,
+    // comparing the complete SHA-256 hash of the UTF-8 bytes.
+    const nonce = Date.now();
+    const verifiedLuaBlob = await downloadObject(STORAGE_LOADER_LUA_PATH, { forceFresh: true, cacheNonce: nonce });
+    if (!verifiedLuaBlob) {
+      throw new Error('[Storage] Persistence verification failed: loader.lua could not be read back from Supabase Storage.');
+    }
+    const verifiedArrayBuffer = await verifiedLuaBlob.arrayBuffer();
+    const verifiedBuffer = Buffer.from(verifiedArrayBuffer);
+    const storedByteLength = verifiedBuffer.byteLength;
+    const storedHash = sha256(verifiedBuffer);
+    const storedText = verifiedBuffer.toString('utf-8');
+
+    // Also verify JSON object
+    const verifiedJson = await readJson<UniversalLoaderConfig>(STORAGE_LOADER_PATH, { forceFresh: true, cacheNonce: nonce });
+
+    // Safe debugging logged immediately after readback:
+    // * stored/read-back byte length + SHA-256
+    console.info('[Loader Readback Debug]', {
+      storedLength: storedText.length,
+      storedByteLength,
+      storedHash,
+      storedVersion: verifiedJson?.version || normalizedConfig.version,
+      hashesMatch: submittedHash === storedHash,
+      byteLengthsMatch: submittedByteLength === storedByteLength,
+    });
+
+    if (storedHash !== submittedHash || storedByteLength !== submittedByteLength) {
       const isLineEndingMismatch =
-        normalizedConfig.code.replace(/\r\n/g, '\n') === verified.code.replace(/\r\n/g, '\n');
+        submittedCode.replace(/\r\n/g, '\n') === storedText.replace(/\r\n/g, '\n');
 
       console.error('[Loader Persistence Verification Mismatch]', {
-        submittedLength: normalizedConfig.code.length,
-        storedLength: verified.code.length,
+        submittedLength: submittedCode.length,
+        storedLength: storedText.length,
+        submittedByteLength,
+        storedByteLength,
         submittedHash,
         storedHash,
         submittedVersion: normalizedConfig.version,
-        storedVersion: verified.version,
+        storedVersion: verifiedJson?.version,
         isLineEndingMismatch,
       });
 
       if (isLineEndingMismatch) {
         throw new Error(
-          `[Storage] Persistence verification failed: line-ending difference detected between submitted and stored code (submitted SHA-256: ${submittedHash.slice(0, 8)}, stored SHA-256: ${storedHash.slice(0, 8)}).`
+          `[Storage] Persistence verification failed: line-ending difference detected between submitted and stored code (submitted bytes: ${submittedByteLength}, stored bytes: ${storedByteLength}, submitted SHA-256: ${submittedHash.slice(0, 8)}, stored SHA-256: ${storedHash.slice(0, 8)}).`
         );
       }
 
       throw new Error(
-        `[Storage] Persistence verification failed: stored loader code does not match submitted code (submitted SHA-256: ${submittedHash.slice(0, 8)}, stored SHA-256: ${storedHash.slice(0, 8)}).`
+        `[Storage] Persistence verification failed: stored loader code does not match submitted code (submitted bytes: ${submittedByteLength}, stored bytes: ${storedByteLength}, submitted SHA-256: ${submittedHash.slice(0, 8)}, stored SHA-256: ${storedHash.slice(0, 8)}).`
       );
     }
 
-    memoryLoaderCache = { data: verified, timestamp: Date.now() };
-    console.info(`[Storage] Persisted and verified Universal Loader config in Supabase Storage (${verified.code.length} chars, v${verified.version}).`);
-    return verified;
+    const verifiedResult: UniversalLoaderConfig = {
+      code: storedText,
+      version: verifiedJson?.version || normalizedConfig.version,
+      enabled: verifiedJson?.enabled !== undefined ? verifiedJson.enabled : normalizedConfig.enabled,
+      updatedAt: verifiedJson?.updatedAt || normalizedConfig.updatedAt,
+    };
+
+    memoryLoaderCache = { data: verifiedResult, timestamp: Date.now() };
+    console.info(`[Storage] Persisted and verified Universal Loader in Supabase Storage (${storedByteLength} bytes, v${verifiedResult.version}).`);
+    return verifiedResult;
   } finally {
     releaseLock!();
   }

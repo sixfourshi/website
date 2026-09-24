@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
 import { ensureLocalStorageServer } from './supabase-emulator';
 
 // Server-only guard: prevent any client component from bundling this module
@@ -325,16 +326,37 @@ export function sanitizeError(err: unknown): Error & { statusCode?: number | str
   return cleanError;
 }
 
+export interface StorageReadOptions {
+  forceFresh?: boolean;
+  cacheNonce?: string | number;
+}
+
+/**
+ * Helper to compute SHA-256 hex digest for strings or binary buffers.
+ */
+export function sha256(data: string | Buffer | Uint8Array): string {
+  return createHash('sha256').update(data).digest('hex');
+}
+
 /**
  * Download a raw object from the private Supabase Storage bucket.
  * Returns null if the object does not exist (404).
  * Throws a clean error if Supabase Storage encounters real auth/bucket/network/path issues.
+ * Passes cacheNonce and cache: 'no-store' to guarantee fresh reads directly from Supabase Storage.
  */
-export async function downloadObject(path: string): Promise<Blob | null> {
+export async function downloadObject(
+  path: string,
+  options?: StorageReadOptions
+): Promise<Blob | null> {
   await ensureStorageReady();
   const bucket = getSupabaseBucket();
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
+
+  const downloadOpts = options?.forceFresh
+    ? { cacheNonce: String(options.cacheNonce ?? Date.now()) }
+    : undefined;
+  const fetchParams = { cache: 'no-store' as RequestCache };
 
   // Production-safe diagnostics immediately before .download()
   console.info('[Supabase download target]', {
@@ -342,12 +364,16 @@ export async function downloadObject(path: string): Promise<Blob | null> {
     path: cleanPath,
     pathLength: cleanPath.length,
     bucketLength: bucket.length,
+    forceFresh: Boolean(options?.forceFresh),
+    cacheNonce: downloadOpts?.cacheNonce,
     bucketJson: JSON.stringify(bucket),
     pathJson: JSON.stringify(cleanPath),
   });
 
   try {
-    const { data, error } = await client.storage.from(bucket).download(cleanPath);
+    const { data, error } = await client.storage
+      .from(bucket)
+      .download(cleanPath, downloadOpts, fetchParams);
 
     if (error) {
       if (isNotFoundError(error)) {
@@ -389,8 +415,11 @@ export async function downloadObject(path: string): Promise<Blob | null> {
  * Read an object as UTF-8 text from the private Supabase bucket.
  * Returns null if not found. Throws on storage error.
  */
-export async function readText(path: string): Promise<string | null> {
-  const blob = await downloadObject(path);
+export async function readText(
+  path: string,
+  options?: StorageReadOptions
+): Promise<string | null> {
+  const blob = await downloadObject(path, options);
   if (!blob) return null;
   const text = await blob.text();
   return text;
@@ -401,9 +430,12 @@ export async function readText(path: string): Promise<string | null> {
  * Returns null if the file does not exist or has invalid/uninitialized content.
  * Throws on real storage/network errors.
  */
-export async function readJson<T>(path: string): Promise<T | null> {
-  const text = await readText(path);
-  if (!text || text.trim().length === 0) return null;
+export async function readJson<T>(
+  path: string,
+  options?: StorageReadOptions
+): Promise<T | null> {
+  const text = await readText(path, options);
+  if (!text || text.length === 0) return null;
   try {
     return JSON.parse(text) as T;
   } catch (parseErr: any) {
@@ -417,12 +449,12 @@ export async function readJson<T>(path: string): Promise<T | null> {
 
 /**
  * Upload or overwrite an object in the private Supabase Storage bucket.
- * Logs the final sanitized values of bucket and path immediately before the Supabase call.
- * Throws if upload fails, with clear logging identifying the path, bucket, status code, and error.
+ * Ensures data is uploaded as raw binary Buffer/Blob so multi-byte UTF-8 text is never truncated.
+ * Logs byte length and SHA-256 immediately before the upload call.
  */
 export async function uploadObject(
   path: string,
-  body: string | ArrayBuffer | Blob | Buffer,
+  body: string | ArrayBuffer | Blob | Buffer | Uint8Array,
   options?: {
     contentType?: string;
     upsert?: boolean;
@@ -433,18 +465,43 @@ export async function uploadObject(
   const cleanPath = validateStoragePath(path, bucket);
   const client = getSupabaseClient();
 
+  // Convert string or Uint8Array to concrete UTF-8 Buffer so Node fetch uses exact byte count
+  const binaryBody: Buffer | ArrayBuffer | Blob = typeof body === 'string'
+    ? Buffer.from(body, 'utf-8')
+    : (Buffer.isBuffer(body)
+      ? body
+      : (body instanceof Uint8Array
+        ? Buffer.from(body.buffer, body.byteOffset, body.byteLength)
+        : body));
+
+  const byteLength = Buffer.isBuffer(binaryBody)
+    ? binaryBody.byteLength
+    : (binaryBody instanceof Blob
+      ? binaryBody.size
+      : (binaryBody instanceof ArrayBuffer ? binaryBody.byteLength : 0));
+
+  const uploadHash = sha256(
+    Buffer.isBuffer(binaryBody)
+      ? binaryBody
+      : (binaryBody instanceof ArrayBuffer
+        ? Buffer.from(binaryBody)
+        : Buffer.from(String(body), 'utf-8'))
+  );
+
   // Production-safe diagnostics immediately before .upload()
   console.info('[Supabase upload target]', {
     bucket,
     path: cleanPath,
     pathLength: cleanPath.length,
     bucketLength: bucket.length,
+    byteLength,
+    uploadHash,
     bucketJson: JSON.stringify(bucket),
     pathJson: JSON.stringify(cleanPath),
   });
 
   try {
-    const { error } = await client.storage.from(bucket).upload(cleanPath, body, {
+    const { error } = await client.storage.from(bucket).upload(cleanPath, binaryBody, {
       contentType: options?.contentType || 'application/octet-stream',
       upsert: options?.upsert !== undefined ? options.upsert : true,
     });
@@ -479,11 +536,12 @@ export async function uploadObject(
 
 /**
  * Write a JSON payload to the private Supabase Storage bucket with upsert enabled.
- * Single boundary: prepares the serialized payload and delegates directly to uploadObject.
+ * Single boundary: serializes to UTF-8 Buffer and delegates directly to uploadObject.
  */
 export async function writeJson<T>(path: string, data: T): Promise<void> {
   const payload = JSON.stringify(data, null, 2);
-  await uploadObject(path, payload, {
+  const buffer = Buffer.from(payload, 'utf-8');
+  await uploadObject(path, buffer, {
     contentType: 'application/json; charset=utf-8',
     upsert: true,
   });
@@ -491,14 +549,15 @@ export async function writeJson<T>(path: string, data: T): Promise<void> {
 
 /**
  * Write text or Lua script source to the private Supabase Storage bucket with upsert enabled.
- * Single boundary: delegates directly to uploadObject.
+ * Single boundary: converts exact text to UTF-8 Buffer and delegates directly to uploadObject.
  */
 export async function writeText(
   path: string,
   content: string,
   contentType: string = 'text/plain; charset=utf-8'
 ): Promise<void> {
-  await uploadObject(path, content, {
+  const buffer = Buffer.from(content, 'utf-8');
+  await uploadObject(path, buffer, {
     contentType,
     upsert: true,
   });

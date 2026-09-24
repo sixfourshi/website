@@ -3,7 +3,11 @@ const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
   skipTrailingSlashRedirect: true,
-  experimental: {},
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb',
+    },
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
