@@ -85,6 +85,9 @@ export function UniversalLoaderManager({
 
       const updated = (await res.json()) as UniversalLoaderConfig;
       setUpdatedAt(updated.updatedAt);
+      setCode(updated.code);
+      setVersion(updated.version);
+      setEnabled(updated.enabled);
       setStatusNotice({
         type: 'success',
         text: 'Universal Loader saved persistently to private Supabase Storage!',

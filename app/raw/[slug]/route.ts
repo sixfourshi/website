@@ -49,7 +49,7 @@ export async function GET(
 
     // Support main universal loader at /raw/loader
     if (rawSlug === 'loader') {
-      const config = await getStoredLoaderConfig();
+      const config = await getStoredLoaderConfig({ forceFresh: true });
       const codeToReturn = config.enabled
         ? config.code
         : `-- [Nova Hub] Universal loader is currently disabled.\nwarn("[Nova Hub] The universal loader is currently disabled for maintenance.")\n`;
@@ -61,6 +61,7 @@ export async function GET(
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
+          'Surrogate-Control': 'no-store',
           ...CORS_HEADERS,
         },
       });

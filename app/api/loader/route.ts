@@ -8,10 +8,12 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    const config = await getStoredLoaderConfig();
+    const config = await getStoredLoaderConfig({ forceFresh: true });
     return NextResponse.json(config, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (err: any) {
@@ -45,23 +47,27 @@ export async function PUT(req: NextRequest) {
     const now = new Date();
     const formattedDate = now.toISOString().slice(0, 10);
 
-    const updatedConfig = {
+    const configToSave = {
       code: body.code,
       version,
       enabled,
       updatedAt: formattedDate,
     };
 
-    await saveStoredLoaderConfig(updatedConfig);
+    const saved = await saveStoredLoaderConfig(configToSave);
 
     revalidatePath('/loader');
+    revalidatePath('/raw/loader');
+    revalidatePath('/raw');
     revalidatePath('/dashboard');
     revalidatePath('/');
     revalidatePath('/scripts');
 
-    return NextResponse.json(updatedConfig, {
+    return NextResponse.json(saved, {
       headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
     });
   } catch (err: any) {
@@ -71,4 +77,8 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function POST(req: NextRequest) {
+  return PUT(req);
 }

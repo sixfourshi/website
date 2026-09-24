@@ -17,7 +17,7 @@ export default async function DashboardPage() {
   const [scripts, games, loaderConfig, suggestions, executionsStore, changelog] = await Promise.all([
     getScripts({ forceFresh: true }),
     getGames({ forceFresh: true }),
-    getStoredLoaderConfig(),
+    getStoredLoaderConfig({ forceFresh: true }),
     getStoredSuggestions(),
     getStoredExecutions(),
     getChangelogReleases({ forceFresh: true }),
