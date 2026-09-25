@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { AppBackground } from '@/components/AppBackground';
 import { ToastContainer } from '@/components/Toast';
+import { SITE_URL } from '@/lib/site-config';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://novahub.vercel.app'),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: 'Nova Hub - Keyless',
     template: 'Nova Hub - Keyless',
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
   },
   description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
   alternates: {
-    canonical: 'https://novahub.vercel.app',
+    canonical: SITE_URL,
   },
   icons: {
     icon: [
@@ -29,12 +30,12 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'Nova Hub - Best Keyless Script Hub',
     description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
-    url: 'https://novahub.vercel.app',
+    url: SITE_URL,
     siteName: 'Nova Hub',
     type: 'website',
     images: [
       {
-        url: 'https://novahub.vercel.app/icon.png',
+        url: `${SITE_URL}/icon.png`,
         width: 512,
         height: 512,
         alt: 'Nova Hub - Best Keyless Script Hub',
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
     card: 'summary',
     title: 'Nova Hub - Best Keyless Script Hub',
     description: 'Free, keyless scripts for the games we build - no ads, checkpoints.',
-    images: ['https://novahub.vercel.app/icon.png'],
+    images: [`${SITE_URL}/icon.png`],
   },
 };
 

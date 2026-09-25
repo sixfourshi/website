@@ -35,6 +35,7 @@ import { UniversalLoaderManager } from './UniversalLoaderManager';
 import { SuggestionsTab } from './SuggestionsTab';
 import { ExecutionLogsTab } from './ExecutionLogsTab';
 import { ChangelogManager } from './ChangelogManager';
+import { getRawScriptUrl } from '@/lib/site-config';
 import type { Script } from '@/lib/scripts';
 import type { RobloxGame } from '@/lib/games';
 import { countGameFeatures } from '@/lib/games';
@@ -83,7 +84,7 @@ export function DashboardClient({
   const [copiedRawSlug, setCopiedRawSlug] = useState<string | null>(null);
 
   const handleCopyRawUrl = async (slug: string) => {
-    const rawUrl = `https://novahub.vercel.app/raw/${slug}`;
+    const rawUrl = getRawScriptUrl(slug);
     const ok = await copyToClipboard(rawUrl, 'Raw URL copied to clipboard!');
     if (ok) {
       setCopiedRawSlug(slug);
@@ -1063,7 +1064,7 @@ export function DashboardClient({
                                   type="button"
                                   onClick={() => handleCopyRawUrl(script.slug)}
                                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-line text-slate-400 hover:border-white/30 hover:text-white transition-colors cursor-pointer"
-                                  title={`Copy Raw URL (https://novahub.vercel.app/raw/${script.slug})`}
+                                  title={`Copy Raw URL (${getRawScriptUrl(script.slug)})`}
                                   aria-label="Copy Raw URL"
                                 >
                                   {copiedRawSlug === script.slug ? (

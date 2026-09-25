@@ -21,7 +21,7 @@ export async function OPTIONS() {
 }
 
 /**
- * Public raw loader endpoint: https://novahub.vercel.app/loader
+ * Public raw loader endpoint: https://novaxhub.vercel.app/loader
  * Returns pure Luau plain-text code for Roblox executors and browsers.
  * Strictly no HTML, markdown, or webpage wrapper.
  */

@@ -26,7 +26,7 @@ local scriptSlug = gamesMap[placeId] or "orbit-farm"
 print("[Nova Hub] Launching keyless module: " .. scriptSlug)
 
 local success, err = pcall(function()
-    loadstring(game:HttpGet("https://novahub.vercel.app/raw/" .. scriptSlug))()
+    loadstring(game:HttpGet("https://novaxhub.vercel.app/raw/" .. scriptSlug))()
 end)
 
 if success then
@@ -36,7 +36,7 @@ if success then
         local req = (syn and syn.request) or (http and http.request) or http_request or request
         if req and HttpService then
             req({
-                Url = "https://novahub.vercel.app/api/executions",
+                Url = "https://novaxhub.vercel.app/api/executions",
                 Method = "POST",
                 Headers = {
                     ["Content-Type"] = "application/json"

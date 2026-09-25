@@ -5,13 +5,13 @@ import Link from 'next/link';
 import { ArrowRight, Check, Copy, Sparkles, Zap } from 'lucide-react';
 import { Reveal } from './Reveal';
 import { copyToClipboard } from './Toast';
+import { LOADER_SNIPPET } from '@/lib/site-config';
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
 
   const handleCopyLoader = async () => {
-    const loaderSnippet = 'loadstring(game:HttpGet("https://novahub.vercel.app/loader"))()';
-    const success = await copyToClipboard(loaderSnippet, 'Loader copied to clipboard!');
+    const success = await copyToClipboard(LOADER_SNIPPET, 'Loader copied to clipboard!');
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { copyToClipboard } from './Toast';
 import { DEFAULT_LOADER_CODE, type UniversalLoaderConfig } from '@/lib/loader-types';
+import { LOADER_SNIPPET } from '@/lib/site-config';
 
 export function UniversalLoaderManager({
   initialConfig,
@@ -40,8 +41,7 @@ export function UniversalLoaderManager({
   } | null>(null);
 
   const handleCopyLoader = async () => {
-    const snippet = `loadstring(game:HttpGet("https://novahub.vercel.app/loader"))()`;
-    const success = await copyToClipboard(snippet, 'Loader copied to clipboard!');
+    const success = await copyToClipboard(LOADER_SNIPPET, 'Loader copied to clipboard!');
     if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

@@ -8,6 +8,7 @@ import { CodeViewer } from '@/components/CodeViewer';
 import { LoaderActions } from '@/components/LoaderActions';
 import { getScript } from '@/lib/scripts';
 import { getGameBySlug } from '@/lib/games-server';
+import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
@@ -16,7 +17,7 @@ export const revalidate = 0;
 export const metadata = {
   title: 'Nova Hub - Keyless',
   alternates: {
-    canonical: 'https://novahub.vercel.app/games',
+    canonical: `${SITE_URL}/games`,
   },
 };
 

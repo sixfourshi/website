@@ -2,6 +2,7 @@ import { Navbar } from '@/components/Navbar';
 import { Changelog } from '@/components/Changelog';
 import { Footer } from '@/components/Footer';
 import { getChangelogReleases } from '@/lib/changelog';
+import { SITE_URL } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -9,7 +10,7 @@ export const revalidate = 0;
 export const metadata = {
   title: 'Nova Hub - Keyless',
   alternates: {
-    canonical: 'https://novahub.vercel.app/changelog',
+    canonical: `${SITE_URL}/changelog`,
   },
 };
 
